@@ -10,6 +10,8 @@ setenv('LC_ALL','C');
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+profile on
+
 warning off all
 
 clear all
@@ -24,22 +26,24 @@ fprintf('pid = %i:  Matlab started at %s\n', feature('getpid'), datestr(now));
 
 % --- CONSTANTS -----------------------------------------------------------
 is_debug         = 0;
-is_visualisation = 0;
+is_visualisation = 1;
 b_std            = 5;
 
 database    = 'PharmaPack_R_I_S1';
-source      = ['../../', database, '/cropped/'];
-destination = ['../../', database, '/text_regions/no_quality_control/'];
+source      = ['D:/pharmapack/', database, '/cropped/'];
+destination = ['D:/pharmapack/', database, '/text_regions/no_quality_control/'];
 
 % --- Process -------------------------------------------------------------
-[~, ~, images] = readDir([source, '*.*']);
-n = size(images, 2);  
+images = dir(source);
+images  = images(~ismember({images.name},{'.','..'}));
+images = {images.name}.';
+n = size(images);  
 
-ImageList = cell(0);
+% ImageList = cell(0);
 
 fprintf('\n%s: %s start text detection \n',datestr(now), database);
 l = 0;
-for i=1:n
+for i=1:15
         fprintf('%s: i= %i,  %s\n', datestr(now), i, images{i});
         
         gray = prepareImage([source, images{i}]);
@@ -53,7 +57,7 @@ for i=1:n
         end
         
         l = l + 1;
-        ImageList(l, :) = {images{i}};
+        % ImageList(l, :) = {images{i}};
 
         save([destination, '/TextRegionsMasks_', num2str(l), '.mat'],...
             'TextRegionsMasks', '-v7.3');
@@ -61,11 +65,17 @@ for i=1:n
             'TextRegionsCoordinates', '-v7.3');
 
         if is_visualisation
-            saveas(fig, [destination, '/visualisation/TextRegions_', num2str(l), '.png']);
+            saveas(fig, [destination, 'visualization/TextRegions_', num2str(l), '.png']);
         end
         
-        save([destination, 'ListOfImages.mat'], 'ImageList');
+        clear TextRegionsMasks
+        clear TextRegionsCoordinates
+        clear fig
+        clear gray
+        
+        % save([destination, 'ListOfImages.mat'], 'ImageList');
 end
+profile viewer
 fprintf('\n%s: %s end text detection \n',datestr(now), database);
 
 

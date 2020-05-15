@@ -40,8 +40,8 @@ dateFormat = 'dd.mm.yyyy';
 
 database = 'PharmaPack_R_I_S1';
 
-srcpath         = ['../../', database, '/cropped/']; 
-mask_dir        = ['../../', database, '/cropped/masks/'];
+srcpath         = ['D:/pharmapack/', database, '/cropped/']; 
+mask_dir        = ['D:/pharmapack/', database, '/cropped/masks/'];
 save_to      = ['results/test_light_blicks_detection_and_edges/', datestr(now,dateFormat), '_v3/'];
 
 % --- Prepare data --------------------------------------------------------

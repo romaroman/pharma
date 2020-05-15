@@ -12,6 +12,7 @@ else
     gray = im;
 end
 
+clear im
 
 end
 

@@ -34,7 +34,7 @@ nbins = 27;
 
 database    = 'PharmaPack_R_I_S1';
 
-source      = ['../../', database, '/cropped/']; 
+source      = ['D:/pharmapack/', database, '/cropped/']; 
 destination = ['results/test_light_blicks_detection/', datestr(now,dateFormat), '/'];
 
 
