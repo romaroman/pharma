@@ -38,10 +38,10 @@ is_visualisation = 1;
 
 database = 'Enrollment'; %'PharmaPack_R_I_S1';
 
-srcpath         = ['../../', database, '/cropped/']; 
-mask_dir        = ['../../', database, '/cropped/masks/'];
-destination     = ['../../', database, '/text_regions/quality_control_v1/'];
-vis_destination = ['../../', database, '/text_regions/quality_control_v1_visualisation/']; 
+srcpath         = ['D:/pharmapack/', database, '/cropped/']; 
+mask_dir        = ['D:/pharmapack/', database, '/cropped/masks/'];
+destination     = ['D:/pharmapack/', database, '/text_regions/quality_control_v1/'];
+vis_destination = ['D:/pharmapack/', database, '/text_regions/quality_control_v1_visualisation/']; 
 
 % --- Prepare data --------------------------------------------------------
 %load([destination, 'ListOfImages.mat']);
