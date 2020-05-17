@@ -111,7 +111,6 @@ for n=st:N
         
         A = ind; A(A ~= j) = 0;        
         ind_new = ind_new + bw.*A;
-
     end
    
     Edges = binary_mask.*ind_new/nbins;
@@ -227,6 +226,7 @@ for n=st:N
         saveas(fig, [vis_destination, 'TextRegions_', num2str(n), '.png']);
     end    
     
+    fig.Visible = true;
     clear TextRegionsMasks
     clear TextRegionsExtMasks
     clear TextRegionsCoordinates 

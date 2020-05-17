@@ -76,8 +76,8 @@ for n=[60 61 76 100 145 146 250 251 292]%1:N%[2, 4 5 1 13 60, 61, 84, 105, 164, 
 
     Edges = binary_mask.*ind/nbins;
     
-    saveImage(Edges, [save_to, 'Edges_', files(n).name]);
-    continue
+    % saveImage(Edges, [save_to, 'Edges_', files(n).name]);
+    % continue
 
     if is_debug | 1
         fig = figure('Visible','off'); 
