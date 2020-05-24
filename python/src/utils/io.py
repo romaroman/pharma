@@ -1,4 +1,4 @@
-import cv2 as cv
+import cv2.cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
@@ -36,7 +36,7 @@ def show_image_as_window(image: np.ndarray, title: str = ""):
 
 
 def load_images(src_folder: str) -> List[str]:
-    return glob.glob(src_folder + "\\*.png")
+    return glob.glob(src_folder + "/*.png")
 
 
 def get_logger(name):

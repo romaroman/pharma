@@ -1,4 +1,4 @@
-import cv2 as cv
+import cv2.cv2 as cv
 import numpy as np
 
 
@@ -7,7 +7,7 @@ def clear_borders(image_bw: np.ndarray) -> np.ndarray:
     def is_contour_valid(contour) -> bool:
         for point in contour:
             point = point[0]
-            if point[0] == 0 or point[1] == 0:
+            if point[0] <= 25 or point[1] == 25:
                 return True
 
         return False

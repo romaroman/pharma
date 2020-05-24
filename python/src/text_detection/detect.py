@@ -1,22 +1,22 @@
-import cv2 as cv
+import cv2.cv2 as cv
 import numpy as np
-import skimage
-import skimage.measure
 
 from copy import deepcopy
-import time
 import pathlib
+import os
 import random
 
+from scipy import ndimage
+import skimage.measure
 from skimage.feature import peak_local_max
 from skimage.morphology import watershed
-from scipy import ndimage
-
 
 from typing import List, Tuple, NoReturn
 from enum import Enum, auto
 
+from file_info import get_file_info, FileInfoEnrollment, FileInfoRecognition
 import utils
+
 
 _rrect = List[Tuple[Tuple[float, float], Tuple[float, float], float]]
 logger = utils.get_logger('detect')
@@ -24,22 +24,22 @@ logger = utils.get_logger('detect')
 display = utils.show_image_as_plot
 
 
-class PreprocessMethod(Enum):
-
-    def __str__(self):
-        return str(self.value)
-
-    GeneralMorphology = auto(),
-    SimpleEdgeDetection = auto(),
-    ComplexEdgeDetection = auto()
-
-
 class DetectTextRegion:
+
+    class PreprocessMethod(Enum):
+
+        def __str__(self):
+            return str(self.value)
+
+        BasicMorphology = auto(),
+        SimpleEdgeDetection = auto(),
+        ComplexEdgeDetection = auto()
 
     KERNEL_SIZE_STD = 5
 
-    def __init__(self, image_path: str):
+    def __init__(self, image_path: str, preprocess_method: PreprocessMethod):
         self.filename = pathlib.Path(image_path).stem
+        self.preprocess_method = preprocess_method
 
         self.image_orig = cv.imread(image_path)
 
@@ -97,7 +97,7 @@ class DetectTextRegion:
                 A[A != 0] = 1
                 A = A * binary_mask
 
-                A = cv.dilate(A, np.ones((14, 14)))
+                A = cv.dilate(A, kernel=np.ones((14, 14)))
 
                 contours, _ = cv.findContours(A, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
                 valid_contours = list(filter(lambda c: cv.contourArea(c) > 300, contours))
@@ -112,12 +112,12 @@ class DetectTextRegion:
 
             self.image_preprocessed = binary_mask * new_ind / nbins
             self.image_preprocessed[self.image_preprocessed != 0] = 255
-            self.image_preprocessed = cv.dilate(self.image_preprocessed, np.ones((10, 10))).astype(np.uint8)
+            self.image_preprocessed = cv.dilate(self.image_preprocessed, kernel=np.ones((10, 10))).astype(np.uint8)
 
-    def preprocess_image(self) -> NoReturn:
+    def apply_basic_morphology(self) -> NoReturn:
         _, image_bw = cv.threshold(self.image_std_filtered, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
 
-        image_dilated = cv.dilate(image_bw, np.ones((self.KERNEL_SIZE_STD, self.KERNEL_SIZE_STD)))
+        image_dilated = cv.dilate(image_bw, kernel=np.ones((self.KERNEL_SIZE_STD, self.KERNEL_SIZE_STD)))
 
         image_cleared = utils.clear_borders(image_dilated)
 
@@ -168,22 +168,8 @@ class DetectTextRegion:
         display(labels * int(255 / labels.max()))
         return
 
-    def find_text_areas(self) -> NoReturn:
-        self.image_cleared_borders = utils.clear_borders(self.image_preprocessed)
-        self.image_filled = utils.fill_holes(self.image_cleared_borders)
-
-        self.image_filled = cv.erode(self.image_filled, np.ones((3, 3)))
-
-        self.filter_non_text_blobs()
-
-        # scale = 0.25
-        # new_size = (int(image_filtered.shape[1] * scale), int(image_filtered.shape[0] * scale))
-        # old_size = image_filtered.shape[1], image_filtered.shape[0]
-        # image_resized = cv.resize(image_filtered, new_size, interpolation=cv.INTER_NEAREST)
-
-        self.apply_line_morphology(1)
-
-        self.image_linearly_morphed = cv.morphologyEx(self.image_linearly_morphed, cv.MORPH_OPEN, np.ones((5, 5)))
+    def find_text_regions(self) -> NoReturn:
+        self.image_linearly_morphed = cv.morphologyEx(self.image_linearly_morphed, cv.MORPH_OPEN, kernel=np.ones((5, 5)))
 
         _, self.image_labeled = cv.connectedComponents(self.image_linearly_morphed)
 
@@ -203,79 +189,79 @@ class DetectTextRegion:
             cv.drawContours(self.image_text_regions, [coord], -1, color, 2)
             cv.drawContours(self.image_text_masks, [coord], -1, color, -1)
 
-    # TODO: implement
-    def combine_intersections(self) -> NoReturn:
-        dist_threshold = 20
-        for idx1 in range(0, len(self.rrects)):
-            for idx2 in range(idx1 + 1, len(self.rrects)):
-                if not np.equal(self.rrects[idx1], self.rrects[idx2]).all():
-                    distance = utils.calc_rrects_distance(self.coordinates[idx1], self.coordinates[idx2])
-                    if distance < dist_threshold:
-                        print(distance)
-                        # image_visualization_rrect = deepcopy(image_visualization)
-                        # cv.drawContours(image_visualization_rrect, [cv.boxPoints(rrects[idx1]).astype(np.int0)], -1, (255, 255, 0), 2)
-                        # cv.drawContours(image_visualization_rrect, [cv.boxPoints(rrects[idx2]).astype(np.int0)], -1, (255, 255, 0), 2)
-                        # display(image_visualization_rrect)
-
     def create_visualization(self) -> NoReturn:
         first_row = np.hstack([self.image_gray, self.image_preprocessed, self.image_filled])
         second_row = np.hstack([self.image_cleared_borders, self.image_filtered, self.image_linearly_morphed])
         third_row = np.hstack([self.image_labeled * int(255 / self.image_labeled.max()), self.image_text_masks, self.image_text_regions])
+
         self.image_visualization = np.vstack([first_row, second_row, third_row])
 
-    def detect_text_regions(self, preprocess_method: PreprocessMethod) -> NoReturn:
-        try:
-            # start_time = time.time()
-            # print("LOAD AND FILTER --- %s seconds ---" % (time.time() - start_time))
-            if preprocess_method == PreprocessMethod.GeneralMorphology:
-                self.preprocess_image()
-                # print("GENERAL MORPHOLOGY --- %s seconds ---" % (time.time() - start_time))
-            elif preprocess_method == PreprocessMethod.SimpleEdgeDetection:
-                self.extract_edges(1)
-                # print("SIMPLE EDGES EXTRACTION --- %s seconds ---" % (time.time() - start_time))
-            elif preprocess_method == PreprocessMethod.ComplexEdgeDetection:
-                self.extract_edges(2)
-                # print("COMPLEX EDGES EXTRACTION --- %s seconds ---" % (time.time() - start_time))
+    def detect_text_regions(self) -> NoReturn:
+        self.preprocess()
 
-            self.find_text_areas()
-            # print("FIND COORDINATES AND MASK --- %s seconds ---" % (time.time() - start_time))
+        self.image_cleared_borders = utils.clear_borders(self.image_preprocessed)
 
-            self.draw_text_regions_and_mask()
+        self.image_filled = utils.fill_holes(self.image_cleared_borders)
 
-            self.create_visualization()
+        self.filter_non_text_blobs()
 
-            logger.info(f'SUCCESS {self.filename}, found {len(self.rrects)} regions')
-        except Exception as e:
-            logger.warn(f'WARNING {self.filename}, occured error: {e}')
+        self.apply_line_morphology(scale=1)
+
+        self.find_text_regions()
+
+        self.draw_text_regions_and_mask()
+
+        self.create_visualization()
+
+        logger.info(f'SUCCESS {self.filename}, found {len(self.rrects)} regions')
 
     def write_results(self, base_folder: str, database: str) -> NoReturn:
-        text_coord_dst_folder = base_folder + database + f"\\python\\text_coords\\{self.filename}.csv"
-        text_regions_dst_folder = base_folder + database + f"\\python\\text_regions\\{self.filename}.png"
-        text_masks_dst_folder = base_folder + database + f"\\python\\text_masks\\{self.filename}.png"
-        visualization_dst_folder = base_folder + database + f"\\python\\visualizations\\{self.filename}.png"
+        text_coord_dst_folder = base_folder + database + f"/python/text_coords"
+        text_regions_dst_folder = base_folder + database + f"/python/text_regions"
+        text_masks_dst_folder = base_folder + database + f"/python/text_masks"
+        visualization_dst_folder = base_folder + database + f"/python/visualizations"
 
-        np.savetxt(text_coord_dst_folder, self.coordinates_ravel, delimiter=",", fmt='%i')
-        cv.imwrite(text_regions_dst_folder, self.image_text_regions)
-        cv.imwrite(text_masks_dst_folder, self.image_text_masks)
-        cv.imwrite(visualization_dst_folder, self.image_visualization)
+        os.makedirs(text_coord_dst_folder, exist_ok=True)
+        os.makedirs(text_regions_dst_folder, exist_ok=True)
+        os.makedirs(text_masks_dst_folder, exist_ok=True)
+        os.makedirs(visualization_dst_folder, exist_ok=True)
+
+        text_coord_dst_path = text_coord_dst_folder + f"/{self.filename}.csv"
+        text_regions_dst_path = text_regions_dst_folder + f"/{self.filename}.png"
+        text_masks_dst_path = text_masks_dst_folder + f"/{self.filename}.png"
+        visualization_dst_path = visualization_dst_folder + f"/{self.filename}.png"
+
+        np.savetxt(text_coord_dst_path, self.coordinates_ravel, delimiter=",", fmt='%i')
+        cv.imwrite(text_regions_dst_path, self.image_text_regions)
+        cv.imwrite(text_masks_dst_path, self.image_text_masks)
+        cv.imwrite(visualization_dst_path, self.image_visualization)
+
+    def preprocess(self):
+        if self.preprocess_method == self.PreprocessMethod.BasicMorphology:
+            self.apply_basic_morphology()
+        elif self.preprocess_method == self.PreprocessMethod.SimpleEdgeDetection:
+            self.extract_edges(1)
+        elif self.preprocess_method == self.PreprocessMethod.ComplexEdgeDetection:
+            self.extract_edges(2)
 
 
 def main():
-    base_folder = "D:\\pharmapack\\"
+    base_folder = "/fls/pharmapack/"
     database = "Enrollment"
-    src_folder = base_folder + database + "\\cropped\\"
+    src_folder = base_folder + database + "/cropped/"
 
     images_path = utils.load_images(src_folder)
-    rng = 123
-    random.Random(rng).shuffle(images_path)
+    # rng = 123
+    # random.Random(rng).shuffle(images_path)
 
-    for image_path in images_path:
-        detect = DetectTextRegion(image_path)
+    for image_path in images_path[:20]:
+        detect = DetectTextRegion(image_path, DetectTextRegion.PreprocessMethod.ComplexEdgeDetection)
+        file_info = get_file_info(detect.filename, database)
 
         # if detect.filename not in ["PFP_Ph1_P0001_D01_S001_C4_az100_side1"]:
         #     continue
 
-        detect.detect_text_regions(PreprocessMethod.ComplexEdgeDetection)
+        detect.detect_text_regions()
         detect.write_results(base_folder, database)
 
 
