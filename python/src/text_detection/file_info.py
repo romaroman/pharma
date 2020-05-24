@@ -1,4 +1,5 @@
 import re
+import pathlib
 
 from typing import NoReturn
 from enum import Enum
@@ -74,7 +75,9 @@ class FileInfoRecognition(FileInfo):
         self.RS = self._extract_numerical_info('RS')
 
 
-def get_file_info(filename: str, database: str):
+def get_file_info(file_path: str, database: str) -> FileInfo:
+    filename = pathlib.Path(file_path).stem
+
     if database == 'Enrollment':
         return FileInfoEnrollment(filename)
     if database.startswith('PharmaPack'):

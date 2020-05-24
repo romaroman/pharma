@@ -157,7 +157,7 @@ def get_preprocess_fn(is_training, is_pretrain):
   else:
     test_crop = True
   return functools.partial(
-      data_util.apply_basic_morphology,
+      data_util._apply_basic_morphology,
       height=FLAGS.image_size,
       width=FLAGS.image_size,
       is_training=is_training,

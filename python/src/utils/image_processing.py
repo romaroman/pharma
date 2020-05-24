@@ -1,5 +1,8 @@
 import cv2.cv2 as cv
 import numpy as np
+from copy import deepcopy
+
+from typing import Tuple
 
 
 def clear_borders(image_bw: np.ndarray) -> np.ndarray:
@@ -65,3 +68,47 @@ def fill_holes(image_bw: np.ndarray) -> np.ndarray:
     image_filled = np.zeros_like(image_bw)
     cv.drawContours(image_filled, contours, -1, 255, -1)
     return image_filled
+
+
+def find_magnitude_and_angle(image_std_filtered: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    sobel_x = cv.Sobel(image_std_filtered, cv.CV_64F, 1, 0)  # Find x and y gradients
+    sobel_y = cv.Sobel(image_std_filtered, cv.CV_64F, 0, 1)
+
+    magnitude = np.sqrt(sobel_x ** 2.0 + sobel_y ** 2.0)
+    angle = np.arctan2(sobel_y, sobel_x) * (180 / np.pi)
+
+    _, image_bw = cv.threshold(image_std_filtered, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY)
+
+    image_bw = image_bw / 255
+
+    magnitude = magnitude * image_bw
+    angle = angle * image_bw
+
+    magnitude = magnitude / magnitude.max()
+
+    return magnitude, angle
+
+
+def filter_long_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbins: int = 7) -> np.ndarray:
+    image_new_ind = np.zeros_like(image_ind)
+
+    for j in range(1, nbins + 1):
+        image_current_bin = deepcopy(image_ind)
+        image_current_bin[image_current_bin != j] = 0
+        image_current_bin[image_current_bin != 0] = 1
+        image_current_bin = image_current_bin * image_binary_mask
+
+        image_current_bin = cv.dilate(image_current_bin, kernel=np.ones((14, 14)))
+
+        contours, _ = cv.findContours(image_current_bin, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        valid_contours = list(filter(lambda c: cv.contourArea(c) > 300, contours))
+
+        image_bw = np.zeros_like(image_current_bin)
+        cv.drawContours(image_bw, valid_contours, -1, 1, -1)
+
+        image_current_bin = deepcopy(image_ind)
+        image_current_bin[image_current_bin != j] = 0
+
+        image_new_ind = image_new_ind + image_bw * image_current_bin
+
+    return image_new_ind
