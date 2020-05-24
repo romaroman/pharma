@@ -127,9 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-.idea/
+
+# Custom exclusions
 *.png
 *.txt
 *.svg
 *.csv
 *.asv
+*.mat

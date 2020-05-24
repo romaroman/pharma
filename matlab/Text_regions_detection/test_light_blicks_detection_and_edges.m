@@ -56,6 +56,8 @@ for n=[60 61 76 100 145 146 250 251 292]%1:N%[2, 4 5 1 13 60, 61, 84, 105, 164, 
     fprintf('%s: %i %s\n', datestr(now), n, files(n).name);
     filename  = [srcpath files(n).name];
 
+    % [ imCropped, mask_s, imCropped_rgb] = cropPackage(filename, 10, 0.8);
+    
     gray = prepareGrayImage0255(filename);
     gray = imresize(gray, 1/imscale);
 

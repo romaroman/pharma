@@ -1,7 +1,7 @@
 import re
 import pathlib
 
-from typing import NoReturn
+from typing import NoReturn, Union
 from enum import Enum
 from abc import ABC
 
@@ -75,7 +75,7 @@ class FileInfoRecognition(FileInfo):
         self.RS = self._extract_numerical_info('RS')
 
 
-def get_file_info(file_path: str, database: str) -> FileInfo:
+def get_file_info(file_path: str, database: str) -> Union[FileInfoEnrollment, FileInfoRecognition]:
     filename = pathlib.Path(file_path).stem
 
     if database == 'Enrollment':

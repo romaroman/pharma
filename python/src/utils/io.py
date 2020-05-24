@@ -1,10 +1,13 @@
-import cv2.cv2 as cv
+import matplotlib as mpl
+import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
+
+import pathlib
 import glob
-from typing import List
-import matplotlib as mpl
 import logging
+
+from typing import List
 
 
 mpl.rc('image', cmap='Greys_r')
@@ -35,17 +38,22 @@ def show_image_as_window(image: np.ndarray, title: str = ""):
     cv.destroyWindow(title)
 
 
-def load_images(src_folder: str) -> List[str]:
+def get_images_list(src_folder: str) -> List[str]:
+    # images_list = []
+    # for file in glob.glob(src_folder + "/*.png"):
+    #     images_list.append(str(pathlib.Path(file).resolve()))
+    #
+    # return images_list
     return glob.glob(src_folder + "/*.png")
 
 
-def get_logger(name):
+def get_logger(name: str, level: int = logging.INFO):
     log = logging.Logger(name)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
+    ch.setLevel(level)
     ch.setFormatter(formatter)
     log.addHandler(ch)
 

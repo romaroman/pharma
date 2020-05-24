@@ -70,7 +70,7 @@ for n=st:N
     filename  = [srcpath files(n).name];
     
     ImageList(n, :) = {files(n).name};
-
+    
     gray = prepareGrayImage0255(filename);
     gray = imresize(gray, 1/imscale);
 

@@ -5,6 +5,10 @@ from copy import deepcopy
 from typing import Tuple
 
 
+def to_rgb(image_1c: np.ndarray) -> np.ndarray:
+    return np.stack((image_1c,) * 3, axis=-1)
+
+
 def clear_borders(image_bw: np.ndarray) -> np.ndarray:
 
     def is_contour_valid(contour) -> bool:
@@ -71,22 +75,22 @@ def fill_holes(image_bw: np.ndarray) -> np.ndarray:
 
 
 def find_magnitude_and_angle(image_std_filtered: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    sobel_x = cv.Sobel(image_std_filtered, cv.CV_64F, 1, 0)  # Find x and y gradients
-    sobel_y = cv.Sobel(image_std_filtered, cv.CV_64F, 0, 1)
+    image_sobel_x = cv.Sobel(image_std_filtered, cv.CV_64F, 1, 0)  # Find x and y gradients
+    image_sobel_y = cv.Sobel(image_std_filtered, cv.CV_64F, 0, 1)
 
-    magnitude = np.sqrt(sobel_x ** 2.0 + sobel_y ** 2.0)
-    angle = np.arctan2(sobel_y, sobel_x) * (180 / np.pi)
+    image_magnitude = np.sqrt(image_sobel_x ** 2.0 + image_sobel_y ** 2.0)
+    image_angle = np.arctan2(image_sobel_y, image_sobel_x) * (180 / np.pi)
 
     _, image_bw = cv.threshold(image_std_filtered, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY)
 
     image_bw = image_bw / 255
 
-    magnitude = magnitude * image_bw
-    angle = angle * image_bw
+    image_magnitude = image_magnitude * image_bw
+    image_angle = image_angle * image_bw
 
-    magnitude = magnitude / magnitude.max()
+    image_magnitude = image_magnitude / image_magnitude.max()
 
-    return magnitude, angle
+    return image_magnitude, image_angle
 
 
 def filter_long_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbins: int = 7) -> np.ndarray:
@@ -101,7 +105,7 @@ def filter_long_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbin
         image_current_bin = cv.dilate(image_current_bin, kernel=np.ones((14, 14)))
 
         contours, _ = cv.findContours(image_current_bin, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-        valid_contours = list(filter(lambda c: cv.contourArea(c) > 300, contours))
+        valid_contours = list(filter(lambda c: cv.contourArea(c) < 1200, contours))
 
         image_bw = np.zeros_like(image_current_bin)
         cv.drawContours(image_bw, valid_contours, -1, 1, -1)
