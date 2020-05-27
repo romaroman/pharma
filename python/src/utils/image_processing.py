@@ -1,4 +1,4 @@
-import cv2.cv2 as cv
+import cv2 as cv
 import numpy as np
 from copy import deepcopy
 
@@ -42,12 +42,6 @@ def std_filter(image_gray: np.ndarray, kernel_size: int) -> np.ndarray:
     return (255 * image_filtered).astype(np.uint8)
 
 
-def prepare_image_gray(image: np.ndarray) -> np.ndarray:
-    if image.shape[2] == 3:
-        return cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    return image
-
-
 def morph_line(length: int, angle: int) -> np.ndarray:
 
     length_2 = length * 2
@@ -81,19 +75,12 @@ def find_magnitude_and_angle(image_std_filtered: np.ndarray) -> Tuple[np.ndarray
     image_magnitude = np.sqrt(image_sobel_x ** 2.0 + image_sobel_y ** 2.0)
     image_angle = np.arctan2(image_sobel_y, image_sobel_x) * (180 / np.pi)
 
-    _, image_bw = cv.threshold(image_std_filtered, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY)
-
-    image_bw = image_bw / 255
-
-    image_magnitude = image_magnitude * image_bw
-    image_angle = image_angle * image_bw
-
     image_magnitude = image_magnitude / image_magnitude.max()
 
     return image_magnitude, image_angle
 
 
-def filter_long_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbins: int = 7) -> np.ndarray:
+def filter_small_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbins: int = 7) -> np.ndarray:
     image_new_ind = np.zeros_like(image_ind)
 
     for j in range(1, nbins + 1):
@@ -105,7 +92,7 @@ def filter_long_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbin
         image_current_bin = cv.dilate(image_current_bin, kernel=np.ones((14, 14)))
 
         contours, _ = cv.findContours(image_current_bin, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-        valid_contours = list(filter(lambda c: cv.contourArea(c) < 1200, contours))
+        valid_contours = list(filter(lambda c: cv.contourArea(c) > 300, contours))
 
         image_bw = np.zeros_like(image_current_bin)
         cv.drawContours(image_bw, valid_contours, -1, 1, -1)
@@ -116,3 +103,25 @@ def filter_long_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbin
         image_new_ind = image_new_ind + image_bw * image_current_bin
 
     return image_new_ind
+
+
+def apply_watershed(image_rgb: np.ndarray, image_bw: np.ndarray) -> np.ndarray:
+    image_opened = cv.morphologyEx(image_bw, cv.MORPH_OPEN, np.ones((3, 3)), iterations=2)
+
+    image_background = cv.dilate(image_opened, np.ones((3, 3)), iterations=3)
+
+    image_distance = cv.distanceTransform(image_opened, cv.DIST_L2, 5)
+    thresh_value, image_foreground = cv.threshold(image_distance, 0.7 * image_distance.mean(), 255, 0)
+    image_foreground = image_foreground.astype(np.uint8)
+
+    image_unknown = cv.subtract(image_background, image_foreground)
+
+    markers_amount, image_markers = cv.connectedComponents(image_foreground)
+
+    image_markers += 1
+
+    image_markers[image_unknown == 255] = 0
+
+    image_markers = cv.watershed(image_rgb, image_markers)
+
+    return image_markers

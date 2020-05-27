@@ -26,8 +26,8 @@ class FileInfo(ABC):
         'C?': r'C[0-9]'
    }
 
-    def __init__(self, filename: str):
-        self.filename = filename
+    def __init__(self, file_path: str):
+        self.filename = pathlib.Path(file_path).stem
 
         self.phone = self._extract_numerical_info('phone')
         self.package_class = self._extract_numerical_info('package_class')
@@ -37,7 +37,7 @@ class FileInfo(ABC):
 
     def _extract_numerical_info(self, keyword: str) -> int:
         substring = self._extract_substring(keyword)
-        return int(re.sub('[^0-9]', '', substring))
+        return int(re.sub(r'[^0-9]', '', substring))
 
     def _extract_substring(self, keyword: str) -> str:
         return re.search(self.res[keyword], self.filename).group(0)
@@ -76,9 +76,8 @@ class FileInfoRecognition(FileInfo):
 
 
 def get_file_info(file_path: str, database: str) -> Union[FileInfoEnrollment, FileInfoRecognition]:
-    filename = pathlib.Path(file_path).stem
 
     if database == 'Enrollment':
-        return FileInfoEnrollment(filename)
+        return FileInfoEnrollment(file_path)
     if database.startswith('PharmaPack'):
-        return FileInfoRecognition(filename)
+        return FileInfoRecognition(file_path)

@@ -14,7 +14,12 @@ mpl.rc('image', cmap='Greys_r')
 
 
 def show_image_as_plot(image):
-    fig = plt.figure(figsize=(12, 12), frameon=False)
+    if len(image.shape) == 3:
+        h, w, _ = image.shape
+    elif len(image.shape) == 2:
+        h, w = image.shape
+
+    fig = plt.figure(figsize=(max(int(w / 100), 3), max(int(h / 100), 3)), frameon=False)
     fig.subplots_adjust(0, 0, 1, 1)
     fig.tight_layout()
     fig.patch.set_visible(False)
