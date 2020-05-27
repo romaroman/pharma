@@ -13,7 +13,7 @@ from typing import List
 mpl.rc('image', cmap='Greys_r')
 
 
-def show_image_as_plot(image):
+def display(image):
     if len(image.shape) == 3:
         h, w, _ = image.shape
     elif len(image.shape) == 2:
@@ -41,15 +41,6 @@ def show_image_as_window(image: np.ndarray, title: str = ""):
     cv.imshow(title, image)
     cv.waitKey(0)
     cv.destroyWindow(title)
-
-
-def get_images_list(src_folder: str) -> List[str]:
-    # images_list = []
-    # for file in glob.glob(src_folder + "/*.png"):
-    #     images_list.append(str(pathlib.Path(file).resolve()))
-    #
-    # return images_list
-    return glob.glob(src_folder + "/*.png")
 
 
 def get_logger(name: str, level: int = logging.INFO):
