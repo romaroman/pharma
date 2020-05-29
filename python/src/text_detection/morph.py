@@ -1,6 +1,6 @@
 import cv2 as cv
 import numpy as np
-from typing import NoReturn, List, Tuple, Dict
+from typing import Tuple
 import skimage
 
 import utils
@@ -10,8 +10,8 @@ from text_detection.types import PreprocessMethod
 class Morph:
 
     @classmethod
-    def find_package_mask_and_angle(cls, image_std_filtered, ) -> Tuple[np.ndarray, np.ndarray, float, bool]:
-        general_rotation = -90
+    def find_package_mask_and_angle(cls, image_std_filtered: np.ndarray) -> Tuple[np.ndarray, np.ndarray, float, bool]:
+        rotation_angle = -90
 
         is_mask_partial = False
 
@@ -31,17 +31,17 @@ class Morph:
         image_mask = np.zeros_like(image_bw)
         if mask_to_image_area_ratio < 0.3 or minrect_contour_area_ratio > 0.2:
             image_mask = np.full(image_bw.shape, 1, dtype=np.uint8)
-            general_rotation = int(np.mean(
+            rotation_angle = int(np.mean(
                 [x for x in [int(cv.minAreaRect(x)[2]) for x in sorted(contours, key=lambda x: cv.contourArea(x))[::-1]] if
                  x % 90 != 0]))
         else:
             cv.drawContours(image_mask, [points], -1, 1, -1)
             is_mask_partial = True
 
-        return image_mask, image_bw, general_rotation, is_mask_partial
+        return image_mask, image_bw, rotation_angle, is_mask_partial
 
     @classmethod
-    def apply_basic_morphology(cls, image_bw) -> np.ndarray:
+    def apply_basic_morphology(cls, image_bw: np.ndarray) -> np.ndarray:
         image_dilated = cv.dilate(image_bw, kernel=np.ones((5, 5)))
 
         image_cleared = utils.clear_borders(image_dilated)
@@ -51,7 +51,9 @@ class Morph:
         return image_preprocessed
 
     @classmethod
-    def extract_edges(cls, image_std_filtered, image_bw, preprocess_method) -> NoReturn:
+    def extract_edges(cls, image_std_filtered: np.ndarray, image_bw: np.ndarray,
+                      preprocess_method: np.ndarray, nbins: int = 7) -> np.ndarray:
+
         image_magnitude, image_angle = utils.find_magnitude_and_angle(image_std_filtered)
 
         image_mask_from_threshold = (image_bw / 255).astype(np.uint8)
@@ -59,12 +61,12 @@ class Morph:
         image_magnitude = image_magnitude * image_mask_from_threshold
         image_angle = image_angle * image_mask_from_threshold
 
-        nbins = 7
         image_ind = (np.ceil((image_angle + 180) / (360 / (nbins - 1))) + 1).astype(np.uint8)
 
         threshold = 0.075
         image_binary_mask = (image_magnitude > threshold).astype(np.uint8) * 255
 
+        image_preprocessed = np.zeros_like(image_binary_mask)
         if preprocess_method == PreprocessMethod.EdgeExtraction:
             image_preprocessed = image_binary_mask * image_ind / nbins
         elif preprocess_method == PreprocessMethod.EdgeExtractionAndFiltration:
@@ -77,28 +79,29 @@ class Morph:
         return image_preprocessed
 
     @classmethod
-    def filter_enclosed_contours(cls, image_cleared_borders) -> NoReturn:
+    def filter_enclosed_contours(cls, image_cleared_borders: np.ndarray) -> np.ndarray:
         contours, hierarchy = cv.findContours(image_cleared_borders, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
 
-        occurences = {}
+        occurrences = {}
         children_areas = {}
         for contour_index, contour_info in enumerate(hierarchy[0], start=0):
             parent_contour = contour_info[3]
             doesnt_have_any_child = contour_info[2] == -1
             contour_area = cv.contourArea(contours[contour_index])
+
             if contour_area > 20 and parent_contour != -1 and doesnt_have_any_child:
-                if parent_contour in occurences.keys():
-                    occurences[parent_contour] += 1
+                if parent_contour in occurrences.keys():
+                    occurrences[parent_contour] += 1
                     children_areas[parent_contour].append(contour_area)
                 else:
-                    occurences[parent_contour] = 1
+                    occurrences[parent_contour] = 1
                     children_areas[parent_contour] = [contour_area]
 
         image_mask_contours = np.zeros_like(image_cleared_borders)
 
         contours_to_delete_indices = []
-        for index, occ in occurences.items():
-            if occ > 5:
+        for index, occurrence in occurrences.items():
+            if occurrence > 5:
                 children_area = np.sum(children_areas[index])
                 ratio = cv.contourArea(contours[index]) / children_area
                 if ratio < 1.5:
@@ -112,7 +115,8 @@ class Morph:
         return image_mask_contours
 
     @classmethod
-    def filter_non_text_blobs(cls, image_filled) -> NoReturn:
+    def filter_non_text_blobs(cls, image_filled: np.ndarray) -> np.ndarray:
+
         def is_prop_valid(prop: skimage.measure._regionprops._RegionProperties) -> bool:
             if prop.minor_axis_length > 20:
                 if prop.solidity > 0.33:
@@ -132,8 +136,8 @@ class Morph:
         return image_filtered
 
     @classmethod
-    def apply_line_morphology(cls, image_filtered, scale: float = 1) -> NoReturn:
-        line_length = int(150 * scale)
+    def apply_line_morphology(cls, image_filtered: np.ndarray, scale: float = 1) -> np.ndarray:
+        line_length = int(max(image_filtered.shape) / 10 * scale)
 
         line_rotation_angles = [i for i in range(-90, 90, 5)]
 

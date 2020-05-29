@@ -6,9 +6,6 @@
       <change beforePath="$PROJECT_DIR$/.idea/pharmapack-recognition.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/pharmapack-recognition.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python/src/text_detection/morph.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/text_detection/morph.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/src/text_detection/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/text_detection/run.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/src/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/utils/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/src/utils/image_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/utils/improc.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -192,10 +189,7 @@
       <workItem from="1589289122914" duration="12993000" />
       <workItem from="1589478511982" duration="53517000" />
       <workItem from="1589909926305" duration="40632000" />
-      <workItem from="1590567399587" duration="13455000" />
-      <workItem from="1590655606657" duration="1581000" />
-      <workItem from="1590658775278" duration="7362000" />
-      <workItem from="1590668212885" duration="889000" />
+      <workItem from="1590567399587" duration="15317000" />
     </task>
     <servers />
   </component>
