@@ -25,10 +25,11 @@ class Morph:
         max_area_contour = max(contours, key=lambda x: cv.contourArea(x))
         points = cv.boxPoints(cv.minAreaRect(max_area_contour)).astype(np.int0)
 
+        minrect_contour_area_ratio = abs(1 - cv.contourArea(points) / cv.contourArea(max_area_contour))
         mask_to_image_area_ratio = cv.contourArea(points) / image_bw.size
 
         image_mask = np.zeros_like(image_bw)
-        if mask_to_image_area_ratio < 0.3:
+        if mask_to_image_area_ratio < 0.3 or minrect_contour_area_ratio > 0.2:
             image_mask = np.full(image_bw.shape, 1, dtype=np.uint8)
             general_rotation = int(np.mean(
                 [x for x in [int(cv.minAreaRect(x)[2]) for x in sorted(contours, key=lambda x: cv.contourArea(x))[::-1]] if

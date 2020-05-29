@@ -45,7 +45,7 @@ class Run:
                 self.write_result(detect, file_info.filename)
 
     def _load_images(self):
-        return glob.glob(self.options.base_folder + self.options.database + "/selected/*.png")
+        return glob.glob(self.options.base_folder + self.options.database + "/cropped/*.png")
 
     def write_result(self, detect: Detect, filename: str) -> NoReturn:
         common_folder = self.options.base_folder + self.options.database

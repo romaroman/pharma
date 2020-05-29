@@ -125,3 +125,36 @@ def apply_watershed(image_rgb: np.ndarray, image_bw: np.ndarray) -> np.ndarray:
     image_markers = cv.watershed(image_rgb, image_markers)
 
     return image_markers
+
+
+def MSER(image_gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    mser = cv.MSER_create()
+
+    image_visualization = image_gray.copy()
+
+    regions, _ = mser.detectRegions(image_gray)
+
+    hulls = [cv.convexHull(r.reshape(-1, 1, 2)) for r in regions]
+    cv.polylines(image_visualization, hulls, 1, (0, 255, 0))
+
+    image_mask = np.zeros_like(image_gray)
+
+    cv.drawContours(image_mask, hulls, -1, (255, 255, 255), -1)
+
+    image_text_only = cv.bitwise_and(image_gray, image_gray, mask=image_mask)
+
+    return image_mask, image_text_only, image_visualization
+
+
+def scale(image: np.ndarray, scale: float) -> np.ndarray:
+    return cv.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)))
+
+
+def random_forest_edge_detection(image: np.ndarray) -> np.ndarray:
+    detector = cv.ximgproc_StructuredEdgeDetection()
+
+    edges = detector.detectEdges(image)
+    orientation = detector.computeOrientation(edges)
+    edges_supressed = detector.edgesNms(edges, orientation, r=2, s=0, m=1, isParallel=True)
+
+    return edges_supressed
