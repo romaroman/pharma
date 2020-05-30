@@ -1,12 +1,11 @@
 import os
-import pathlib
 from typing import NoReturn
 import numpy as np
 import cv2 as cv
 import glob
 
 import utils
-from text_detection.detect import Detect
+from text_detection.detect import DetectTextRegion
 from text_detection.args import parser, Options
 from text_detection.types import PreprocessMethod
 from text_detection.file_info import get_file_info
@@ -36,18 +35,18 @@ class Run:
                 continue
 
             image_orig = cv.imread(image_path)
-            flags = Detect.Flags(self.options.visualize, 1, self.options.iterations)
+            flags = DetectTextRegion.Flags(self.options.visualize)
 
-            detect = Detect(image_orig, PreprocessMethod.EdgeExtractionAndFiltration, flags)
+            detect = DetectTextRegion(image_orig, PreprocessMethod.EdgeExtractionAndFiltration, flags)
             detect.detect_text_regions()
 
-            if self.options.write:
-                self.write_result(detect, file_info.filename)
+            # if self.options.write:
+            #     self.write_result(detect, file_info.filename)
 
     def _load_images(self):
-        return glob.glob(self.options.base_folder + self.options.database + "/cropped/*.png")
+        return glob.glob(self.options.base_folder + self.options.database + "/selected/*.png")
 
-    def write_result(self, detect: Detect, filename: str) -> NoReturn:
+    def write_result(self, detect: DetectTextRegion, filename: str) -> NoReturn:
         common_folder = self.options.base_folder + self.options.database
 
         text_coord_dst_folder = f"{common_folder}/python/text_coords"

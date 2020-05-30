@@ -139,7 +139,7 @@ def MSER(image_gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     image_mask = np.zeros_like(image_gray)
 
-    cv.drawContours(image_mask, hulls, -1, (255, 255, 255), -1)
+    cv.drawContours(image_mask, hulls, -1, 255, -1)
 
     image_text_only = cv.bitwise_and(image_gray, image_gray, mask=image_mask)
 

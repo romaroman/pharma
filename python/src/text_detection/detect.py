@@ -1,6 +1,6 @@
 import cv2 as cv
 import numpy as np
-import skimage.measure
+import abc
 
 import pathlib
 import time
@@ -19,14 +19,21 @@ from text_detection.types import PreprocessMethod, _rrect
 logger = utils.get_logger(__name__, logging.DEBUG)
 
 
-class Detect:
+# class Detect(abc.ABC):
+#
+#     def __init__(self):
+
+
+
+class DetectTextRegion:
 
     class Flags:
 
-        def __init__(self, visualize: bool, current_iteration: int = 1, last_iteration: int = 2):
+        def __init__(self, visualize: bool):
             self.visualize: bool = visualize
-            self.current_iteration: int = current_iteration
-            self.last_iteration: int = last_iteration
+
+
+
 
     def __init__(self, image_orig: np.ndarray, preprocess_method: PreprocessMethod, flags: Flags):
         self.image_orig: np.ndarray = image_orig
@@ -52,7 +59,6 @@ class Detect:
         self.image_filled: np.ndarray = np.zeros_like(self.image_gray)
 
         self.image_cleared_borders: np.ndarray = np.zeros_like(self.image_gray)
-        self.image_cleared_enclosed: np.ndarray = np.zeros_like(self.image_gray)
 
         self.image_filtered: np.ndarray = np.zeros_like(self.image_gray)
 
@@ -64,11 +70,13 @@ class Detect:
         self.image_text_masks: np.ndarray = np.zeros_like(self.image_gray)
         self.image_text_regions: np.ndarray = deepcopy(self.image_orig)
 
-        self.rrects: List[_rrect] = list()
-        self.coordinates: List[np.ndarray] = list()
-        self.coordinates_ravel: List[np.ndarray] = list()
+        # self.rrects: List[_rrect] = list()
+        # self.coordinates: List[np.ndarray] = list()
+        # self.coordinates_ravel: List[np.ndarray] = list()
+        #
+        # self.text_regions: List[np.ndarray] = list()
 
-        self.text_regions: List[np.ndarray] = list()
+        self.text_regions: List[TextRegion] = list()
 
         self._update_timestamp("CLASS INITIALIZATION")
 
@@ -87,8 +95,6 @@ class Detect:
 
         self.image_cleared_borders = utils.clear_borders(self.image_preprocessed)
 
-        self.image_cleared_enclosed = Morph.filter_enclosed_contours(self.image_cleared_borders)
-
         self.image_filled = utils.fill_holes(self.image_cleared_borders)
 
         self.image_filtered = Morph.filter_non_text_blobs(self.image_filled)
@@ -103,29 +109,16 @@ class Detect:
         self._find_text_regions()
         self._update_timestamp("FIND TEXT REGIONS")
 
-        if self.flags.current_iteration != self.flags.last_iteration:
-            self._split_text_regions()
+        self._detect_words()
+        utils.display(self.image_linearly_morphed)
+
+        self._find_text_regions()
 
         self._draw_text_regions_and_mask()
-
+        utils.display(self.image_text_regions)
+        s = 1
         if self.flags.visualize:
             self._create_visualization()
-
-    def detect_text_regions_second(self) -> NoReturn:
-        display(self.image_orig)
-
-        self._preprocess()
-        self._update_timestamp("PREPROCESS")
-
-        self.image_cleared_borders = utils.clear_borders(self.image_preprocessed)
-
-        self.image_cleared_enclosed = Morph.filter_enclosed_contours(self.image_cleared_borders)
-
-        self.image_filled = utils.fill_holes(self.image_cleared_borders)
-
-        self.image_filtered = Morph.filter_non_text_blobs(self.image_filled)
-        self._update_timestamp("BORDER, FILLING, FILTERING")
-
 
     def _apply_mask(self) -> NoReturn:
         self.image_gray = self.image_gray * self.image_mask
@@ -143,33 +136,52 @@ class Detect:
     def _find_text_regions(self) -> NoReturn:
         _, self.image_labeled = cv.connectedComponents(self.image_linearly_morphed)
 
+        self.text_regions.clear()
         for k in range(1, self.image_labeled.max() + 1):
             image_blob = (self.image_labeled == k).astype(np.uint8) * 255
-            contours, _ = cv.findContours(image_blob, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
-            rrect = cv.minAreaRect(contours[0])
-            points = np.int0(cv.boxPoints(rrect))
-            x, y, w, h = cv.boundingRect(contours[0])
-            image_text_region = cv.copyTo(self.image_orig, image_blob)
+            self.text_regions.append(TextRegion(self, image_blob))
+            # contours, _ = cv.findContours(image_blob, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+            #
+            # rrect = cv.minAreaRect(contours[0])
+            # points = np.int0(cv.boxPoints(rrect))
+            # x, y, w, h = cv.boundingRect(contours[0])
+            # image_text_region = cv.copyTo(self.image_orig, image_blob)
+            #
+            # image_text_region = image_text_region[y:y+h, x:x+w, :]
+            #
+            # self.text_regions.append(image_text_region)
+            # self.rrects.append(rrect)
+            # self.coordinates.append(points)
+            # self.coordinates_ravel.append(np.transpose(points).ravel())
 
-            image_text_region = image_text_region[y:y+h, x:x+w, :]
+    def _detect_words(self) -> NoReturn:
+        holst = np.zeros_like(self.image_gray)
 
-            self.text_regions.append(image_text_region)
-            self.rrects.append(rrect)
-            self.coordinates.append(points)
-            self.coordinates_ravel.append(np.transpose(points).ravel())
-
-    def _split_text_regions(self) -> NoReturn:
         for text_region in self.text_regions:
-            upd_flags = deepcopy(self.flags)
-            upd_flags.current_iteration += 1
-            detect = Detect(text_region, self.preprocess_method, upd_flags)
-            detect.detect_text_regions_second()
+
+            preprocessed = Morph.extract_edges(text_region.image_std_filtered, text_region.image_bw, self.preprocess_method, post_dilate=False)
+            preprocessed = cv.morphologyEx(preprocessed, cv.MORPH_CLOSE, np.ones((3, 3)))
+            filtered = Morph.filter_enclosed_contours(preprocessed)
+
+            filled = utils.fill_holes(filtered)
+
+            contours, _ = cv.findContours(filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+            mean_area = np.mean([cv.contourArea(contour) for contour in contours])
+            ratio = max(filled.shape) / min(filled.shape) / 3
+            line_length = int(np.sqrt(mean_area) / 4 * ratio)
+
+            morphed = Morph.apply_line_morphology(filled, line_length)
+
+            x, y, w, h = text_region.brect
+            holst[y:y + h, x:x + w] = morphed
+
+        self.image_linearly_morphed = holst
 
     def _draw_text_regions_and_mask(self, color: int = 255) -> NoReturn:
-        for coord in self.coordinates:
-            cv.drawContours(self.image_text_regions, [coord], -1, (color, 0, 0), 2)
-            cv.drawContours(self.image_text_masks, [coord], -1, color, -1)
+        for text_region in self.text_regions:
+            cv.drawContours(self.image_text_regions, [text_region.coordinates], -1, (color, 0, 0), 2)
+            cv.drawContours(self.image_text_masks, [text_region.coordinates], -1, color, -1)
 
     def _create_visualization(self) -> NoReturn:
         def add_text(image: np.ndarray, text: str) -> np.ndarray:
@@ -206,3 +218,33 @@ class Detect:
     def _update_timestamp(self, message: str):
         logger.debug(f"{message} --- {(time.time() - self.timestamp)} sec ---")
         self.timestamp = time.time()
+
+
+class TextRegion:
+
+    def __init__(self, detect_text_region: DetectTextRegion, image_blob: np.ndarray):
+
+        self.image_blob = image_blob
+        self.contour = cv.findContours(image_blob, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0][0]
+
+        self.rrect = cv.minAreaRect(self.contour)
+        self.coordinates: np.ndarray = np.int0(cv.boxPoints(self.rrect))
+        self.brect = cv.boundingRect(self.contour)
+
+#         self.coordinates_ravel.append(np.transpose(points).ravel())
+
+        self.image_orig = self._crop_by_brect(detect_text_region.image_orig)
+        self.image_gray = self._crop_by_brect(detect_text_region.image_gray)
+        self.image_preprocessed = self._crop_by_brect(detect_text_region.image_preprocessed)
+        self.image_std_filtered = self._crop_by_brect(detect_text_region.image_std_filtered)
+        self.image_bw = self._crop_by_brect(detect_text_region.image_bw)
+
+        # TODO continue needed copying images
+
+    def _crop_by_brect(self, image):
+        x, y, w, h = self.brect
+
+        if len(image.shape) == 3:
+            return cv.copyTo(image, self.image_blob)[y:y + h, x:x + w, :]
+        elif len(image.shape) == 2:
+            return cv.copyTo(image, self.image_blob)[y:y + h, x:x + w]
