@@ -3,6 +3,7 @@ from typing import NoReturn
 import numpy as np
 import cv2 as cv
 import glob
+import random
 
 import utils
 from text_detection.detect import DetectTextRegion
@@ -19,20 +20,21 @@ class Run:
         self.image_paths = self._load_images()
 
     def process(self):
+        random.shuffle(self.image_paths)
         for image_path in self.image_paths:
             file_info = get_file_info(image_path, self.options.database)
 
-            if file_info.filename not in [
-                "PFP_Ph1_P0004_D01_S001_C2_az360_side1",
-                "PFP_Ph1_P0005_D01_S003_C2_az360_side1",
-                "PFP_Ph1_P0024_D01_S001_C2_az360_side1",
-                "PFP_Ph1_P0026_D01_S002_C2_az360_side1",
-                "PFP_Ph1_P0156_D01_S001_C2_az360_side1",
-                "PFP_Ph1_P0079_D01_S002_C2_az360_side1",
-                "PFP_Ph1_P0069_D01_S001_C3_az360_side1",
-                "PFP_Ph1_P0014_D01_S001_C3_az360_side1",
-            ]:
-                continue
+            # if file_info.filename not in [
+            #     "PFP_Ph1_P0004_D01_S001_C2_az360_side1",
+            #     "PFP_Ph1_P0005_D01_S003_C2_az360_side1",
+            #     "PFP_Ph1_P0024_D01_S001_C2_az360_side1",
+            #     "PFP_Ph1_P0026_D01_S002_C2_az360_side1",
+            #     "PFP_Ph1_P0156_D01_S001_C2_az360_side1",
+            #     "PFP_Ph1_P0079_D01_S002_C2_az360_side1",
+            #     "PFP_Ph1_P0069_D01_S001_C3_az360_side1",
+            #     "PFP_Ph1_P0014_D01_S001_C3_az360_side1",
+            # ]:
+            #     continue
 
             image_orig = cv.imread(image_path)
             flags = DetectTextRegion.Flags(self.options.visualize)
@@ -44,7 +46,7 @@ class Run:
             #     self.write_result(detect, file_info.filename)
 
     def _load_images(self):
-        return glob.glob(self.options.base_folder + self.options.database + "/selected/*.png")
+        return glob.glob(self.options.base_folder + self.options.database + "/cropped/*.png")
 
     def write_result(self, detect: DetectTextRegion, filename: str) -> NoReturn:
         common_folder = self.options.base_folder + self.options.database

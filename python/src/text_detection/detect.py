@@ -108,9 +108,10 @@ class DetectTextRegion:
 
         self._find_text_regions()
         self._update_timestamp("FIND TEXT REGIONS")
+        self._draw_text_regions_and_mask()
 
+        utils.display(self.image_text_regions)
         self._detect_words()
-        utils.display(self.image_linearly_morphed)
 
         self._find_text_regions()
 
@@ -167,18 +168,24 @@ class DetectTextRegion:
             filled = utils.fill_holes(filtered)
 
             contours, _ = cv.findContours(filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+            # center_line = [np.int0(utils.get_contour_center(contour)) for contour in contours if len(contour) > 3]
+
+            # print(cv.contourArea(center_line))
+
             mean_area = np.mean([cv.contourArea(contour) for contour in contours])
-            ratio = max(filled.shape) / min(filled.shape) / 3
+            ratio = max(filled.shape) / min(filled.shape)
             line_length = int(np.sqrt(mean_area) / 4 * ratio)
 
-            morphed = Morph.apply_line_morphology(filled, line_length)
+            morphed = Morph.apply_line_morphology(filled, max(line_length, 35))
 
             x, y, w, h = text_region.brect
-            holst[y:y + h, x:x + w] = morphed
+            holst[y:y + h, x:x + w] = cv.bitwise_xor(morphed, holst[y:y + h, x:x + w])
 
         self.image_linearly_morphed = holst
 
     def _draw_text_regions_and_mask(self, color: int = 255) -> NoReturn:
+        self.image_text_regions = deepcopy(self.image_orig)
         for text_region in self.text_regions:
             cv.drawContours(self.image_text_regions, [text_region.coordinates], -1, (color, 0, 0), 2)
             cv.drawContours(self.image_text_masks, [text_region.coordinates], -1, color, -1)
