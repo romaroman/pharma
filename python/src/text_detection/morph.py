@@ -10,14 +10,22 @@ from text_detection.types import PreprocessMethod
 
 class Morph:
 
+    class TunableVariables:
+
+        otsu_threshold_adjustment: int = -10
+
+
+
     @classmethod
-    def find_package_mask_and_angle(cls, image_std_filtered: np.ndarray) -> Tuple[np.ndarray, np.ndarray, float, bool]:
-        rotation_angle = -90
+    def find_package_mask(cls, image_std_filtered: np.ndarray) -> Tuple[np.ndarray, np.ndarray, bool]:
+        valid_mask_to_image_area_ratio = 0.3
+        valid_minrect_contour_area_ratio = 0.2
 
         is_mask_partial = False
 
         thresh_value, _ = cv.threshold(image_std_filtered, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
-        _, image_bw = cv.threshold(image_std_filtered, thresh_value - 10, 255, cv.THRESH_BINARY)
+        thresh_value += cls.TunableVariables.otsu_threshold_adjustment
+        _, image_bw = cv.threshold(image_std_filtered, thresh_value, 255, cv.THRESH_BINARY)
 
         image_dilated = cv.dilate(image_bw, kernel=np.ones((9, 9)))
 
@@ -30,30 +38,20 @@ class Morph:
         mask_to_image_area_ratio = cv.contourArea(points) / image_bw.size
 
         image_mask = np.zeros_like(image_bw)
-        if mask_to_image_area_ratio < 0.3 or minrect_contour_area_ratio > 0.2:
+        if mask_to_image_area_ratio < valid_mask_to_image_area_ratio or\
+                minrect_contour_area_ratio > valid_minrect_contour_area_ratio:
+
             image_mask = np.full(image_bw.shape, 1, dtype=np.uint8)
-            rotation_angle = int(np.mean(
-                [x for x in [int(cv.minAreaRect(x)[2]) for x in sorted(contours, key=lambda x: cv.contourArea(x))[::-1]] if
-                 x % 90 != 0]))
+
         else:
             cv.drawContours(image_mask, [points], -1, 1, -1)
             is_mask_partial = True
 
-        return image_mask, image_bw, rotation_angle, is_mask_partial
-
-    @classmethod
-    def apply_basic_morphology(cls, image_bw: np.ndarray) -> np.ndarray:
-        image_dilated = cv.dilate(image_bw, kernel=np.ones((5, 5)))
-
-        image_cleared = utils.clear_borders(image_dilated)
-
-        image_preprocessed = utils.fill_holes(image_cleared)
-
-        return image_preprocessed
+        return image_mask, image_bw, is_mask_partial
 
     @classmethod
     def extract_edges(cls, image_std_filtered: np.ndarray, image_bw: np.ndarray,
-                      preprocess_method, nbins: int = 7, post_dilate: bool = True) -> np.ndarray:
+                      nbins: int = 7, post_dilate: bool = True) -> np.ndarray:
 
         image_magnitude, image_angle = utils.find_magnitude_and_angle(image_std_filtered)
 
@@ -68,15 +66,12 @@ class Morph:
         image_binary_mask = (image_magnitude > threshold).astype(np.uint8) * 255
 
         image_preprocessed = np.zeros_like(image_binary_mask)
-        if preprocess_method == PreprocessMethod.EdgeExtraction:
-            image_preprocessed = image_binary_mask * image_ind / nbins
-        elif preprocess_method == PreprocessMethod.EdgeExtractionAndFiltration:
-            image_ind = utils.filter_small_edges(image_ind, image_binary_mask, nbins)
+        image_ind = utils.filter_small_edges(image_ind, image_binary_mask, nbins)
 
-            image_preprocessed = (image_binary_mask * image_ind / nbins).astype(np.uint8)
-            image_preprocessed[image_preprocessed != 0] = 255
-            if post_dilate:
-                image_preprocessed = cv.dilate(image_preprocessed, kernel=np.ones((3, 3)))
+        image_preprocessed = (image_binary_mask * image_ind / nbins).astype(np.uint8)
+        image_preprocessed[image_preprocessed != 0] = 255
+        if post_dilate:
+            image_preprocessed = cv.dilate(image_preprocessed, kernel=np.ones((3, 3)))
 
         return image_preprocessed
 
@@ -153,8 +148,8 @@ class Morph:
 
         def is_prop_valid(prop: skimage.measure._regionprops._RegionProperties) -> bool:
             if prop.minor_axis_length > 20:
-                if prop.solidity > 0.33:
-                    if prop.area > 500:
+                if prop.solidity > 0.25:
+                    if prop.area > 300:
                         return True
 
             return False
@@ -188,9 +183,28 @@ class Morph:
         strel_line_rotated = utils.morph_line(int(line_length / 2), line_rotation_angles[k])
         image_linearly_morphed = cv.dilate(image_filtered, strel_line_rotated)
 
-        strel_line_rotated = utils.morph_line(int(line_length / 4), line_rotation_angles[k])
-        image_linearly_morphed = cv.erode(image_linearly_morphed, strel_line_rotated)
+        # strel_line_rotated = utils.morph_line(int(line_length / 4), line_rotation_angles[k])
+        # image_linearly_morphed = cv.erode(image_linearly_morphed, strel_line_rotated)
+        #
+        # image_linearly_morphed = cv.morphologyEx(image_linearly_morphed, cv.MORPH_OPEN, kernel=np.ones((7, 7)))
 
-        image_linearly_morphed = cv.morphologyEx(image_linearly_morphed, cv.MORPH_OPEN, kernel=np.ones((7, 7)))
+        return image_linearly_morphed
+
+    @classmethod
+    def apply_line_morphology_simplified(cls, image_filtered: np.ndarray, angle: int, line_length: int) -> np.ndarray:
+
+        line_rotation_angles = [i for i in range(angle, angle + 180, 5)]
+
+        pixel_amounts = []
+        for line_rotation_angle in line_rotation_angles:
+            strel_line_rotated = utils.morph_line(line_length, line_rotation_angle)
+            image_linearly_morphed = cv.dilate(image_filtered, strel_line_rotated)
+
+            pixel_amounts.append(cv.countNonZero(image_linearly_morphed))
+
+        k = np.asarray(pixel_amounts).argmin()
+
+        strel_line_rotated = utils.morph_line(line_length, line_rotation_angles[k])
+        image_linearly_morphed = cv.dilate(image_filtered, strel_line_rotated)
 
         return image_linearly_morphed

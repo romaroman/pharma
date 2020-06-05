@@ -2,18 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/pharmapack-recognition.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/pharmapack-recognition.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/src/text_detection/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/text_detection/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python/src/text_detection/args.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/text_detection/args.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python/src/text_detection/detect.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/text_detection/detect.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python/src/text_detection/morph.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/text_detection/morph.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python/src/text_detection/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/text_detection/run.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/src/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/utils/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/src/utils/calc.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/utils/calc.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/src/utils/descriptors.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/src/utils/improc.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/src/utils/improc.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -170,9 +163,9 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.run" />
+        <item itemvalue="Python.detect" />
         <item itemvalue="Python.scratch_2" />
         <item itemvalue="Python.args" />
-        <item itemvalue="Python.detect" />
       </list>
     </recent_temporary>
   </component>
@@ -198,7 +191,7 @@
       <workItem from="1589478511982" duration="53517000" />
       <workItem from="1589909926305" duration="40632000" />
       <workItem from="1590567399587" duration="15317000" />
-      <workItem from="1590749942714" duration="15871000" />
+      <workItem from="1590749942714" duration="34350000" />
     </task>
     <servers />
   </component>
@@ -239,23 +232,23 @@
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="669" y="120" key="#detect/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590593817552" />
-    <state x="2589" y="55" key="#run" timestamp="1590852936950">
+    <state x="2589" y="55" key="#run" timestamp="1590927129891">
       <screen x="1920" y="-65" width="1920" height="1050" />
     </state>
-    <state x="2589" y="55" key="#run/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590852936950" />
+    <state x="2589" y="55" key="#run/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590927129891" />
     <state x="494" y="0" key="#run/28.0.1338.768@28.0.1338.768" timestamp="1590667741116" />
     <state x="415" y="0" key="#scratch_1" timestamp="1590659787839">
       <screen x="28" y="0" width="1338" height="768" />
     </state>
     <state x="415" y="0" key="#scratch_1/28.0.1338.768@28.0.1338.768" timestamp="1590659787839" />
-    <state width="1004" height="438" key="DebuggerActiveHint" timestamp="1590346078645">
+    <state width="1519" height="438" key="DebuggerActiveHint" timestamp="1590941930783">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1004" height="438" key="DebuggerActiveHint/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590346078645" />
-    <state x="740" y="279" key="FileChooserDialogImpl" timestamp="1590411343670">
+    <state width="1519" height="438" key="DebuggerActiveHint/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590941930783" />
+    <state x="740" y="279" key="FileChooserDialogImpl" timestamp="1591183591957">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state x="740" y="279" key="FileChooserDialogImpl/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590411343670" />
+    <state x="740" y="279" key="FileChooserDialogImpl/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1591183591957" />
     <state width="1338" height="710" key="GridCell.Tab.-1.bottom" timestamp="1590668019668">
       <screen x="28" y="0" width="1338" height="768" />
     </state>
@@ -272,25 +265,25 @@
       <screen x="28" y="0" width="1338" height="768" />
     </state>
     <state width="1338" height="710" key="GridCell.Tab.-1.right/28.0.1338.768@28.0.1338.768" timestamp="1590668019668" />
-    <state width="1921" height="994" key="GridCell.Tab.0.bottom" timestamp="1590857713307">
+    <state width="1921" height="994" key="GridCell.Tab.0.bottom" timestamp="1591184343020">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590857713307" />
+    <state width="1921" height="994" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1591184343020" />
     <state width="1338" height="710" key="GridCell.Tab.0.bottom/28.0.1338.768@28.0.1338.768" timestamp="1590668176349" />
-    <state width="1921" height="994" key="GridCell.Tab.0.center" timestamp="1590857713307">
+    <state width="1921" height="994" key="GridCell.Tab.0.center" timestamp="1591184343020">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590857713307" />
+    <state width="1921" height="994" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1591184343020" />
     <state width="1338" height="710" key="GridCell.Tab.0.center/28.0.1338.768@28.0.1338.768" timestamp="1590668176348" />
-    <state width="1921" height="994" key="GridCell.Tab.0.left" timestamp="1590857713307">
+    <state width="1921" height="994" key="GridCell.Tab.0.left" timestamp="1591184343020">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590857713307" />
+    <state width="1921" height="994" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1591184343020" />
     <state width="1338" height="710" key="GridCell.Tab.0.left/28.0.1338.768@28.0.1338.768" timestamp="1590668176348" />
-    <state width="1921" height="994" key="GridCell.Tab.0.right" timestamp="1590857713307">
+    <state width="1921" height="994" key="GridCell.Tab.0.right" timestamp="1591184343020">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590857713307" />
+    <state width="1921" height="994" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1591184343020" />
     <state width="1338" height="710" key="GridCell.Tab.0.right/28.0.1338.768@28.0.1338.768" timestamp="1590668176348" />
     <state x="461" y="169" key="SettingsEditor" timestamp="1590752611920">
       <screen x="0" y="0" width="1920" height="1050" />
@@ -320,8 +313,13 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/python/src/text_detection/detect.py</url>
-          <line>118</line>
-          <option name="timeStamp" value="56" />
+          <line>184</line>
+          <option name="timeStamp" value="72" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/python/src/text_detection/detect.py</url>
+          <line>244</line>
+          <option name="timeStamp" value="77" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -338,8 +336,8 @@
     <SUITE FILE_PATH="coverage/pharmapack_recognition$get_text_region.coverage" NAME="get_text_region Coverage Results" MODIFIED="1589383348662" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/matlab-integration" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$scratch_2.coverage" NAME="scratch_2 Coverage Results" MODIFIED="1590663266907" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/scratches" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$scratch.coverage" NAME="scratch Coverage Results" MODIFIED="1588095021020" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/scratches" />
-    <SUITE FILE_PATH="coverage/pharmapack_recognition$detect.coverage" NAME="detect Coverage Results" MODIFIED="1590593629043" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$detect.coverage" NAME="detect Coverage Results" MODIFIED="1591183021642" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$args.coverage" NAME="args Coverage Results" MODIFIED="1590593631340" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src" />
-    <SUITE FILE_PATH="coverage/pharmapack_recognition$run.coverage" NAME="run Coverage Results" MODIFIED="1590857713280" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$run.coverage" NAME="run Coverage Results" MODIFIED="1591184343002" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src" />
   </component>
 </project>
