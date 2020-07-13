@@ -8,7 +8,6 @@ import random
 import utils
 from text_detection.detect import DetectTextRegion
 from text_detection.args import parser, Options
-from text_detection.types import PreprocessMethod
 from text_detection.file_info import get_file_info
 
 
@@ -27,32 +26,10 @@ class Run:
         for image_path in self.image_paths:
             file_info = get_file_info(image_path, self.options.database)
 
-            if file_info.phone != 1 or file_info.angle not in [0, 90, 180, 360]:
-                continue
-
-            # if file_info.filename not in [
-            #     # "PFP_Ph1_P0027_D01_S001_C2_az340_side1",
-            #     # "PFP_Ph2_P0618_D01_S001_C2_az260_side1",
-            #     # "PFP_Ph1_P0862_D01_S001_C4_az160_side1",
-            #     # "PFP_Ph1_P0470_D01_S002_C2_az080_side1",
-            #     # "PFP_Ph3_P0129_D01_S001_C2_az200_side1",
-            #     # "PFP_Ph1_P0058_D01_S001_C2_az340_side1",
-            #     # "PFP_Ph3_P0491_D01_S004_C3_az040_side1",
-            #     # "PFP_Ph1_P0037_D02_S006_C2_az320_side1",
-            #     # "PFP_Ph3_P0322_D01_S001_C2_az360_side1",
-            #     "PFP_Ph3_P0422_D01_S001_C2_az140_side1",
-            #     # "PFP_Ph1_P0044_D01_S001_C2_az320_side1",
-            #     # "PFP_Ph1_P0226_D01_S001_C3_az120_side1",
-            #     # "PFP_Ph1_P0618_D01_S002_C2_az120_side1",
-            #     # "PFP_Ph1_P0512_D01_S001_C2_az140_side1",
-            # ]:
-            #     continue
-            # logger.info(file_info.filename)
-
             image_orig = cv.imread(image_path)
             flags = DetectTextRegion.Flags(self.options.visualize, self.options.time_profiling)
 
-            detect = DetectTextRegion(image_orig, PreprocessMethod.EdgeExtractionAndFiltration, flags)
+            detect = DetectTextRegion(image_orig, flags)
             detect.detect_text_regions()
 
             if self.options.write:

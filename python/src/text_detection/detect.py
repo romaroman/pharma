@@ -1,20 +1,13 @@
 import cv2 as cv
 import numpy as np
-import abc
 
-import pathlib
 import time
-import os
 import logging
 
-from copy import deepcopy
 from typing import List, Tuple, NoReturn
 
 import utils
-from utils import display
 from text_detection.morph import Morph
-from text_detection.types import PreprocessMethod, _rrect
-
 
 logger = utils.get_logger(__name__, logging.DEBUG)
 
@@ -27,9 +20,12 @@ class DetectTextRegion:
             self.visualize: bool = visualize
             self.time_profiling: bool = time_profiling
 
-    def __init__(self, image_orig: np.ndarray, preprocess_method: PreprocessMethod, flags: Flags):
-        self.image_orig: np.ndarray = image_orig
-        self.preprocess_method = preprocess_method
+    def __init__(self, image_orig: np.ndarray, flags: Flags):
+        self.image_orig = Morph.align_package_to_corners(image_orig)
+        if self.image_orig is None:
+            logger.warning(f"REJECT Couldn't align image")
+            return
+        utils.display(self.image_orig)
         self.flags = flags
 
         self.timestamp = time.time()
@@ -44,7 +40,7 @@ class DetectTextRegion:
 
         self.image_visualization: np.ndarray = np.zeros((self.image_gray.shape[0] * 4, self.image_gray.shape[1] * 4))
 
-        self.image_preprocessed: np.ndarray = np.zeros_like(self.image_gray)
+        self.image_edges: np.ndarray = np.zeros_like(self.image_gray)
         self.image_filled: np.ndarray = np.zeros_like(self.image_gray)
         self.image_cleared_borders: np.ndarray = np.zeros_like(self.image_gray)
         self.image_filtered: np.ndarray = np.zeros_like(self.image_gray)
@@ -53,17 +49,19 @@ class DetectTextRegion:
         self.image_text_linearly_morphed: np.ndarray = np.zeros_like(self.image_gray)
         self.image_text_labeled: np.ndarray = np.zeros_like(self.image_gray)
         self.image_text_masks: np.ndarray = np.zeros_like(self.image_gray)
-        self.image_text_regions: np.ndarray = deepcopy(self.image_orig)
+        self.image_text_regions: np.ndarray = np.copy(self.image_orig)
 
         self.image_word_linearly_morphed: np.ndarray = np.zeros_like(self.image_gray)
         self.image_word_labeled: np.ndarray = np.zeros_like(self.image_gray)
         self.image_word_masks: np.ndarray = np.zeros_like(self.image_gray)
-        self.image_word_regions: np.ndarray = deepcopy(self.image_orig)
+        self.image_word_regions: np.ndarray = np.copy(self.image_orig)
 
         self.text_regions: List[TextRegion] = list()
         self.word_regions: List[TextRegion] = list()
 
-        self._update_timestamp("CLASS INITIALIZATION")
+        self.morph_angle = 0
+
+        self._profile("CLASS INITIALIZATION")
 
     def detect_text_regions(self) -> NoReturn:
 
@@ -72,36 +70,43 @@ class DetectTextRegion:
         if self.is_mask_partial:
             self._apply_mask()
 
-        self._update_timestamp("MASK OPERATIONS")
+        self._profile("MASK OPERATIONS")
 
-        self.image_preprocessed = Morph.extract_edges(self.image_std_filtered, self.image_bw)
-        self._update_timestamp("EXTRACT EDGES")
+        self.image_edges = Morph.extract_edges(self.image_std_filtered, self.image_bw, post_morph=True)
+        self._profile("EXTRACT EDGES")
 
-        self.image_cleared_borders = utils.clear_borders(self.image_preprocessed)
+        self.image_cleared_borders = utils.clear_borders(self.image_edges)
 
         self.image_filled = utils.fill_holes(self.image_cleared_borders)
 
         self.image_filtered = Morph.filter_non_text_blobs(self.image_filled)
-        self._update_timestamp("BORDER, FILLING, FILTERING")
+        self._profile("BORDER, FILLING, FILTERING")
 
-        self.image_segmented = utils.apply_watershed(self.image_orig, self.image_filtered)
+        # self.image_segmented = utils.apply_watershed(self.image_orig, self.image_filtered)
 
-        self.image_text_linearly_morphed = Morph.apply_line_morphology(self.image_filtered, scale=1)
+        # self.morph_angle, self.image_text_linearly_morphed = Morph.apply_line_morphology(self.image_filtered, scale=1)
 
-        self._update_timestamp("LINE MORPHOLOGY")
+        self._profile("LINE MORPHOLOGY")
 
-        self._find_text_regions()
-        self._update_timestamp("FIND TEXT REGIONS")
+        lines_regions = Morph.split_lines(self.image_filtered)
+
+        self._process_lines(lines_regions)
+        self._profile("LINES PROCESSING")
+        utils.display(self.image_lines_morphed)
+
+        # self._find_text_regions()
+
+        self._profile("FIND TEXT REGIONS")
         self._draw_text_regions_and_mask()
 
-        self._detect_words_2()
-
-        self._find_word_regions()
-
-        self._draw_word_regions_and_mask()
-
-        if self.flags.visualize:
-            self._create_visualization()
+        # self._detect_words()
+        #
+        # self._find_word_regions()
+        #
+        # self._draw_word_regions_and_mask()
+        #
+        # if self.flags.visualize:
+        #     self._create_visualization()
 
     def _apply_mask(self) -> NoReturn:
         self.image_gray = self.image_gray * self.image_mask
@@ -109,6 +114,40 @@ class DetectTextRegion:
 
         self.image_bw = self.image_bw * self.image_mask
         self.image_std_filtered = self.image_std_filtered * self.image_mask
+
+    def _process_lines(self, lines_regions: List[Tuple[int, int]]):
+
+        self.image_lines_morphed = np.zeros_like(self.image_gray)
+
+        for line_region in lines_regions:
+            x_min, x_max, y_min, y_max = line_region[0][1], line_region[1][1], line_region[0][0], line_region[1][0]
+
+            if x_min > x_max:
+                x_max, x_min = x_min, x_max
+
+            if x_max - x_min < 15:
+                continue
+            print(x_max - x_min)
+
+            image_line_rgb = self.image_orig[x_min:x_max, y_min:y_max]
+            image_line_filtered = self.image_filtered[x_min:x_max, y_min:y_max]
+
+            contours, _ = cv.findContours(image_line_filtered, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+            min_sides = []
+            for contour in contours:
+                x, y, w, h = cv.boundingRect(contour)
+                min_sides.append(min(w, h))
+
+            mean_min_side = np.mean(min_sides)
+            morph_line_length = int(mean_min_side / 1.5)
+
+            image_line_morphed = Morph.apply_line_morphology_simplified(image_line_filtered, 90, morph_line_length)
+            # utils.display(np.vstack([utils.to_rgb(image_morphed), image_line_rgb]))
+            self.image_lines_morphed[x_min:x_max, y_min:y_max] = cv.bitwise_xor(
+                image_line_morphed,
+                self.image_lines_morphed[x_min:x_max, y_min:y_max]
+            )
 
     def _find_text_regions(self) -> NoReturn:
         _, self.image_text_labeled = cv.connectedComponents(self.image_text_linearly_morphed)
@@ -134,7 +173,7 @@ class DetectTextRegion:
 
         for text_region in self.text_regions:
 
-            edges = Morph.extract_edges(text_region.image_std_filtered, text_region.image_bw, post_dilate=False)
+            edges = Morph.extract_edges(text_region.image_std_filtered, text_region.image_bw, post_morph=False)
             edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, np.ones((3, 3)))
             filtered = Morph.filter_enclosed_contours(edges)
             filled = utils.fill_holes(filtered)
@@ -143,13 +182,7 @@ class DetectTextRegion:
 
             contours = list(filter(lambda x: cv.contourArea(x) > 200, contours))
 
-            # variance = np.var([cv.contourArea(contour) for contour in contours])
-            # if variance > 10000:
-            #     continue
-
             points = [cv.boxPoints(cv.minAreaRect(contour)) for contour in contours if len(contour) > 4]
-
-
             distances = dict()
             for idx1, points1 in enumerate(points, start=0):
                 for idx2, points2 in enumerate(points[idx1 + 1:], start=idx1 + 1):
@@ -169,84 +202,14 @@ class DetectTextRegion:
 
             if len(contours) < 2:
                 mean_distance = 25
-                rotation_angle = -90
             else:
-                try:
-                    rotation_angle = int(np.mean([x for x in [int(cv.minAreaRect(x)[2]) for x in contours if len(x) > 3] if x % 90 != 0]))
-                except:
-                    rotation_angle = -90
                 mean_distance = max(int(1.5 * np.mean(np.asarray([v for _, v in distances.items()]))), 10)
 
-            rrects = [np.int0(cv.convexHull(contour)) for contour in contours]
-            sss = cv.drawContours(np.zeros_like(filled), rrects, -1, 255, -1)
-
-            morphed = Morph.apply_line_morphology_simplified(sss, rotation_angle, mean_distance)
-
-            x, y, w, h = text_region.brect
-            self.image_word_linearly_morphed[y:y + h, x:x + w] = \
-                cv.bitwise_xor(morphed, self.image_word_linearly_morphed[y:y + h, x:x + w])
-
-    def _detect_words_2(self) -> NoReturn:
-
-        for text_region in self.text_regions:
-
-            edges = Morph.extract_edges(text_region.image_std_filtered, text_region.image_bw, post_dilate=False)
-            edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, np.ones((3, 3)))
-            filtered = Morph.filter_enclosed_contours(edges)
-            filled = utils.fill_holes(filtered)
-            utils.display(filled)
-            contours, _ = cv.findContours(filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-
-            contours = list(filter(lambda x: cv.contourArea(x) > 200 or len(x) > 4, contours))
-
-            def extract_extreme(c):
-                left = tuple(c[c[:, :, 0].argmin()][0])
-                right = tuple(c[c[:, :, 0].argmax()][0])
-                top = tuple(c[c[:, :, 1].argmin()][0])
-                bottom = tuple(c[c[:, :, 1].argmax()][0])
-                return [left, right, top, bottom]
-
-            points = [cv.convexHull(contour) for contour in contours if len(contour) > 4]
-
-            distances = dict()
-            for idx1, points1 in enumerate(points, start=0):
-                for idx2, points2 in enumerate(points[idx1 + 1:], start=idx1 + 1):
-
-                    min_distance = 1000000
-                    for point1 in points1:
-                        for point2 in points2:
-                            distance = np.linalg.norm(point1[0] - point2[0])
-                            # print(f"{point1[0]=} {point2[0]=} {distance=}")
-                            if distance < min_distance:
-                                min_distance = distance
-
-                    if idx1 in distances.keys():
-                        if distances[idx1][0] > min_distance:
-                            distances[idx1] = (min_distance, idx2)
-                    else:
-                        distances[idx1] = (min_distance, idx2)
-
-
-            # TODO Combine contours
-            if len(contours) < 2:
-                mean_distance = 25
-                rotation_angle = -90
-            else:
-                try:
-                    rotation_angle = int(np.mean([x for x in [int(cv.minAreaRect(x)[2]) for x in contours if len(x) > 3] if x % 90 != 0]))
-                except:
-                    rotation_angle = -90
-                mean_distance = np.ceil(np.mean(np.asarray([v for _, v in distances.items()])))
-
-            to_morph = cv.drawContours(np.zeros_like(filled), contours, -1, 255, -1)
-
-            morphed = Morph.apply_line_morphology_simplified(to_morph, rotation_angle, mean_distance)
+            morphed = Morph.apply_line_morphology_simplified(filled, -90, mean_distance)
             utils.display(morphed)
             x, y, w, h = text_region.brect
             self.image_word_linearly_morphed[y:y + h, x:x + w] = \
                 cv.bitwise_xor(morphed, self.image_word_linearly_morphed[y:y + h, x:x + w])
-
-
 
     def _draw_text_regions_and_mask(self, color: int = 255) -> NoReturn:
         for text_region in self.text_regions:
@@ -265,7 +228,7 @@ class DetectTextRegion:
         first_row = np.hstack([
             add_text(self.image_orig, "orig"),
             add_text(utils.to_rgb(self.image_mask * 255), "mask"),
-            add_text(utils.to_rgb(self.image_preprocessed), "edges"),
+            add_text(utils.to_rgb(self.image_edges), "edges"),
             add_text(utils.to_rgb(self.image_cleared_borders), "clear borders")
         ])
 
@@ -293,7 +256,7 @@ class DetectTextRegion:
 
         self.image_visualization = np.vstack([first_row, second_row, third_row, fourth_row])
 
-    def _update_timestamp(self, message: str):
+    def _profile(self, message: str):
         logger.debug(f"{message} --- {(time.time() - self.timestamp)} sec ---")
         self.timestamp = time.time()
 
@@ -312,15 +275,18 @@ class TextRegion:
         self.rrect_area = self.rrect[1][0] * self.rrect[1][1]
         self.contour_area = cv.contourArea(self.contour)
 
+        self.morph_angle = detect_text_region.morph_angle
 
-#         self.coordinates_ravel.append(np.transpose(points).ravel())
+        #         self.coordinates_ravel.append(np.transpose(points).ravel())
 
         self.image_orig = self._crop_by_brect(detect_text_region.image_orig)
         self.image_gray = self._crop_by_brect(detect_text_region.image_gray)
-        self.image_preprocessed = self._crop_by_brect(detect_text_region.image_preprocessed)
+        self.image_preprocessed = self._crop_by_brect(detect_text_region.image_edges)
         self.image_std_filtered = self._crop_by_brect(detect_text_region.image_std_filtered)
         self.image_bw = self._crop_by_brect(detect_text_region.image_bw)
+        self.image_text_linearly_morphed = self._crop_by_brect(detect_text_region.image_text_linearly_morphed)
 
+        self.image_edges = np.zeros_like(self.image_gray)
         # TODO continue needed copying images
 
     def _crop_by_brect(self, image):
@@ -330,4 +296,3 @@ class TextRegion:
             return cv.copyTo(image, self.image_blob)[y:y + h, x:x + w, :]
         elif len(image.shape) == 2:
             return cv.copyTo(image, self.image_blob)[y:y + h, x:x + w]
-

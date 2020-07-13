@@ -21,9 +21,9 @@ class FileInfo(ABC):
     res = {
         'phone': r'Ph[1-3]',
         'package_class': r'P[0-9][0-9][0-9][0-9]',
-        'D?': r'D[0-9][0-9]',
-        'S?': r'S[0-9][0-9][0-9]',
-        'C?': r'C[0-9]'
+        'distinct': r'D[0-9][0-9]',
+        'sample': r'S[0-9][0-9][0-9]',
+        'size': r'C[0-9]'
    }
 
     def __init__(self, file_path: str):
@@ -31,9 +31,9 @@ class FileInfo(ABC):
 
         self.phone = self._extract_numerical_info('phone')
         self.package_class = self._extract_numerical_info('package_class')
-        self.D = self._extract_numerical_info('D?')
-        self.S = self._extract_numerical_info('S?')
-        self.C = self._extract_numerical_info('C?')
+        self.distinct = self._extract_numerical_info('distinct')
+        self.sample = self._extract_numerical_info('sample')
+        self.size = self._extract_numerical_info('size')
 
     def _extract_numerical_info(self, keyword: str) -> int:
         substring = self._extract_substring(keyword)

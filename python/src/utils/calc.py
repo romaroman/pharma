@@ -14,7 +14,8 @@ def get_contour_center(contour: np.ndarray) -> Tuple[int, int]:
 
 
 def calc_points_distance(point1: Tuple[int, int], point2: Tuple[int, int]) -> float:
-    return math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point1[1]) ** 2)
+    # return math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point1[1]) ** 2)
+    return np.linalg.norm(np.asarray(point1) - np.asarray(point2))
 
 
 def calc_rrects_distance(coords1: np.ndarray, coords2: np.ndarray) -> float:

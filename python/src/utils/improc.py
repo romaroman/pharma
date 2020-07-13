@@ -1,6 +1,5 @@
 import cv2 as cv
 import numpy as np
-from copy import deepcopy
 
 from typing import Tuple
 
@@ -11,16 +10,18 @@ def to_rgb(image_1c: np.ndarray) -> np.ndarray:
 
 def clear_borders(image_bw: np.ndarray) -> np.ndarray:
 
-    def is_contour_valid(contour) -> bool:
+    def is_contour_invalid(contour) -> bool:
+        amount_of_border_pixels_to_omit = 25
+
         for point in contour:
             point = point[0]
-            if point[0] <= 25 or point[1] == 25:
+            if point[0] <= amount_of_border_pixels_to_omit or point[1] == amount_of_border_pixels_to_omit:
                 return True
 
         return False
 
     contours, _ = cv.findContours(image_bw, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
-    contours_to_delete = list(filter(is_contour_valid, contours))
+    contours_to_delete = list(filter(is_contour_invalid, contours))
 
     image_contour_mask = np.full(image_bw.shape, 255, dtype=np.uint8)
     contour_thickness = int(max(image_bw.shape) * 0.015)
@@ -43,6 +44,9 @@ def std_filter(image_gray: np.ndarray, kernel_size: int) -> np.ndarray:
 
 
 def morph_line(length: int, angle: int) -> np.ndarray:
+
+    if length < 5:
+        length = 5
 
     length_2 = length * 2
 
@@ -68,9 +72,9 @@ def fill_holes(image_bw: np.ndarray) -> np.ndarray:
     return image_filled
 
 
-def find_magnitude_and_angle(image_std_filtered: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    image_sobel_x = cv.Sobel(image_std_filtered, cv.CV_64F, 1, 0)  # Find x and y gradients
-    image_sobel_y = cv.Sobel(image_std_filtered, cv.CV_64F, 0, 1)
+def find_magnitude_and_angle(image_gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    image_sobel_x = cv.Sobel(image_gray, cv.CV_64F, 1, 0)  # Find x and y gradients
+    image_sobel_y = cv.Sobel(image_gray, cv.CV_64F, 0, 1)
 
     image_magnitude = np.sqrt(image_sobel_x ** 2.0 + image_sobel_y ** 2.0)
     image_angle = np.arctan2(image_sobel_y, image_sobel_x) * (180 / np.pi)
@@ -84,7 +88,7 @@ def filter_small_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbi
     image_new_ind = np.zeros_like(image_ind)
 
     for j in range(1, nbins + 1):
-        image_current_bin = deepcopy(image_ind)
+        image_current_bin = np.copy(image_ind)
         image_current_bin[image_current_bin != j] = 0
         image_current_bin[image_current_bin != 0] = 1
         image_current_bin = image_current_bin * image_binary_mask
@@ -97,7 +101,7 @@ def filter_small_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbi
         image_bw = np.zeros_like(image_current_bin)
         cv.drawContours(image_bw, valid_contours, -1, 1, -1)
 
-        image_current_bin = deepcopy(image_ind)
+        image_current_bin = np.copy(image_ind)
         image_current_bin[image_current_bin != j] = 0
 
         image_new_ind = image_new_ind + image_bw * image_current_bin

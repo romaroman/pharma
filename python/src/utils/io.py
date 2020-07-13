@@ -2,7 +2,6 @@ import matplotlib as mpl
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
-
 import pathlib
 import glob
 import logging
@@ -14,8 +13,10 @@ mpl.rc('image', cmap='Greys_r')
 
 
 def display(image):
+    image_disp = np.copy(image)
     if len(image.shape) == 3:
         h, w, _ = image.shape
+        image_disp = cv.cvtColor(image_disp, cv.COLOR_BGR2RGB)
     elif len(image.shape) == 2:
         h, w = image.shape
 
@@ -26,7 +27,7 @@ def display(image):
 
     ax = fig.add_subplot(111)
     plt.axis('off')
-    ax.imshow(image, interpolation="nearest")
+    ax.imshow(image_disp, interpolation="nearest")
     ax.autoscale(False)
     plt.show()
 
@@ -36,7 +37,7 @@ def show_image_as_window(image: np.ndarray, title: str = ""):
     ratio = default_width / image.shape[0]
     h = int(image.shape[1] * ratio)
 
-    image = cv.resize(image, (h, default_width), interpolation=cv.INTER_NEAREST)
+    #  image = cv.resize(image, (h, default_width), interpolation=cv.INTER_NEAREST)
 
     cv.imshow(title, image)
     cv.waitKey(0)
