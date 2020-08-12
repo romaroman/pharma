@@ -45,7 +45,7 @@ class Run:
                 writer.add_dict_result(evaluation_result)
 
             if config.profile:
-                writer.add_dict_result(detection.profile_result)
+                writer.add_dict_result(utils.profiler.get_results())
 
             if config.write:
                 writer.save_single_detection(detection, file_info.filename)

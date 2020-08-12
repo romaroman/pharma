@@ -16,11 +16,8 @@ logger = utils.get_logger(__name__, logging.DEBUG)
 class Detector:
 
     def __init__(self, image_orig: np.ndarray) -> NoReturn:
-        self.timestamp = time.time()
-        self.profile_result: Dict[str, float] = {}
-
         self.is_image_orig_aligned, self.image_orig = Morph.align_package_to_corners(image_orig)
-        self._profile('PACKAGE ALIGNMENT')
+        utils.profiler.add_timestamp('PACKAGE ALIGNMENT')
 
         self.image_gray: np.ndarray = cv.cvtColor(self.image_orig, cv.COLOR_BGR2GRAY)
 
@@ -55,7 +52,7 @@ class Detector:
         self.word_regions: List[TextRegion] = []
 
         self.morph_angle = 0
-        self._profile('CLASS INITIALIZATION')
+        utils.profiler.add_timestamp('CLASS INITIALIZATION')
 
     def detect_text_regions(self) -> NoReturn:
         self.image_mask, self.image_bw, self.is_mask_partial = Morph.find_package_mask(self.image_std_filtered)
@@ -64,7 +61,7 @@ class Detector:
             self._apply_mask()
 
         self.image_edges = Morph.extract_edges(self.image_std_filtered, self.image_bw, post_morph=True)
-        self._profile('EDGES EXTRACTION')
+        utils.profiler.add_timestamp('EDGES EXTRACTION')
 
         self.image_cleared_borders = utils.clear_borders(self.image_edges)
 
@@ -73,7 +70,7 @@ class Detector:
         self.image_filtered = Morph.filter_non_text_blobs(self.image_filled)
 
         self.morph_angle, self.image_text_linearly_morphed = Morph.apply_line_morphology(self.image_filtered, 30)
-        self._profile('MORPHOLOGY')
+        utils.profiler.add_timestamp('MORPHOLOGY')
 
         # self.lines_regions = Morph.split_lines(self.image_filtered)
 
@@ -83,13 +80,13 @@ class Detector:
         self._draw_text_regions_and_mask()
         self._detect_words()
         self._find_word_regions()
-        self._profile('WORD AND TEXT DETECTION')
+        utils.profiler.add_timestamp('WORD AND TEXT DETECTION')
 
         self._draw_word_regions_and_mask()
 
         if config.visualize:
             self._create_visualization()
-        self._profile('VISUALIZATION')
+        utils.profiler.add_timestamp('VISUALIZATION')
 
     def get_text_coordinates(self) -> List[np.ndarray]:
         return [np.transpose(text_region.coordinates).ravel() for text_region in self.text_regions]
@@ -229,11 +226,6 @@ class Detector:
         ]
 
         self.image_visualization = utils.combine_images(image_list)
-
-    def _profile(self, message: str) -> NoReturn:
-        logger.debug(f"{message} --- {(time.time() - self.timestamp)} sec ---")
-        self.timestamp = time.time()
-        self.profile_result[message] = self.timestamp
 
 
 class TextRegion:
