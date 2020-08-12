@@ -53,6 +53,7 @@ class Morph:
 
         contours, _ = cv.findContours(image_dilated, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         contours = np.asarray(contours)
+
         max_area_contour = max(contours, key=lambda x: cv.contourArea(x))
         points = cv.boxPoints(cv.minAreaRect(max_area_contour)).astype(np.int0)
 
@@ -231,7 +232,7 @@ class Morph:
             axis: int = 0
     ) -> np.ndarray:
 
-        H, W = image_bw.shape
+        h, w = image_bw.shape
 
         def find_lines(image_roi, axis):
 
@@ -242,11 +243,11 @@ class Morph:
             else:
                 raise AttributeError
 
-            hist = cv.reduce(image_roi, 1 - axis, cv.REDUCE_AVG).reshape(-1)
+            histogram = cv.reduce(image_roi, 1 - axis, cv.REDUCE_AVG).reshape(-1)
 
-            th = 3
-            uppers = [y for y in range(limit - 1) if hist[y] <= th < hist[y + 1]]
-            lowers = [y for y in range(limit - 1) if hist[y] > th >= hist[y + 1]]
+            threshold = 3
+            uppers = [y for y in range(limit - 1) if histogram[y] <= threshold < histogram[y + 1]]
+            lowers = [y for y in range(limit - 1) if histogram[y] > threshold >= histogram[y + 1]]
 
             return uppers, lowers
 
@@ -256,8 +257,9 @@ class Morph:
         horizontal_upper.extend(horizontal_upper_i)
         horizontal_lower.extend(horizontal_lower_i)
 
-        horizontal_rectangles = np.asarray([[(0, y1), (W, y2)] for y1, y2 in zip(horizontal_upper, horizontal_lower)],
-                                           dtype=np.int0)
+        horizontal_rectangles = np.asarray(
+            [[(0, y1), (w, y2)] for y1, y2 in zip(horizontal_upper, horizontal_lower)], dtype=np.int0
+        )
 
         return horizontal_rectangles
 
@@ -272,30 +274,26 @@ class Morph:
         box = cv.boxPoints(rrect)
         box = np.asarray(box, dtype=np.int0)
 
-        W = rrect[1][0]
-        H = rrect[1][1]
+        h = rrect[1][0]
+        w = rrect[1][1]
 
-        Xs = [i[0] for i in box]
-        Ys = [i[1] for i in box]
-        x1, x2, y1, y2 = min(Xs), max(Xs), min(Ys), max(Ys)
+        xs = [i[0] for i in box]
+        ys = [i[1] for i in box]
+        x1, x2, y1, y2 = min(xs), max(xs), min(ys), max(ys)
 
         angle = rrect[2]
         if angle < -45:
             angle += 90
 
-        # Center of rectangle in source image
         center = ((x1 + x2) / 2, (y1 + y2) / 2)
 
-        # Size of the upright rectangle bounding the rotated rectangle
         size = (x2 - x1, y2 - y1)
-        M = cv.getRotationMatrix2D((size[0] / 2, size[1] / 2), angle, 1.0)
+        m = cv.getRotationMatrix2D((size[0] / 2, size[1] / 2), angle, 1.0)
 
-        # Cropped upright rectangle
         cropped = cv.getRectSubPix(image, size, center)
-        cropped = cv.warpAffine(cropped, M, size)
+        cropped = cv.warpAffine(cropped, m, size)
 
-        # Final cropped & rotated rectangle
-        hw_img = cv.getRectSubPix(cropped, (int(H), int(W)), (size[0] / 2, size[1] / 2))
-        wh_img = cv.getRectSubPix(cropped, (int(W), int(H)), (size[0] / 2, size[1] / 2))
+        hw_img = cv.getRectSubPix(cropped, (int(w), int(h)), (size[0] / 2, size[1] / 2))
+        wh_img = cv.getRectSubPix(cropped, (int(h), int(w)), (size[0] / 2, size[1] / 2))
 
         return hw_img if cv.countNonZero(hw_img[:, :, 0]) > cv.countNonZero(wh_img[:, :, 0]) else wh_img

@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 from typing import NoReturn, List, Union
 
@@ -45,7 +46,7 @@ def show_image_as_window(image: np.ndarray, title: str = "") -> NoReturn:
     cv.destroyWindow(title)
 
 
-def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
+def get_logger(name: str, level) -> logging.Logger:
     log = logging.Logger(name)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logging.basicConfig(level=level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -85,3 +86,12 @@ def combine_images(images: List[np.ndarray]) -> Union[np.ndarray, None]:
             image_result = np.vstack([image_result, image_row])
 
     return image_result
+
+
+def init_path(path_str: str) -> Path:
+    path = Path(path_str)
+
+    if path.exists():
+        return path.absolute()
+    else:
+        raise FileNotFoundError

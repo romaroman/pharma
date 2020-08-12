@@ -1,12 +1,13 @@
 import time
 import logging
 
-from typing import List, NoReturn
+from typing import List, NoReturn, Dict
 
 import cv2 as cv
 import numpy as np
 
 import utils
+import textdetector.config as config
 from textdetector.morph import Morph
 
 logger = utils.get_logger(__name__, logging.DEBUG)
@@ -14,18 +15,12 @@ logger = utils.get_logger(__name__, logging.DEBUG)
 
 class Detector:
 
-    class Flags:
-
-        def __init__(self, visualize: bool, time_profiling: bool) -> NoReturn:
-            self.visualize: bool = visualize
-            self.time_profiling: bool = time_profiling
-
-    def __init__(self, image_orig: np.ndarray, flags: Flags) -> NoReturn:
-        self.is_image_orig_aligned, self.image_orig = Morph.align_package_to_corners(image_orig)
-
-        self.flags = flags
-
+    def __init__(self, image_orig: np.ndarray) -> NoReturn:
         self.timestamp = time.time()
+        self.profile_result: Dict[str, float] = {}
+
+        self.is_image_orig_aligned, self.image_orig = Morph.align_package_to_corners(image_orig)
+        self._profile('PACKAGE ALIGNMENT')
 
         self.image_gray: np.ndarray = cv.cvtColor(self.image_orig, cv.COLOR_BGR2GRAY)
 
@@ -56,10 +51,11 @@ class Detector:
         self.image_word_masks: np.ndarray = np.zeros_like(self.image_gray)
         self.image_word_regions: np.ndarray = np.copy(self.image_orig)
 
-        self.text_regions: List[TextRegion] = list()
-        self.word_regions: List[TextRegion] = list()
+        self.text_regions: List[TextRegion] = []
+        self.word_regions: List[TextRegion] = []
 
         self.morph_angle = 0
+        self._profile('CLASS INITIALIZATION')
 
     def detect_text_regions(self) -> NoReturn:
         self.image_mask, self.image_bw, self.is_mask_partial = Morph.find_package_mask(self.image_std_filtered)
@@ -68,6 +64,7 @@ class Detector:
             self._apply_mask()
 
         self.image_edges = Morph.extract_edges(self.image_std_filtered, self.image_bw, post_morph=True)
+        self._profile('EDGES EXTRACTION')
 
         self.image_cleared_borders = utils.clear_borders(self.image_edges)
 
@@ -75,26 +72,24 @@ class Detector:
 
         self.image_filtered = Morph.filter_non_text_blobs(self.image_filled)
 
-        self.morph_angle, self.image_text_linearly_morphed = Morph.apply_line_morphology(
-            self.image_filtered, line_length=30, scale=1
-        )
+        self.morph_angle, self.image_text_linearly_morphed = Morph.apply_line_morphology(self.image_filtered, 30)
+        self._profile('MORPHOLOGY')
 
         # self.lines_regions = Morph.split_lines(self.image_filtered)
 
         # self.image_lines_morphed = self._process_lines()
 
         self._find_text_regions()
-
         self._draw_text_regions_and_mask()
-
         self._detect_words()
-
         self._find_word_regions()
+        self._profile('WORD AND TEXT DETECTION')
 
         self._draw_word_regions_and_mask()
 
-        if self.flags.visualize:
+        if config.visualize:
             self._create_visualization()
+        self._profile('VISUALIZATION')
 
     def get_text_coordinates(self) -> List[np.ndarray]:
         return [np.transpose(text_region.coordinates).ravel() for text_region in self.text_regions]
@@ -228,7 +223,7 @@ class Detector:
             add_text(utils.to_rgb(self.image_text_masks), "text masks"),
             add_text(self.image_text_regions, "text regions"),
             add_text(utils.to_rgb(self.image_word_linearly_morphed), "morphed words"),
-            add_text(utils.to_rgb(self.image_word_labeled * int(255 / self.image_word_labeled.max())),"labeled words"),
+            add_text(utils.to_rgb(self.image_word_labeled * int(255 / self.image_word_labeled.max())), "labeled words"),
             add_text(utils.to_rgb(self.image_word_masks), "word masks"),
             add_text(self.image_word_regions, "word regions"),
         ]
@@ -238,6 +233,7 @@ class Detector:
     def _profile(self, message: str) -> NoReturn:
         logger.debug(f"{message} --- {(time.time() - self.timestamp)} sec ---")
         self.timestamp = time.time()
+        self.profile_result[message] = self.timestamp
 
 
 class TextRegion:
