@@ -9,6 +9,8 @@ root_folder: Path = base_folder / database
 logging_level: int = logging.INFO
 
 write: bool = True
+shuffle: bool = True
+percentage: int = 20
 debug: bool = True
 visualize: bool = False
 profile: bool = False

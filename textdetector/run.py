@@ -1,5 +1,6 @@
 import sys
 import glob
+import random
 import logging
 
 from typing import NoReturn, List, Union
@@ -21,15 +22,19 @@ logger = logging.getLogger('runner')
 class Run:
 
     def __init__(self) -> NoReturn:
-        self.image_paths: List[str] = glob.glob(str(config.root_folder / "cropped/*.png"))
+        self.image_paths: List[str] = list()
+
+        self._load_images()
 
         if config.evaluate:
             self.evaluator: Evaluator = Evaluator()
 
     def process(self) -> NoReturn:
+        logger.warning(f'Preparing to process {len(self.image_paths)} images...\n\n')
+
         writer = Writer()
 
-        for index, image_path in enumerate(self.image_paths, start=0):
+        for index, image_path in enumerate(self.image_paths, start=1):
             index_b = str(index).zfill(6)
             try:
                 file_info = get_file_info(image_path, config.database)
@@ -60,6 +65,16 @@ class Run:
                 logger.error(f'#{index_b} FAILED {image_path}')
 
         writer.save_dataframe()
+
+    def _load_images(self):
+        self.image_paths = glob.glob(str(config.root_folder / "cropped/*.png"))
+
+        if config.shuffle:
+            random.shuffle(self.image_paths)
+
+        if config.percentage is not None:
+            if config.percentage < 100:
+                self.image_paths = self.image_paths[:int(len(self.image_paths) * abs(config.percentage)/100)]
 
 
 def main() -> int:
