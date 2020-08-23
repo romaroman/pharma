@@ -74,6 +74,7 @@ def fill_holes(image_bw: np.ndarray) -> np.ndarray:
     contours, _ = cv.findContours(image_bw, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     image_filled = np.zeros_like(image_bw)
     cv.drawContours(image_filled, contours, -1, 255, -1)
+
     return image_filled
 
 

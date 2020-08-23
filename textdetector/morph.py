@@ -226,12 +226,11 @@ class Morph:
         return image_linearly_morphed
 
     @classmethod
-    def split_lines(
+    def apply_rectangular_segmentation(
             cls,
             image_bw: np.ndarray,
             axis: int = 0
     ) -> np.ndarray:
-
         h, w = image_bw.shape
 
         def find_lines(image_roi, axis):
@@ -239,7 +238,7 @@ class Morph:
             if axis == 0:
                 limit, _ = image_roi.shape
             elif axis == 1:
-                limit, _ = image_roi.shape
+                _, limit = image_roi.shape
             else:
                 raise AttributeError
 

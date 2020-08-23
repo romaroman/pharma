@@ -1,7 +1,4 @@
-import re
-import glob
-from pathlib import Path
-
+import logging
 from typing import NoReturn, Dict, List, Union
 
 import cv2 as cv
@@ -16,6 +13,9 @@ from textdetector.file_info import FileInfo
 import utils
 
 
+logger = logging.getLogger()
+
+
 class Evaluator:
 
     def __init__(self) -> NoReturn:
@@ -25,7 +25,7 @@ class Evaluator:
         try:
             annotation = Annotation.load_annotation_by_pattern(config.root_folder, file_info.get_annotation_pattern())
         except FileNotFoundError:
-            utils.logger.warning(f"Not found an annotation for {file_info.filename}")
+            logger.warning(f"Not found an annotation for {file_info.filename}")
             return {}
 
         image_reference = annotation.load_reference_image(config.root_folder / "references")
@@ -33,9 +33,9 @@ class Evaluator:
         image_ref_mask_text = annotation.get_mask_by_labels([
             AnnotationLabel.Text, AnnotationLabel.Number
         ])
-        image_ref_mask_graph = annotation.get_mask_by_labels([
-            AnnotationLabel.Watermark, AnnotationLabel.Image, AnnotationLabel.Barcode
-        ])
+        # image_ref_mask_graph = annotation.get_mask_by_labels([
+        #     AnnotationLabel.Watermark, AnnotationLabel.Image, AnnotationLabel.Barcode
+        # ])
 
         image_verification = detection.image_orig
 
@@ -45,24 +45,20 @@ class Evaluator:
         )
 
         h, w = image_reference.shape[0], image_reference.shape[1]
+        dst_size = (w, h)
 
-        image_ver_mask_warped_text = cv.warpPerspective(detection.image_text_masks, homo_mat, (w, h))
-        iou_text_text_ratio = self._calc_iou_ratio(image_ver_mask_warped_text, image_ref_mask_text)
-        iou_text_graph_ration = self._calc_iou_ratio(image_ver_mask_warped_text, image_ref_mask_graph)
+        evaluation_result = {}
 
-        image_ver_mask_warped_word = cv.warpPerspective(detection.image_word_masks, homo_mat, (w, h))
-        iou_word_text_ratio = self._calc_iou_ratio(image_ver_mask_warped_word, image_ref_mask_text)
-        iou_word_graph_ratio = self._calc_iou_ratio(image_ver_mask_warped_word, image_ref_mask_graph)
+        for blob, result in detection.results.items():
+            image_mask, regions = result
+            image_mask_warped = cv.warpPerspective(image_mask, homo_mat, dst_size)
 
-        evaluation_result = {
-            'amount_ver_regions_text': len(detection.text_regions),
-            'iou_text_text_ratio': iou_text_text_ratio,
-            'iou_text_graph_ration': iou_text_graph_ration,
+            text_ratio = self._calc_iou_ratio(image_mask_warped, image_ref_mask_text)
+            # graph_ratio = self._calc_iou_ratio(image_mask_warped, image_ref_mask_graph)
 
-            'amount_ver_regions_word': len(detection.word_regions),
-            'iou_word_text_ratio': iou_word_text_ratio,
-            'iou_word_graph_ratio': iou_word_graph_ratio,
-        }
+            evaluation_result[f'{blob}_text_ratio'] = text_ratio
+            # evaluation_result[f'{blob}_graph_ratio'] = graph_ratio
+            evaluation_result[f'{blob}_regions_amount'] = len(regions)
 
         return evaluation_result
 
@@ -75,4 +71,4 @@ class Evaluator:
         area_union = cv.countNonZero(image_union)
 
         tp_ratio = area_overlap / area_union
-        return tp_ratio
+        return abs(1 - tp_ratio)

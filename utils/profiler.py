@@ -1,8 +1,12 @@
 import time
+import logging
 from typing import Dict, NoReturn
 
 import utils
 import textdetector.config as config
+
+
+logger = logging.getLogger()
 
 
 class _Profiler(metaclass=utils.Singleton):
@@ -16,7 +20,7 @@ class _Profiler(metaclass=utils.Singleton):
 
     def add_timestamp(self, message: str) -> NoReturn:
         if config.profile:
-            utils.logger.debug(f"{message} --- {(time.time() - self._timestamp)} sec ---")
+            logger.debug(f"{message} --- {(time.time() - self._timestamp)} sec ---")
 
         entry_text = message.lower().replace(' ', '_')
         self._dict_results[entry_text] = self._timestamp

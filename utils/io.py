@@ -46,7 +46,7 @@ def show_image_as_window(image: np.ndarray, title: str = "") -> NoReturn:
     cv.destroyWindow(title)
 
 
-def get_logger(name: str, level) -> logging.Logger:
+def setup_logger(name: str, level: int):
     log = logging.Logger(name)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logging.basicConfig(level=level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -55,8 +55,6 @@ def get_logger(name: str, level) -> logging.Logger:
     ch.setLevel(level)
     ch.setFormatter(formatter)
     log.addHandler(ch)
-
-    return log
 
 
 def combine_images(images: List[np.ndarray]) -> Union[np.ndarray, None]:
