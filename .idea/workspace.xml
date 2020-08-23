@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/run.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/statistics.py" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -248,7 +245,7 @@
       <workItem from="1597224327849" duration="10509000" />
       <workItem from="1597237974254" duration="2963000" />
       <workItem from="1597309455463" duration="4731000" />
-      <workItem from="1598165110648" duration="15360000" />
+      <workItem from="1598165110648" duration="16132000" />
     </task>
     <task id="LOCAL-00001" summary="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment">
       <created>1594663231122</created>
