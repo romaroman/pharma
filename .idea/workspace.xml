@@ -2,13 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/utils/profiler.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/detector.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/file_info.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/file_info.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/profiler.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/textdetector/evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/evaluator.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/run.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/profiler.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/profiler.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,17 +46,17 @@
     <property name="settings.editor.selected.configurable" value="watcher.settings" />
   </component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\models\simclr_unige" />
+      <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\models\simclr_google" />
+      <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\models" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\utils" />
       <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\python" />
       <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\python\src\text_detection" />
       <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\python\src" />
       <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\python\src\utils" />
-    </key>
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\models\simclr_unige" />
-      <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\models\simclr_google" />
-      <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\models" />
     </key>
   </component>
   <component name="RunManager" selected="Python.run">
@@ -149,6 +148,28 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="logger" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="pharmapack-recognition" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/utils/logger.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="run" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="pharmapack-recognition" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -176,10 +197,12 @@
       <item itemvalue="Python.detector" />
       <item itemvalue="Python.args" />
       <item itemvalue="Python.evaluator" />
+      <item itemvalue="Python.logger" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.run" />
+        <item itemvalue="Python.logger" />
         <item itemvalue="Python.evaluator" />
         <item itemvalue="Python.args" />
         <item itemvalue="Python.detector" />
@@ -226,6 +249,8 @@
       <workItem from="1597140102548" duration="30016000" />
       <workItem from="1597224327849" duration="10509000" />
       <workItem from="1597237974254" duration="2963000" />
+      <workItem from="1597309455463" duration="4731000" />
+      <workItem from="1598165110648" duration="1525000" />
     </task>
     <task id="LOCAL-00001" summary="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment">
       <created>1594663231122</created>
@@ -331,28 +356,28 @@
       <screen x="28" y="0" width="1338" height="768" />
     </state>
     <state width="1338" height="710" key="GridCell.Tab.-1.right/28.0.1338.768@28.0.1338.768" timestamp="1590668019668" />
-    <state width="1921" height="994" key="GridCell.Tab.0.bottom" timestamp="1597262715049">
+    <state width="1921" height="994" key="GridCell.Tab.0.bottom" timestamp="1598166498339">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597262715049" />
+    <state width="1921" height="994" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598166498339" />
     <state width="1921" height="994" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
     <state width="1338" height="710" key="GridCell.Tab.0.bottom/28.0.1338.768@28.0.1338.768" timestamp="1590668176349" />
-    <state width="1921" height="994" key="GridCell.Tab.0.center" timestamp="1597262715049">
+    <state width="1921" height="994" key="GridCell.Tab.0.center" timestamp="1598166498338">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597262715049" />
+    <state width="1921" height="994" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598166498338" />
     <state width="1921" height="994" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
     <state width="1338" height="710" key="GridCell.Tab.0.center/28.0.1338.768@28.0.1338.768" timestamp="1590668176348" />
-    <state width="1921" height="994" key="GridCell.Tab.0.left" timestamp="1597262715048">
+    <state width="1921" height="994" key="GridCell.Tab.0.left" timestamp="1598166498338">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597262715048" />
+    <state width="1921" height="994" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598166498338" />
     <state width="1921" height="994" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
     <state width="1338" height="710" key="GridCell.Tab.0.left/28.0.1338.768@28.0.1338.768" timestamp="1590668176348" />
-    <state width="1921" height="994" key="GridCell.Tab.0.right" timestamp="1597262715049">
+    <state width="1921" height="994" key="GridCell.Tab.0.right" timestamp="1598166498338">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597262715049" />
+    <state width="1921" height="994" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598166498338" />
     <state width="1921" height="994" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
     <state width="1338" height="710" key="GridCell.Tab.0.right/28.0.1338.768@28.0.1338.768" timestamp="1590668176348" />
     <state x="461" y="169" key="SettingsEditor" timestamp="1597169089262">
@@ -375,10 +400,10 @@
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="667" y="258" width="585" height="534" key="find.popup/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597232425338" />
-    <state x="623" y="227" width="672" height="678" key="search.everywhere.popup" timestamp="1597240971859">
+    <state x="623" y="227" width="672" height="678" key="search.everywhere.popup" timestamp="1597311932086">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state x="623" y="227" width="672" height="678" key="search.everywhere.popup/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597240971859" />
+    <state x="623" y="227" width="672" height="678" key="search.everywhere.popup/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597311932086" />
     <state x="462" y="166" width="672" height="496" key="search.everywhere.popup/28.0.1338.768@28.0.1338.768" timestamp="1590668044506" />
   </component>
   <component name="XDebuggerManager">
@@ -406,8 +431,8 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/textdetector/run.py</url>
-          <line>40</line>
-          <option name="timeStamp" value="160" />
+          <line>54</line>
+          <option name="timeStamp" value="163" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -423,9 +448,10 @@
     <SUITE FILE_PATH="coverage/pharmapack_recognition$annotation.coverage" NAME="annotation Coverage Results" MODIFIED="1594651872629" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/annotations" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$detect.coverage" NAME="detect Coverage Results" MODIFIED="1597141858900" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/text_detection" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$run__1_.coverage" NAME="run (1) Coverage Results" MODIFIED="1597173443795" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/text_detection" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$logger.coverage" NAME="logger Coverage Results" MODIFIED="1597312113408" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$edges.coverage" NAME="edges Coverage Results" MODIFIED="1592420665567" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/text_detection" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$args.coverage" NAME="args Coverage Results" MODIFIED="1597225340611" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/pharmapack_recognition$run.coverage" NAME="run Coverage Results" MODIFIED="1597241104478" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$run.coverage" NAME="run Coverage Results" MODIFIED="1598166498308" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$evaluator.coverage" NAME="evaluator Coverage Results" MODIFIED="1597233779906" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$scratch_1.coverage" NAME="scratch_1 Coverage Results" MODIFIED="1597166799467" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/scratches" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$get_text_region.coverage" NAME="get_text_region Coverage Results" MODIFIED="1589383348662" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/matlab-integration" />

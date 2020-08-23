@@ -1,7 +1,4 @@
-import time
-import logging
-
-from typing import List, NoReturn, Dict
+from typing import List, NoReturn, Dict, Tuple
 
 import cv2 as cv
 import numpy as np
@@ -9,8 +6,6 @@ import numpy as np
 import utils
 import textdetector.config as config
 from textdetector.morph import Morph
-
-logger = utils.get_logger(__name__, logging.DEBUG)
 
 
 class Detector:
@@ -60,7 +55,7 @@ class Detector:
         if self.is_mask_partial:
             self._apply_mask()
 
-        self.image_edges = Morph.extract_edges(self.image_std_filtered, self.image_bw, post_morph=True)
+        self.image_edges = self._extract_edges()
         utils.profiler.add_timestamp('EDGES EXTRACTION')
 
         self.image_cleared_borders = utils.clear_borders(self.image_edges)
@@ -76,13 +71,17 @@ class Detector:
 
         # self.image_lines_morphed = self._process_lines()
 
-        self._find_text_regions()
-        self._draw_text_regions_and_mask()
-        self._detect_words()
-        self._find_word_regions()
-        utils.profiler.add_timestamp('WORD AND TEXT DETECTION')
+        self.text_regions, self.image_text_labeled = self._find_text_regions(self.image_text_linearly_morphed)
+        self.image_text_regions, self.image_text_masks = self._draw_text_regions_and_mask(self.text_regions)
 
-        self._draw_word_regions_and_mask()
+        self._detect_words()
+
+        self.word_regions, self.image_word_labeled = self._find_text_regions(self.image_word_linearly_morphed)
+        self.image_word_regions, self.image_word_masks = self._draw_text_regions_and_mask(self.word_regions)
+
+        self.image_MSER_bw, image_text_only, image_visualization = utils.MSER(self.image_gray)
+        self.MSER_regions, self.image_MSER_labeled = self._find_text_regions(self.image_MSER_bw)
+        self.image_MSER_regions, self.image_MSER_masks = self._draw_text_regions_and_mask(self.MSER_regions)
 
         if config.visualize:
             self._create_visualization()
@@ -132,25 +131,19 @@ class Detector:
 
         return self.image_lines_morphed
 
-    def _find_text_regions(self) -> NoReturn:
-        _, self.image_text_labeled = cv.connectedComponents(self.image_text_linearly_morphed)
+    def _find_text_regions(self, image_bw: np.ndarray) -> Tuple[List['TextRegion'], np.ndarray]:
+        _, image_text_labeled = cv.connectedComponents(image_bw)
+        text_regions = []
 
-        for k in range(1, self.image_text_labeled.max() + 1):
-            image_blob = (self.image_text_labeled == k).astype(np.uint8) * 255
+        for k in range(1, image_text_labeled.max() + 1):
+            image_blob = (image_text_labeled == k).astype(np.uint8) * 255
 
             text_region = TextRegion(self, image_blob)
-            self.text_regions.append(text_region)
 
-    def _find_word_regions(self) -> NoReturn:
-        _, self.image_word_labeled = cv.connectedComponents(self.image_word_linearly_morphed)
+            if text_region.contour_area > 400:
+                text_regions.append(text_region)
 
-        for k in range(1, self.image_word_labeled.max() + 1):
-            image_blob = (self.image_word_labeled == k).astype(np.uint8) * 255
-
-            word_region = TextRegion(self, image_blob)
-
-            if word_region.contour_area > 400:
-                self.word_regions.append(word_region)
+        return text_regions, image_text_labeled
 
     def _detect_words(self) -> NoReturn:
         for text_region in self.text_regions:
@@ -193,15 +186,20 @@ class Detector:
             self.image_word_linearly_morphed[y:y + h, x:x + w] = \
                 cv.bitwise_xor(morphed, self.image_word_linearly_morphed[y:y + h, x:x + w])
 
-    def _draw_text_regions_and_mask(self, color: int = 255) -> NoReturn:
-        for text_region in self.text_regions:
-            cv.drawContours(self.image_text_regions, [text_region.coordinates], -1, (color, 0, 0), 2)
-            cv.drawContours(self.image_text_masks, [text_region.coordinates], -1, 255, -1)
+    def _draw_text_regions_and_mask(
+            self,
+            text_regions: List['TextRegion'],
+            color: int = 255
+    ) -> Tuple[np.ndarray, np.ndarray]:
 
-    def _draw_word_regions_and_mask(self, color: int = 255) -> NoReturn:
-        for word_region in self.word_regions:
-            cv.drawContours(self.image_word_regions, [word_region.coordinates], -1, (color, 0, 0), 2)
-            cv.drawContours(self.image_word_masks, [word_region.coordinates], -1, 255, -1)
+        image_text_regions = np.copy(self.image_orig)
+        image_text_masks = np.zeros_like(self.image_gray)
+
+        for text_region in text_regions:
+            cv.drawContours(image_text_regions, [text_region.coordinates], -1, (color, 0, 0), 2)
+            cv.drawContours(image_text_masks, [text_region.coordinates], -1, 255, -1)
+
+        return image_text_regions, image_text_masks
 
     def _create_visualization(self) -> NoReturn:
 
@@ -215,10 +213,12 @@ class Detector:
             add_text(utils.to_rgb(self.image_cleared_borders), "clear borders"),
             add_text(utils.to_rgb(self.image_filled), "filled"),
             add_text(utils.to_rgb(self.image_filtered), "filtered blobs"),
+
             add_text(utils.to_rgb(self.image_text_linearly_morphed), "morphed text"),
             add_text(utils.to_rgb(self.image_text_labeled * int(255 / self.image_text_labeled.max())), "labeled text"),
             add_text(utils.to_rgb(self.image_text_masks), "text masks"),
             add_text(self.image_text_regions, "text regions"),
+
             add_text(utils.to_rgb(self.image_word_linearly_morphed), "morphed words"),
             add_text(utils.to_rgb(self.image_word_labeled * int(255 / self.image_word_labeled.max())), "labeled words"),
             add_text(utils.to_rgb(self.image_word_masks), "word masks"),
@@ -226,6 +226,16 @@ class Detector:
         ]
 
         self.image_visualization = utils.combine_images(image_list)
+
+    def _extract_edges(self):
+        image_hsv = cv.cvtColor(self.image_orig, cv.COLOR_BGR2HSV)
+
+        _, image_channel_s, image_channel_v = cv.split(image_hsv)
+
+        image_edges_s = Morph.extract_edges(image_channel_s, self.image_bw, post_morph=True)
+        image_edges_v = Morph.extract_edges(image_channel_v, self.image_bw, post_morph=True)
+
+        return cv.bitwise_and(image_edges_s, image_edges_v)
 
 
 class TextRegion:

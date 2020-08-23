@@ -1,7 +1,5 @@
-import os
-import glob
-import random
 import sys
+import glob
 
 from typing import NoReturn, List, Union
 
@@ -14,9 +12,6 @@ from textdetector.evaluator import Evaluator
 from textdetector.writer import Writer
 
 import utils
-
-
-logger = utils.get_logger(__name__, config.logging_level)
 
 
 class Run:
@@ -51,7 +46,7 @@ class Run:
                 writer.save_single_detection(detection, file_info.filename)
 
             writer.update_dataframe()
-            logger.debug(f"Successfully processed {file_info.filename}")
+            utils.logger.debug(f"Successfully processed {file_info.filename}")
 
         writer.save_dataframe()
 

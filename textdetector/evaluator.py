@@ -16,9 +16,6 @@ from textdetector.file_info import FileInfo
 import utils
 
 
-logger = utils.get_logger(__name__, config.logging_level)
-
-
 class Evaluator:
 
     def __init__(self) -> NoReturn:
@@ -28,7 +25,7 @@ class Evaluator:
         try:
             annotation = Annotation.load_annotation_by_pattern(config.root_folder, file_info.get_annotation_pattern())
         except FileNotFoundError:
-            logger.warning(f"Not found an annotation for {file_info.filename}")
+            utils.logger.warning(f"Not found an annotation for {file_info.filename}")
             return {}
 
         image_reference = annotation.load_reference_image(config.root_folder / "references")
