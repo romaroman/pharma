@@ -2,7 +2,7 @@ import re
 import pathlib
 
 from collections import OrderedDict
-from typing import NoReturn, Union, Dict, List, OrderedDict as OrderedDictT
+from typing import NoReturn, Union, Dict, List
 from enum import Enum
 from abc import ABC, abstractmethod
 
@@ -80,7 +80,7 @@ class FileInfoEnrollment(FileInfo):
     def get_annotation_pattern(self) -> re.Pattern:
         return re.compile(f"PFP_Ph1_P{str(self.package_class).zfill(4)}_D01_S001_C._az360_side1")
 
-    def to_dict(self) -> OrderedDictT[str, int]:
+    def to_dict(self) -> Dict[str, int]:
         return OrderedDict(super(FileInfoEnrollment, self).to_dict(), **{'angle': self.angle, 'side': self.side})
 
     def to_list(self) -> List[Union[str, int]]:
@@ -103,7 +103,7 @@ class FileInfoRecognition(FileInfo):
     def get_annotation_pattern(self) -> re.Pattern:
         raise NotImplemented
 
-    def to_dict(self) -> OrderedDictT[str, int]:
+    def to_dict(self) -> Dict[str, int]:
         return OrderedDict(super(FileInfoRecognition, self).to_dict(), **{'RS': self.RS})
 
     def to_list(self) -> List[Union[str, int]]:

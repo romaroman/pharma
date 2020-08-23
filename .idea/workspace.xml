@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/textdetector/evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/evaluator.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -245,7 +247,7 @@
       <workItem from="1597224327849" duration="10509000" />
       <workItem from="1597237974254" duration="2963000" />
       <workItem from="1597309455463" duration="4731000" />
-      <workItem from="1598165110648" duration="16132000" />
+      <workItem from="1598165110648" duration="16573000" />
     </task>
     <task id="LOCAL-00001" summary="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment">
       <created>1594663231122</created>
@@ -277,10 +279,10 @@
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="1041" y="166" key="#args/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590395690819" />
-    <state x="414" y="179" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1597233170937">
+    <state x="414" y="179" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1598205078071">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state x="414" y="179" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597233170937" />
+    <state x="414" y="179" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598205078071" />
     <state x="295" y="83" key="#com.intellij.execution.impl.EditConfigurationsDialog/28.0.1338.768@28.0.1338.768" timestamp="1590662333255" />
     <state x="707" y="326" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1594738830246">
       <screen x="0" y="0" width="1920" height="1050" />

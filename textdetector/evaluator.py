@@ -51,13 +51,10 @@ class Evaluator:
 
         for blob, result in detection.results.items():
             image_mask, regions = result
+
             image_mask_warped = cv.warpPerspective(image_mask, homo_mat, dst_size)
+            evaluation_result[f'{blob}_text_ratio'] = self._calc_iou_ratio(image_mask_warped, image_ref_mask_text)
 
-            text_ratio = self._calc_iou_ratio(image_mask_warped, image_ref_mask_text)
-            # graph_ratio = self._calc_iou_ratio(image_mask_warped, image_ref_mask_graph)
-
-            evaluation_result[f'{blob}_text_ratio'] = text_ratio
-            # evaluation_result[f'{blob}_graph_ratio'] = graph_ratio
             evaluation_result[f'{blob}_regions_amount'] = len(regions)
 
         return evaluation_result
