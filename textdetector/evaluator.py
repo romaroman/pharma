@@ -22,11 +22,7 @@ class Evaluator:
         self.df_result: pd.Pandas = pd.DataFrame()
 
     def evaluate(self, detection: Detector, file_info: FileInfo) -> Dict[str, float]:
-        try:
-            annotation = Annotation.load_annotation_by_pattern(config.root_folder, file_info.get_annotation_pattern())
-        except FileNotFoundError:
-            logger.warning(f"Not found an annotation for {file_info.filename}")
-            return {}
+        annotation = Annotation.load_annotation_by_pattern(config.root_folder, file_info.get_annotation_pattern())
 
         image_reference = annotation.load_reference_image(config.root_folder / "references")
 

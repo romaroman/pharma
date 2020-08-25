@@ -2,7 +2,7 @@ import re
 import pathlib
 
 from collections import OrderedDict
-from typing import NoReturn, Union, Dict, List
+from typing import NoReturn, Union, Dict, List, Pattern
 from enum import Enum
 from abc import ABC, abstractmethod
 
@@ -37,7 +37,7 @@ class FileInfo(ABC):
         self.size = self._extract_numerical_info('size')
 
     @abstractmethod
-    def get_annotation_pattern(self) -> re.Pattern:
+    def get_annotation_pattern(self) -> Pattern:
         pass
 
     def to_dict(self) -> Dict[str, int]:
@@ -77,8 +77,8 @@ class FileInfoEnrollment(FileInfo):
         self.angle = self._extract_numerical_info('angle')
         self.side = self._extract_numerical_info('side')
 
-    def get_annotation_pattern(self) -> re.Pattern:
-        return re.compile(f"PFP_Ph1_P{str(self.package_class).zfill(4)}_D01_S001_C._az360_side1")
+    def get_annotation_pattern(self) -> Pattern:
+        return re.compile(f"PFP_Ph._P{str(self.package_class).zfill(4)}_D0._S00._C._az..._side.")
 
     def to_dict(self) -> Dict[str, int]:
         return OrderedDict(super(FileInfoEnrollment, self).to_dict(), **{'angle': self.angle, 'side': self.side})
@@ -100,7 +100,7 @@ class FileInfoRecognition(FileInfo):
         super().__init__(filename)
         self.RS = self._extract_numerical_info('RS')
 
-    def get_annotation_pattern(self) -> re.Pattern:
+    def get_annotation_pattern(self) -> Pattern:
         raise NotImplemented
 
     def to_dict(self) -> Dict[str, int]:

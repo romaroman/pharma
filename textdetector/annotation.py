@@ -1,12 +1,11 @@
 import math
-import re
 import glob
 
 from abc import ABC
 from enum import Enum
 from pathlib import Path
 import xml.etree.ElementTree as ET
-from typing import List, Tuple, NoReturn, Union
+from typing import List, Tuple, NoReturn, Union, Pattern
 
 import cv2 as cv
 import numpy as np
@@ -20,7 +19,7 @@ class AnnotationLabel(Enum):
     Number = (0, 255, 255),
     Watermark = (0, 0, 255),
     Image = (255, 0, 0),
-    Barcode = (255, 255, 0),
+    Barcode = (255, 255, 0)
 
 
 class BoundingRectangleABC(ABC):
@@ -100,14 +99,14 @@ class BoundingRectangleRotated(BoundingRectangleABC):
 
         robndbox = rectangle.find('robndbox')
 
-        self.cx = float(robndbox.find('cx').text)
-        self.cy = float(robndbox.find('cy').text)
-        self.width = float(robndbox.find('w').text)
-        self.height = float(robndbox.find('h').text)
+        self.cx: float = float(robndbox.find('cx').text)
+        self.cy: float = float(robndbox.find('cy').text)
+        self.width: float = float(robndbox.find('w').text)
+        self.height: float = float(robndbox.find('h').text)
 
-        self.angle = float(robndbox.find("angle").text)
+        self.angle: float = float(robndbox.find("angle").text)
 
-        self.points = self._get_points()
+        self.points: np.ndarray = self._get_points()
 
     def _get_points(self) -> np.ndarray:
         def rotate_point(xc: float, yc: float, xp: float, yp: float, theta: float) -> Tuple[float, float]:
@@ -159,17 +158,9 @@ class BoundingRectangleRotated(BoundingRectangleABC):
     def get_area(self) -> float:
         return cv.contourArea(self.points)
 
-    def _draw_not_filled(
-            self,
-            image: np.ndarray,
-            color: Union[Tuple[int, int, int], None] = None
-    ) -> np.ndarray:
+    def _draw_not_filled(self, image: np.ndarray, color: Union[Tuple[int, int, int], None] = None) -> np.ndarray:
 
-        def draw_line(
-                image: np.ndarray,
-                point1: np.ndarray,
-                point2: np.ndarray
-        ) -> np.ndarray:
+        def draw_line(image: np.ndarray, point1: np.ndarray, point2: np.ndarray) -> np.ndarray:
             point1_tuple = utils.to_tuple(point1)
             point2_tuple = utils.to_tuple(point2)
 
@@ -191,9 +182,9 @@ class BoundingRectangleRotated(BoundingRectangleABC):
 class Annotation:
 
     def __init__(self, path_xml: str) -> NoReturn:
-        self.root = ET.parse(path_xml).getroot()
-        self.filename = self.root.find('filename').text
-        self.size = self._get_size()
+        self.root: ET.Element = ET.parse(path_xml).getroot()
+        self.filename: str = self.root.find('filename').text
+        self.size: Tuple[int, int, int] = self._get_size()
 
         self.image_mask: Union[np.ndarray, None] = None
 
@@ -222,9 +213,7 @@ class Annotation:
 
         return bounding_rectangles, bounding_rectangles_rotated
 
-    def create_mask(
-            self,
-    ) -> np.ndarray:
+    def create_mask(self) -> np.ndarray:
         self.image_mask = np.zeros(self.size, dtype=np.uint8)
 
         for bounding_rectangle in self.bounding_rectangles:
@@ -273,29 +262,22 @@ class Annotation:
         return amount
 
     def get_list_of_labels_amount(self) -> NoReturn:
-        result = []
-
-        for label in AnnotationLabel:
-            result.append(self.get_amount_of_regions_by_labels([label]))
-
-        return result
+        return [self.get_amount_of_regions_by_labels([label]) for label in AnnotationLabel]
 
     def get_dict_of_labels_amount(self) -> NoReturn:
-        result = {}
+        result = dict()
 
-        total = 0
+        result['total'] = 0
         for label in AnnotationLabel:
             current_amount = self.get_amount_of_regions_by_labels([label])
 
             result[label] = current_amount
-            total += current_amount
-
-        result['total'] = total
+            result['total'] += current_amount
 
         return result
 
     @staticmethod
-    def load_annotation_by_pattern(root_folder: Path, pattern: re.Pattern) -> 'Annotation':
+    def load_annotation_by_pattern(root_folder: Path, pattern: Pattern) -> 'Annotation':
         src_folder = root_folder / "annotations"
 
         for annotation_file in glob.glob(str(src_folder / "*.xml")):

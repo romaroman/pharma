@@ -39,35 +39,20 @@ class Detector:
         if self.is_mask_partial:
             self._apply_mask()
 
-        # self.image_edges = self._extract_edges(hsv=True)
-        # image_morphed = self._apply_all_morphology_operations()
-        #
-        # self._save_result('hsv_text_it1', image_morphed)
-        # self._save_result('hsv_text_it2', self._detect_words(self.results['hsv_text_it1'][1]))
-        #
-        # image_lines_v = self._process_lines(Morph.apply_rectangular_segmentation(self.image_filtered, 0))
-        # image_lines_h = self._process_lines(Morph.apply_rectangular_segmentation(self.image_filtered, 1))
-        #
-        # self._save_result('hsv_lines_v', image_lines_v)
-        # self._save_result('hsv_lines_h', image_lines_h)
-        #
-        # image_MSER_bw = self._get_MSER_mask()
-        # self._save_result('hsv_MSER', image_MSER_bw)
-
-        self.image_edges = self._extract_edges(hsv=False)
+        self.image_edges = Morph.extract_edges(self.image_std_filtered, self.image_bw, post_morph=True)
         image_morphed = self._apply_all_morphology_operations()
 
-        self._save_result('rgb_text_it1', image_morphed)
-        self._save_result('rgb_text_it2', self._detect_words(self.results['rgb_text_it1'][1]))
+        self._save_result('text_it1', image_morphed)
+        self._save_result('text_it2', self._detect_words(self.results['text_it1'][1]))
 
         image_lines_v = self._process_lines(Morph.apply_rectangular_segmentation(self.image_filtered, 0))
         image_lines_h = self._process_lines(Morph.apply_rectangular_segmentation(self.image_filtered, 1))
 
-        self._save_result('rgb_lines_v', image_lines_v)
-        self._save_result('rgb_lines_h', image_lines_h)
+        self._save_result('lines_v', image_lines_v)
+        self._save_result('lines_h', image_lines_h)
 
         image_MSER_bw = self._get_MSER_mask()
-        self._save_result('rgb_MSER', image_MSER_bw)
+        self._save_result('MSER', image_MSER_bw)
 
         if config.visualize:
             self._create_visualization()
@@ -214,18 +199,6 @@ class Detector:
 
         self.image_visualization = utils.combine_images(images)
 
-    def _extract_edges(self, hsv: bool) -> np.ndarray:
-        if hsv:
-            image_hsv = cv.cvtColor(self.image_orig, cv.COLOR_BGR2HSV)
-            _, image_channel_s, image_channel_v = cv.split(image_hsv)
-
-            image_edges_s = Morph.extract_edges(image_channel_s, self.image_bw, post_morph=False)
-            image_edges_v = Morph.extract_edges(image_channel_v, self.image_bw, post_morph=False)
-
-            return cv.bitwise_and(image_edges_s, image_edges_v)
-        else:
-            return Morph.extract_edges(self.image_std_filtered, self.image_bw, post_morph=True)
-
     def _get_MSER_mask(self) -> np.ndarray:
         image_hsv = cv.cvtColor(self.image_orig, cv.COLOR_BGR2HSV)
         _, image_channel_s, image_channel_v = cv.split(image_hsv)
@@ -287,3 +260,17 @@ class Region:
             return cv.copyTo(image, self.image_blob)[y:y + h, x:x + w, :]
         elif len(image.shape) == 2:
             return cv.copyTo(image, self.image_blob)[y:y + h, x:x + w]
+
+    def coordinates_to_dict(self) -> Dict[str, int]:
+        coords_ravel = np.transpose(self.coordinates).ravel()
+
+        return {
+            'x1': coords_ravel[0],
+            'y1': coords_ravel[1],
+            'x2': coords_ravel[2],
+            'y2': coords_ravel[3],
+            'x3': coords_ravel[4],
+            'y3': coords_ravel[5],
+            'x4': coords_ravel[6],
+            'y4': coords_ravel[7],
+        }

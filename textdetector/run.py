@@ -9,6 +9,7 @@ import cv2 as cv
 
 import textdetector.config as config
 from textdetector.detector import Detector
+from textdetector.referencer import Referencer
 from textdetector.file_info import get_file_info
 from textdetector.evaluator import Evaluator
 from textdetector.writer import Writer
@@ -36,35 +37,45 @@ class Run:
 
         for index, image_path in enumerate(self.image_paths, start=1):
             index_b = str(index).zfill(6)
-            try:
-                file_info = get_file_info(image_path, config.database)
 
-                image_orig = cv.imread(image_path)
+            file_info = get_file_info(image_path, config.database)
+            image_orig = cv.imread(image_path)
+            # detection = Detector(image_orig)
+            #
+            # writer.add_dict_result({'filename': file_info.filename})
+            #
+            # detection.detect_text_regions()
 
-                detection = Detector(image_orig)
-                detection.detect_text_regions()
+            if config.extract_reference:
+                referencer = Referencer(image_orig, file_info)
+                referencer.extract_reference_regions()
 
-                writer.add_dict_result({'filename': file_info.filename})
-
-                if config.evaluate:
-                    evaluation_result = self.evaluator.evaluate(detection, file_info)
-                    writer.add_dict_result(evaluation_result)
-
-                if config.profile:
-                    writer.add_dict_result(utils.profiler.get_results())
-
-                if config.write:
-                    writer.save_single_detection(detection, file_info.filename)
-
-                writer.update_dataframe()
-                if index % 10 == 0:
-                    writer.save_dataframe()
-
-                logger.info(f'#{index_b} PROCESSED {image_path}')
-            except:
-                logger.error(f'#{index_b} FAILED {image_path}')
-
-        writer.save_dataframe()
+    #         if config.evaluate:
+    #             evaluation_result = self.evaluator.evaluate(detection, file_info)
+    #             writer.add_dict_result(evaluation_result)
+    #
+    #         if config.profile:
+    #             writer.add_dict_result(utils.profiler.get_results())
+    #
+    #         if config.write:
+    #             writer.save_single_detection(detection, file_info.filename)
+    #
+    #         writer.update_dataframe()
+    #         if index % 10 == 0:
+    #             writer.save_dataframe()
+    #
+    #         logger.info(f'#{index_b} PROCESSED {image_path}')
+    #
+        #     except FileNotFoundError as e:
+        #         logger.warning(f"#{index_b} FAILED Not found an annotation for {file_info.filename}")
+        #     except Exception as e:
+        #         logger.error(f'#{index_b} FAILED {image_path}, error: {e}')
+        #     finally:
+        #         if e:
+        #             writer.clear_current_results()
+        #             writer.add_failed_file(image_path, e.strerror)
+        #
+        # writer.save_dataframe()
 
     def _load_images(self):
         self.image_paths = glob.glob(str(config.root_folder / "cropped/*.png"))

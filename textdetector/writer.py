@@ -15,7 +15,9 @@ class Writer:
 
     def __init__(self):
         self._df_result: pd.DataFrame = pd.DataFrame()
+
         self._dicts_result: List[Dict[str, Union[int, float]]] = []
+        self._failed_files: Dict[str, str] = {}
 
         self._output_folder = config.root_folder / "output_python"
 
@@ -28,15 +30,21 @@ class Writer:
         for dict_result in self._dicts_result:
             dict_combined.update(dict_result)
 
-        self._dicts_result = []
+        self.clear_current_results()
 
         self._df_result = self._df_result.append(pd.Series(dict_combined), ignore_index=True)
 
     def add_dict_result(self, dict_result: Dict[str, Union[int, float]]) -> NoReturn:
         self._dicts_result.append(dict_result)
 
+    def add_failed_file(self, file: str, error: str) -> NoReturn:
+        self._failed_files[file] = error
+
     def save_dataframe(self):
         self._df_result.to_csv(self._output_folder / "result.csv", index=False)
+
+    def clear_current_results(self):
+        self._dicts_result = []
 
     def save_single_detection(self, detection: Detector, filename: str) -> NoReturn:
 
@@ -73,3 +81,11 @@ class Writer:
 
         if config.visualize:
             write_entity(detection.image_visualization, "visualizations", "png")
+
+
+class DetectionJSON:
+
+    class RegionJSON:
+
+        def __init__(self):
+
