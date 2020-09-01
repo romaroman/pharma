@@ -22,16 +22,16 @@ class Evaluator:
         self.df_result: pd.Pandas = pd.DataFrame()
         self.dict_result: Dict[str, float] = dict()
 
-    def evaluate(self, detection: Detector, annotation: Annotation) -> Dict[str, float]:
+    def evaluate(self, detection: Detector, annotation: Annotation) -> NoReturn:
         image_reference = annotation.load_reference_image(config.root_folder / "references")
 
-        image_ref_mask_text = annotation.get_mask_by_labels([
-            AnnotationLabel.Text, AnnotationLabel.Number
-        ])
+        image_ref_mask_text = utils.to_gray(annotation.create_mask_by_labels(
+            labels=[AnnotationLabel.Text, AnnotationLabel.Number]
+        ))
 
         image_verification = detection.image_orig
 
-        homo_mat = utils.find_homography(
+        homo_mat = utils.find_homography_matrix(
             utils.to_gray(image_verification),
             utils.to_gray(image_reference)
         )
@@ -49,6 +49,7 @@ class Evaluator:
 
             self.dict_result[f'{algorithm}_regions_amount'] = len(regions)
 
+    def to_dict(self) -> Dict[str, float]:
         return self.dict_result
 
     @classmethod

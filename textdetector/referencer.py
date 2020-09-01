@@ -3,16 +3,16 @@ from typing import NoReturn, Dict, List, Union, Tuple
 
 import cv2 as cv
 import numpy as np
-import pandas as pd
 
 import textdetector.config as config
-from textdetector.annotation import Annotation, AnnotationLabel, BoundingRectangleABC, BoundingRectangle, \
-    BoundingRectangleRotated
+from textdetector.annotation import Annotation, BoundingRectangle, BoundingRectangleRotated
 from textdetector.detector import Detector
 from textdetector.file_info import FileInfo
 
 import utils
 
+
+logger = logging.getLogger('referencer')
 
 class Referencer:
 
@@ -25,10 +25,10 @@ class Referencer:
 
         self.image_ref: np.ndarray = self.annotation.load_reference_image(config.root_folder / "references")
 
-    def extract_reference_regions(self):
+    def extract_reference_regions(self) -> NoReturn:
 
-        if len(self.annotation.bounding_rectangles_rotated) == 0:
-            print(f'ommited {self.file_info.filename}')
+        if self.annotation.is_empty():
+            logger.warning(f'Omitting {self.file_info.filename} because annotation contains 0 regions')
             return
 
         def extract_reference_region(
@@ -48,25 +48,23 @@ class Referencer:
             bx, by, bw, bh = cv.boundingRect(contour)
 
             image_part = image_part_masked[by:by + bh, bx:bx + bw]
-            brect_dst = cv.boxPoints(cv.minAreaRect(contour))
+            points = cv.boxPoints(cv.minAreaRect(contour))
 
-            return image_part, brect_dst
+            return image_part, points
 
-        homo_mat = utils.find_homography(
+        homo_mat = utils.find_homography_matrix(
             utils.to_gray(self.image_ref),
             utils.to_gray(self.image_ver),
         )
 
         image_parts = list()
-        contour_parts = list()
+        points = list()
         for brect in self.annotation.bounding_rectangles:
-            image_part, brect_part = extract_reference_region(brect)
+            image_part, points_part = extract_reference_region(brect)
             image_parts.append(image_part)
-            contour_parts.append(brect_part)
+            points.append(points_part)
 
         for rbrect in self.annotation.bounding_rectangles_rotated:
-            image_part, rbrect_part = extract_reference_region(rbrect)
+            image_part, points_part = extract_reference_region(rbrect)
             image_parts.append(image_part)
-            contour_parts.append(rbrect_part)
-
-        pass
+            points.append(points_part)

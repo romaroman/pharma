@@ -32,7 +32,7 @@ class Run:
             self.evaluator: Evaluator = Evaluator()
 
     def process(self) -> NoReturn:
-        logger.warning(f'Preparing to process {len(self.image_paths)} images...\n\n')
+        logger.info(f'Preparing to process {len(self.image_paths)} images...\n\n')
 
         writer = Writer()
 
@@ -45,7 +45,7 @@ class Run:
             image_orig = cv.imread(image_path)
 
             detection = Detector(image_orig)
-            detection.detect([alg for alg in Algorithm])
+            detection.detect(Algorithm.to_list())
             writer.add_dict_result('detection', detection.to_dict())
 
             if config.extract_reference:
@@ -56,11 +56,11 @@ class Run:
                 annotation = Annotation.load_annotation_by_pattern(config.root_folder, file_info.get_annotation_pattern())
                 writer.add_dict_result('annotation_info', annotation.to_dict())
 
-                evaluation_result = self.evaluator.evaluate(detection, annotation)
-                writer.add_dict_result('evaluation_result', evaluation_result)
+                self.evaluator.evaluate(detection, annotation)
+                writer.add_dict_result('evaluation_result', self.evaluator.to_dict())
 
             if config.profile:
-                writer.add_dict_result('profiling', utils.profiler.get_results())
+                writer.add_dict_result('profiling', utils.profiler.to_dict())
 
             if config.write:
                 writer.save_results(detection, file_info.filename)
@@ -84,6 +84,7 @@ class Run:
 
 def main() -> int:
     utils.setup_logger('textdetector', config.logging_level)
+    utils.supress_warnings()
 
     runner = Run()
     runner.process()
