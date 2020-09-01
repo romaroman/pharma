@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 from pathlib import Path
@@ -16,8 +17,8 @@ class Writer:
     def __init__(self):
         self._df_result: pd.DataFrame = pd.DataFrame()
 
-        self._dicts_result: List[Dict[str, Union[int, float]]] = []
-        self._failed_files: Dict[str, str] = {}
+        self._dicts_result: Dict[str, Dict[str, Union[int, float]]] = dict()
+        self._failed_files: Dict[str, str] = dict()
 
         self._output_folder = config.root_folder / "output_python"
 
@@ -25,17 +26,22 @@ class Writer:
             shutil.rmtree(self._output_folder, ignore_errors=True)
 
     def update_dataframe(self):
-        dict_combined = {}
+        dict_combined = dict()
 
-        for dict_result in self._dicts_result:
+        for key, dict_result in self._dicts_result.items():
             dict_combined.update(dict_result)
 
-        self.clear_current_results()
-
+        self._clear_current_results()
         self._df_result = self._df_result.append(pd.Series(dict_combined), ignore_index=True)
 
-    def add_dict_result(self, dict_result: Dict[str, Union[int, float]]) -> NoReturn:
-        self._dicts_result.append(dict_result)
+        if len(self._df_result.index) % 10:
+            self.save_dataframe()
+
+    def add_dict_result(
+        self, blob: str,
+        dict_result: Union[Dict[str, Union[int, float]], Dict[str, Dict[int, Dict[str, Union[int, float]]]]]
+    ) -> NoReturn:
+        self._dicts_result[blob] = dict_result
 
     def add_failed_file(self, file: str, error: str) -> NoReturn:
         self._failed_files[file] = error
@@ -43,13 +49,13 @@ class Writer:
     def save_dataframe(self):
         self._df_result.to_csv(self._output_folder / "result.csv", index=False)
 
-    def clear_current_results(self):
-        self._dicts_result = []
+    def _clear_current_results(self):
+        self._dicts_result.clear()
 
-    def save_single_detection(self, detection: Detector, filename: str) -> NoReturn:
+    def save_results(self, detection: Detector, filename: str) -> NoReturn:
 
         def write_entity(
-                entity: Union[List[np.ndarray], np.ndarray, int],
+                entity: Union[List[np.ndarray], np.ndarray, int, Dict[str, Dict[str, Union[int, float]]]],
                 folder_suffix: str,
                 extension: str
         ) -> NoReturn:
@@ -63,6 +69,10 @@ class Writer:
             elif extension == "csv":
                 np.savetxt(dst_path, entity, delimiter=",", fmt='%i')
 
+            elif extension == "json":
+                with open(dst_path, 'w+') as file:
+                    json.dump(entity, file, indent=2, sort_keys=True)
+
         def write_image_region(image: np.ndarray, folder_suffix: str, index: int) -> NoReturn:
             dst_folder = self._output_folder / folder_suffix / filename
             os.makedirs(str(dst_folder.resolve()), exist_ok=True)
@@ -70,22 +80,16 @@ class Writer:
 
             cv.imwrite(dst_path, image)
 
-        for blob, result in detection.results.items():
+        for algorithm, result in detection.results.items():
             image_mask, regions = result
 
-            write_entity(detection.get_coordinates_from_regions(regions), f"{blob}/coords", "csv")
-            write_entity(image_mask, f"{blob}/masks", "png")
+            write_entity(detection.get_coordinates_from_regions(regions), f"{algorithm}/coords", "csv")
+            write_entity(image_mask, f"{algorithm}/masks", "png")
 
             for index, region in enumerate(regions, start=1):
-                write_image_region(region.image_orig, f"{blob}/parts", index)
+                write_image_region(region.image_orig, f"{algorithm}/parts", index)
+
+        write_entity(self._dicts_result, "jsons", "json")
 
         if config.visualize:
-            write_entity(detection.image_visualization, "visualizations", "png")
-
-
-class DetectionJSON:
-
-    class RegionJSON:
-
-        def __init__(self):
-
+            write_entity(detection.create_visualization(), "visualizations", "png")
