@@ -9,21 +9,13 @@ from typing import NoReturn, Union, Dict, List, Pattern
 import utils
 
 
-class Phone(Enum):
-
-    def __str__(self) -> str:
-        return str(self.name)
-
+class Phone(utils.CustomEnum):
     Phone1 = auto(),
     Phone2 = auto(),
     Phone3 = auto()
 
 
-class Database(Enum):
-
-    def __str__(self) -> str:
-        return str(self.name)
-
+class Database(utils.CustomEnum):
     Enrollment = auto(),
     PharmaPack_R_I_S1 = auto(),
     PharmaPack_R_I_S2 = auto(),

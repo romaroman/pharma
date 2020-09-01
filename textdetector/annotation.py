@@ -2,7 +2,6 @@ import math
 import glob
 
 from abc import ABC
-from enum import Enum
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from typing import List, Tuple, NoReturn, Union, Pattern, Dict
@@ -14,20 +13,10 @@ import pandas as pd
 import utils
 
 
-class AnnotationLabel(Enum):
+class AnnotationLabel(utils.CustomEnum):
 
-    def __str__(self):
-        return str(self.name)
-
-    @staticmethod
-    def get_from_str(blob: str) -> "AnnotationLabel":
-        return {
-            'text': AnnotationLabel.Text,
-            'number': AnnotationLabel.Number,
-            'watermark': AnnotationLabel.Watermark,
-            'image': AnnotationLabel.Image,
-            'barcode': AnnotationLabel.Barcode,
-        }.get(blob.lower(), AnnotationLabel.Unknown)
+    def get_color(self):
+        return self.value[0]
 
     Text = (255, 0, 255),
     Number = (0, 255, 255),
@@ -40,7 +29,7 @@ class AnnotationLabel(Enum):
 class BoundingRectangleABC(ABC):
 
     def __init__(self, rectangle: ET.Element) -> NoReturn:
-        self.label: AnnotationLabel = AnnotationLabel.get_from_str(rectangle.find('name').text)
+        self.label: AnnotationLabel = AnnotationLabel[rectangle.find('name').text.capitalize()]
 
         self.width: Union[int, float] = 0
         self.height: Union[int, float] = 0
@@ -60,7 +49,7 @@ class BoundingRectangleABC(ABC):
         return [self.label, self.height, self.width, self.get_area(), self.get_ratio()]
 
     def _set_color(self):
-        self.draw_color = self.label.value[0]
+        self.draw_color = self.label.get_color()
 
 
 class BoundingRectangle(BoundingRectangleABC):
@@ -203,7 +192,7 @@ class Annotation:
 
         self.image_mask: Union[np.ndarray, None] = None
 
-        self.bounding_rectangles, self.bounding_rectangles_rotated = self._get_bounding_rectangles()
+        self.bounding_rectangles = self._get_bounding_rectangles()
 
     def _get_size(self) -> Tuple[int, int, int]:
         width = int(self.root.find('size').find('width').text)
@@ -212,11 +201,10 @@ class Annotation:
 
         return height, width, depth
 
-    def _get_bounding_rectangles(self) -> Tuple[List[BoundingRectangle], List[BoundingRectangleRotated]]:
+    def _get_bounding_rectangles(self) -> List[Union[BoundingRectangle, BoundingRectangleRotated]]:
         rectangles = self.root.findall('object')
 
         bounding_rectangles = list()
-        bounding_rectangles_rotated = list()
 
         for rectangle in rectangles:
             rectangle_type = rectangle.find('type').text
@@ -224,9 +212,12 @@ class Annotation:
             if rectangle_type == "bndbox":
                 bounding_rectangles.append(BoundingRectangle(rectangle))
             elif rectangle_type == "robndbox":
-                bounding_rectangles_rotated.append(BoundingRectangleRotated(rectangle))
+                bounding_rectangles.append(BoundingRectangleRotated(rectangle))
 
-        return bounding_rectangles, bounding_rectangles_rotated
+        return bounding_rectangles
+
+    def is_empty(self) -> bool:
+        return len(self.bounding_rectangles) == 0
 
     def create_mask(self) -> np.ndarray:
         self.image_mask = np.zeros(self.size, dtype=np.uint8)
@@ -234,31 +225,27 @@ class Annotation:
         for bounding_rectangle in self.bounding_rectangles:
             bounding_rectangle.draw(self.image_mask, filled=True)
 
-        for bounding_rectangle_rotated in self.bounding_rectangles_rotated:
-            bounding_rectangle_rotated.draw(self.image_mask, filled=True)
-
         return self.image_mask
 
-    def get_mask_by_labels(self, labels: List[AnnotationLabel]) -> Union[None, np.ndarray]:
-        if self.image_mask is None:
-            self.create_mask()
+    def create_mask_by_labels(
+            self,
+            labels: List[AnnotationLabel],
+            color: Union[None, Tuple[int, int, int]] = None
+    ) -> np.ndarray:
 
-        image_mask_select = np.zeros(self.image_mask.shape[:2], dtype=np.uint8)
+        image_mask = np.zeros(self.size, dtype=np.uint8)
 
-        for label in labels:
-            image_label_select = (np.all(self.image_mask == label.value[0], axis=-1) * 255).astype(np.uint8)
-            image_mask_select = cv.bitwise_xor(image_mask_select, image_label_select)
+        for bounding_rectangle in self.bounding_rectangles:
+            if bounding_rectangle.label in labels:
+                bounding_rectangle.draw(image_mask, color=color, filled=True)
 
-        return image_mask_select
+        return image_mask
 
     def add_statistics(self, df: pd.DataFrame) -> NoReturn:
         file_info = [self.filename]
 
         for bounding_rectangle in self.bounding_rectangles:
             df.loc[len(df.index)] = file_info + bounding_rectangle.get_info()
-
-        for bounding_rectangle_rotated in self.bounding_rectangles_rotated:
-            df.loc[len(df.index)] = file_info + bounding_rectangle_rotated.get_info()
 
     def load_reference_image(self, base_folder: Path) -> np.ndarray:
         return cv.imread(str(base_folder / Path(self.filename + ".png")), cv.IMREAD_COLOR)
@@ -270,10 +257,6 @@ class Annotation:
             if bounding_rectangle.label in labels:
                 amount += 1
 
-        for rotated_rectangle in self.bounding_rectangles_rotated:
-            if rotated_rectangle.label in labels:
-                amount += 1
-
         return amount
 
     def get_list_of_labels_amount(self) -> List[int]:
@@ -282,12 +265,12 @@ class Annotation:
     def get_dict_of_labels_amount(self) -> Dict[str, int]:
         result = dict()
 
-        result['total'] = 0
+        result['Total'] = 0
         for label in AnnotationLabel:
             current_amount = self.get_amount_of_regions_by_labels([label])
 
-            result[str(label).lower()] = current_amount
-            result['total'] += current_amount
+            result[str(label)] = current_amount
+            result['Total'] += current_amount
 
         return result
 

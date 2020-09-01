@@ -6,23 +6,20 @@ import cv2 as cv
 import numpy as np
 
 import utils
-import textdetector.config as config
 import textdetector.morph as morph
 
 
 logger = logging.getLogger('detector')
 
 
-class Algorithm(Enum):
-
-    def __str__(self) -> str:
-        return str(self.name)
+class Algorithm(utils.CustomEnum):
 
     MATLAB_Iteration1 = auto(),
     MATLAB_Iteration2 = auto(),
     Segmentation_Vertical = auto(),
     Segmentation_Horizontal = auto(),
-    MSER = auto()
+    MSER = auto(),
+    Referencer = auto()
 
 
 class Detector:
@@ -67,16 +64,19 @@ class Detector:
             self._save_result(Algorithm.MATLAB_Iteration2, image_iteration2_result)
 
         if Algorithm.Segmentation_Vertical in algorithms:
-            image_lines_v = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, 0))
+            image_lines_v = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=0))
             self._save_result(Algorithm.Segmentation_Vertical, image_lines_v)
 
         if Algorithm.Segmentation_Horizontal in algorithms:
-            image_lines_h = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, 1))
+            image_lines_h = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=1))
             self._save_result(Algorithm.Segmentation_Horizontal, image_lines_h)
 
         if Algorithm.MSER in algorithms:
             image_MSER_bw = self._get_MSER_mask()
             self._save_result(Algorithm.MSER, image_MSER_bw)
+
+        # if Algorithm.Referencer in algorithms:
+        #     self._save_result(Algorithm.Referencer, )
 
     def to_dict(self) -> Dict[str, Dict[int, Dict[str, Union[int, float]]]]:
         dict_to_dump = dict()
@@ -97,7 +97,7 @@ class Detector:
 
     @staticmethod
     def get_coordinates_from_regions(text_regions: List['Region']) -> List[np.ndarray]:
-        return [np.transpose(text_region.coordinates).ravel() for text_region in text_regions]
+        return [text_region.coordinates_ravel for text_region in text_regions]
 
     def _apply_mask(self) -> NoReturn:
         self.image_gray = self.image_gray * self.image_mask
@@ -268,6 +268,8 @@ class Region:
 
         self.rrect = cv.minAreaRect(self.contour)
         self.coordinates: np.ndarray = np.asarray(cv.boxPoints(self.rrect), dtype=int)
+        self.coordinates_ravel: np.ndarray = np.transpose(self.coordinates).ravel()
+
         self.brect = cv.boundingRect(self.contour)
 
         self.rrect_area = self.rrect[1][0] * self.rrect[1][1]
@@ -282,7 +284,6 @@ class Region:
         self.image_edges = np.zeros_like(self.image_gray)
 
     def _crop_by_bounding_rect(self, image: np.ndarray) -> np.ndarray:
-
         x, y, w, h = self.brect
 
         if len(image.shape) == 3:
@@ -291,17 +292,15 @@ class Region:
             return cv.copyTo(image, self.image_blob)[y:y + h, x:x + w]
 
     def coordinates_to_dict(self) -> Dict[str, int]:
-        coords_ravel = np.transpose(self.coordinates).ravel()
-
         return {
-            'x1': coords_ravel[0],
-            'y1': coords_ravel[1],
-            'x2': coords_ravel[2],
-            'y2': coords_ravel[3],
-            'x3': coords_ravel[4],
-            'y3': coords_ravel[5],
-            'x4': coords_ravel[6],
-            'y4': coords_ravel[7]
+            'x1': self.coordinates_ravel[0],
+            'y1': self.coordinates_ravel[1],
+            'x2': self.coordinates_ravel[2],
+            'y2': self.coordinates_ravel[3],
+            'x3': self.coordinates_ravel[4],
+            'y3': self.coordinates_ravel[5],
+            'x4': self.coordinates_ravel[6],
+            'y4': self.coordinates_ravel[7]
         }
 
     def to_dict(self) -> Dict[str, Union[int, float]]:
