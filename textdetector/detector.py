@@ -1,21 +1,34 @@
 import logging
-from typing import List, NoReturn, Dict, Tuple
+from enum import Enum, auto
+from typing import List, NoReturn, Dict, Tuple, Union
 
 import cv2 as cv
 import numpy as np
 
 import utils
 import textdetector.config as config
-from textdetector.morph import Morph
+import textdetector.morph as morph
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('detector')
+
+
+class Algorithm(Enum):
+
+    def __str__(self) -> str:
+        return str(self.name)
+
+    MATLAB_Iteration1 = auto(),
+    MATLAB_Iteration2 = auto(),
+    Segmentation_Vertical = auto(),
+    Segmentation_Horizontal = auto(),
+    MSER = auto()
 
 
 class Detector:
 
     def __init__(self, image_orig: np.ndarray) -> NoReturn:
-        self.is_image_orig_aligned, self.image_orig = Morph.align_package_to_corners(image_orig)
+        self.is_image_orig_aligned, self.image_orig = morph.align_package_to_corners(image_orig)
 
         self.image_gray: np.ndarray = cv.cvtColor(self.image_orig, cv.COLOR_BGR2GRAY)
 
@@ -29,33 +42,58 @@ class Detector:
         self.image_filled: np.ndarray = np.zeros_like(self.image_gray)
         self.image_cleared_borders: np.ndarray = np.zeros_like(self.image_gray)
         self.image_filtered: np.ndarray = np.zeros_like(self.image_gray)
+        self.image_morphed: np.ndarray = np.zeros_like(self.image_gray)
 
         self.results: Dict[str, Tuple[np.ndarray, List['Region']]] = dict()
-        self.image_visualization: np.ndarray = np.zeros((self.image_gray.shape[0] * 4, self.image_gray.shape[1] * 4))
 
-    def detect_text_regions(self) -> NoReturn:
-        self.image_mask, self.image_bw, self.is_mask_partial = Morph.find_package_mask(self.image_std_filtered)
+    def detect(self, algorithms: List[Algorithm]) -> NoReturn:
+        self.image_mask, self.image_bw, self.is_mask_partial = morph.find_package_mask(self.image_std_filtered)
 
         if self.is_mask_partial:
             self._apply_mask()
 
-        self.image_edges = Morph.extract_edges(self.image_std_filtered, self.image_bw, post_morph=True)
-        image_morphed = self._apply_all_morphology_operations()
+        self.image_edges = morph.extract_edges(self.image_std_filtered, self.image_bw, post_morph=True)
+        self.image_cleared_borders = utils.clear_borders(self.image_edges)
 
-        self._save_result('text_it1', image_morphed)
-        self._save_result('text_it2', self._detect_words(self.results['text_it1'][1]))
+        self.image_filled = utils.fill_holes(self.image_cleared_borders)
+        self.image_filtered = morph.filter_non_text_blobs(self.image_filled)
 
-        image_lines_v = self._process_lines(Morph.apply_rectangular_segmentation(self.image_filtered, 0))
-        image_lines_h = self._process_lines(Morph.apply_rectangular_segmentation(self.image_filtered, 1))
+        if Algorithm.MATLAB_Iteration1 in algorithms or Algorithm.MATLAB_Iteration2 in algorithms:
+            self.image_morphed = morph.apply_line_morphology(self.image_filtered, 30)[1]
+            self._save_result(Algorithm.MATLAB_Iteration1, self.image_morphed)
 
-        self._save_result('lines_v', image_lines_v)
-        self._save_result('lines_h', image_lines_h)
+        if Algorithm.MATLAB_Iteration2 in algorithms:
+            image_iteration2_result = self._detect_words(self.get_result_by_algorithm(Algorithm.MATLAB_Iteration1)[1])
+            self._save_result(Algorithm.MATLAB_Iteration2, image_iteration2_result)
 
-        image_MSER_bw = self._get_MSER_mask()
-        self._save_result('MSER', image_MSER_bw)
+        if Algorithm.Segmentation_Vertical in algorithms:
+            image_lines_v = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, 0))
+            self._save_result(Algorithm.Segmentation_Vertical, image_lines_v)
 
-        if config.visualize:
-            self._create_visualization()
+        if Algorithm.Segmentation_Horizontal in algorithms:
+            image_lines_h = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, 1))
+            self._save_result(Algorithm.Segmentation_Horizontal, image_lines_h)
+
+        if Algorithm.MSER in algorithms:
+            image_MSER_bw = self._get_MSER_mask()
+            self._save_result(Algorithm.MSER, image_MSER_bw)
+
+    def to_dict(self) -> Dict[str, Dict[int, Dict[str, Union[int, float]]]]:
+        dict_to_dump = dict()
+
+        for algorithm, result in self.results.items():
+            _, regions = result
+
+            dict_regions = dict()
+            for index, region in enumerate(regions, start=1):
+                dict_regions[index] = region.to_dict()
+
+            dict_to_dump[str(algorithm)] = dict_regions
+
+        return dict_to_dump
+
+    def get_result_by_algorithm(self, algorithm: Algorithm) -> Tuple[np.ndarray, List["Region"]]:
+        return self.results[str(algorithm)]
 
     @staticmethod
     def get_coordinates_from_regions(text_regions: List['Region']) -> List[np.ndarray]:
@@ -85,7 +123,7 @@ class Detector:
 
                 contours, _ = cv.findContours(image_filtered, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
-                min_sides = []
+                min_sides = list()
                 for contour in contours:
                     x, y, w, h = cv.boundingRect(contour)
                     min_sides.append(min(w, h))
@@ -93,7 +131,7 @@ class Detector:
                 mean_min_side = np.mean(min_sides)
                 morph_line_length = int(mean_min_side / 1.5)
 
-                angle, image_morphed = Morph.apply_line_morphology(image_filtered, morph_line_length, key='min')
+                angle, image_morphed = morph.apply_line_morphology(image_filtered, morph_line_length, key='min')
 
                 image_bw[x_min:x_max, y_min:y_max] = cv.bitwise_xor(image_morphed, image_bw[x_min:x_max, y_min:y_max])
             except:
@@ -103,7 +141,7 @@ class Detector:
 
     def _find_regions(self, image_bw: np.ndarray) -> Tuple[List['Region'], np.ndarray]:
         _, image_text_labeled = cv.connectedComponents(image_bw)
-        regions = []
+        regions = list()
 
         for k in range(1, image_text_labeled.max() + 1):
             image_blob = (image_text_labeled == k).astype(np.uint8) * 255
@@ -120,9 +158,9 @@ class Detector:
 
         for region in regions:
 
-            edges = Morph.extract_edges(region.image_std_filtered, region.image_bw, post_morph=False)
+            edges = morph.extract_edges(region.image_std_filtered, region.image_bw, post_morph=False)
             edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, np.ones((3, 3)))
-            filtered = Morph.filter_enclosed_contours(edges)
+            filtered = morph.filter_enclosed_contours(edges)
             filled = utils.fill_holes(filtered)
 
             contours, _ = cv.findContours(filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -152,7 +190,7 @@ class Detector:
             else:
                 mean_distance = max(int(1.5 * np.mean(np.asarray([v for _, v in distances.items()]))), 10)
 
-            _, morphed = Morph.apply_line_morphology(filled, mean_distance, key='min')
+            _, morphed = morph.apply_line_morphology(filled, mean_distance, key='min')
             x, y, w, h = region.brect
 
             image_word_linearly_morphed[y:y + h, x:x + w] = cv.bitwise_xor(
@@ -175,7 +213,7 @@ class Detector:
 
         return image_regions, image_masks
 
-    def _create_visualization(self) -> NoReturn:
+    def create_visualization(self) -> NoReturn:
 
         def add_text(image: np.ndarray, text: str) -> np.ndarray:
             return cv.putText(np.copy(image), text, (50, 50), cv.FONT_HERSHEY_COMPLEX, 2, (0, 255, 0), 1)
@@ -197,7 +235,7 @@ class Detector:
             if len(image.shape) != 3:
                 images[i] = utils.to_rgb(image)
 
-        self.image_visualization = utils.combine_images(images)
+        return utils.combine_images(images)
 
     def _get_MSER_mask(self) -> np.ndarray:
         image_hsv = cv.cvtColor(self.image_orig, cv.COLOR_BGR2HSV)
@@ -211,44 +249,35 @@ class Detector:
 
         return image_bw
 
-    def _save_result(self, blob: str, image_mask: np.ndarray) -> NoReturn:
+    def _save_result(self, algorithm: Algorithm, image_mask: np.ndarray) -> NoReturn:
         regions, _ = self._find_regions(image_mask)
 
         image_regions, image_mask = self._draw_regions_and_mask(regions)
 
-        if blob in self.results.keys():
-            logger.warning(f"{blob} result already exists, overwriting...")
+        if str(algorithm) in self.results.keys():
+            logger.warning(f"{algorithm} result already exists, overwriting...")
 
-        self.results[blob] = image_mask, regions
-
-    def _apply_all_morphology_operations(self):
-        self.image_cleared_borders = utils.clear_borders(self.image_edges)
-
-        self.image_filled = utils.fill_holes(self.image_cleared_borders)
-        self.image_filtered = Morph.filter_non_text_blobs(self.image_filled)
-        _, image_morphed = Morph.apply_line_morphology(self.image_filtered, 30)
-
-        return image_morphed
+        self.results[str(algorithm)] = image_mask, regions
 
 
 class Region:
 
-    def __init__(self, detect_text_region: Detector, image_blob: np.ndarray) -> NoReturn:
+    def __init__(self, detection: Detector, image_blob: np.ndarray) -> NoReturn:
         self.image_blob = image_blob
         self.contour = cv.findContours(image_blob, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0][0]
 
         self.rrect = cv.minAreaRect(self.contour)
-        self.coordinates: np.ndarray = np.int0(cv.boxPoints(self.rrect))
+        self.coordinates: np.ndarray = np.asarray(cv.boxPoints(self.rrect), dtype=int)
         self.brect = cv.boundingRect(self.contour)
 
         self.rrect_area = self.rrect[1][0] * self.rrect[1][1]
         self.contour_area = cv.contourArea(self.contour)
 
-        self.image_orig = self._crop_by_bounding_rect(detect_text_region.image_orig)
-        self.image_gray = self._crop_by_bounding_rect(detect_text_region.image_gray)
-        self.image_preprocessed = self._crop_by_bounding_rect(detect_text_region.image_edges)
-        self.image_std_filtered = self._crop_by_bounding_rect(detect_text_region.image_std_filtered)
-        self.image_bw = self._crop_by_bounding_rect(detect_text_region.image_bw)
+        self.image_orig = self._crop_by_bounding_rect(detection.image_orig)
+        self.image_gray = self._crop_by_bounding_rect(detection.image_gray)
+        self.image_preprocessed = self._crop_by_bounding_rect(detection.image_edges)
+        self.image_std_filtered = self._crop_by_bounding_rect(detection.image_std_filtered)
+        self.image_bw = self._crop_by_bounding_rect(detection.image_bw)
 
         self.image_edges = np.zeros_like(self.image_gray)
 
@@ -272,5 +301,13 @@ class Region:
             'x3': coords_ravel[4],
             'y3': coords_ravel[5],
             'x4': coords_ravel[6],
-            'y4': coords_ravel[7],
+            'y4': coords_ravel[7]
         }
+
+    def to_dict(self) -> Dict[str, Union[int, float]]:
+        coords = self.coordinates_to_dict()
+
+        for key, value in coords.items():
+            coords[key] = int(value)
+
+        return {'angle': round(self.rrect[2], 2), **coords}

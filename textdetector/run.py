@@ -8,9 +8,10 @@ from typing import NoReturn, List, Union
 import cv2 as cv
 
 import textdetector.config as config
-from textdetector.detector import Detector
+from textdetector.annotation import Annotation
+from textdetector.detector import Detector, Algorithm
 from textdetector.referencer import Referencer
-from textdetector.file_info import get_file_info
+from textdetector.file_info import FileInfo
 from textdetector.evaluator import Evaluator
 from textdetector.writer import Writer
 
@@ -38,44 +39,37 @@ class Run:
         for index, image_path in enumerate(self.image_paths, start=1):
             index_b = str(index).zfill(6)
 
-            file_info = get_file_info(image_path, config.database)
+            file_info = FileInfo.get_file_info(image_path, config.database)
+            writer.add_dict_result('file_info', file_info.to_dict())
+
             image_orig = cv.imread(image_path)
-            # detection = Detector(image_orig)
-            #
-            # writer.add_dict_result({'filename': file_info.filename})
-            #
-            # detection.detect_text_regions()
+
+            detection = Detector(image_orig)
+            detection.detect([alg for alg in Algorithm])
+            writer.add_dict_result('detection', detection.to_dict())
 
             if config.extract_reference:
                 referencer = Referencer(image_orig, file_info)
                 referencer.extract_reference_regions()
 
-    #         if config.evaluate:
-    #             evaluation_result = self.evaluator.evaluate(detection, file_info)
-    #             writer.add_dict_result(evaluation_result)
-    #
-    #         if config.profile:
-    #             writer.add_dict_result(utils.profiler.get_results())
-    #
-    #         if config.write:
-    #             writer.save_single_detection(detection, file_info.filename)
-    #
-    #         writer.update_dataframe()
-    #         if index % 10 == 0:
-    #             writer.save_dataframe()
-    #
-    #         logger.info(f'#{index_b} PROCESSED {image_path}')
-    #
-        #     except FileNotFoundError as e:
-        #         logger.warning(f"#{index_b} FAILED Not found an annotation for {file_info.filename}")
-        #     except Exception as e:
-        #         logger.error(f'#{index_b} FAILED {image_path}, error: {e}')
-        #     finally:
-        #         if e:
-        #             writer.clear_current_results()
-        #             writer.add_failed_file(image_path, e.strerror)
-        #
-        # writer.save_dataframe()
+            if config.evaluate:
+                annotation = Annotation.load_annotation_by_pattern(config.root_folder, file_info.get_annotation_pattern())
+                writer.add_dict_result('annotation_info', annotation.to_dict())
+
+                evaluation_result = self.evaluator.evaluate(detection, annotation)
+                writer.add_dict_result('evaluation_result', evaluation_result)
+
+            if config.profile:
+                writer.add_dict_result('profiling', utils.profiler.get_results())
+
+            if config.write:
+                writer.save_results(detection, file_info.filename)
+
+            writer.update_dataframe()
+
+            logger.info(f'#{index_b} PROCESSED {image_path}')
+
+        writer.save_dataframe()
 
     def _load_images(self):
         self.image_paths = glob.glob(str(config.root_folder / "cropped/*.png"))

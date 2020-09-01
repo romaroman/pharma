@@ -57,8 +57,8 @@ class Referencer:
             utils.to_gray(self.image_ver),
         )
 
-        image_parts = []
-        contour_parts = []
+        image_parts = list()
+        contour_parts = list()
         for brect in self.annotation.bounding_rectangles:
             image_part, brect_part = extract_reference_region(brect)
             image_parts.append(image_part)

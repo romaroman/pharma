@@ -13,25 +13,21 @@ from textdetector.file_info import FileInfo
 import utils
 
 
-logger = logging.getLogger()
+logger = logging.getLogger('evaluator')
 
 
 class Evaluator:
 
     def __init__(self) -> NoReturn:
         self.df_result: pd.Pandas = pd.DataFrame()
+        self.dict_result: Dict[str, float] = dict()
 
-    def evaluate(self, detection: Detector, file_info: FileInfo) -> Dict[str, float]:
-        annotation = Annotation.load_annotation_by_pattern(config.root_folder, file_info.get_annotation_pattern())
-
+    def evaluate(self, detection: Detector, annotation: Annotation) -> Dict[str, float]:
         image_reference = annotation.load_reference_image(config.root_folder / "references")
 
         image_ref_mask_text = annotation.get_mask_by_labels([
             AnnotationLabel.Text, AnnotationLabel.Number
         ])
-        # image_ref_mask_graph = annotation.get_mask_by_labels([
-        #     AnnotationLabel.Watermark, AnnotationLabel.Image, AnnotationLabel.Barcode
-        # ])
 
         image_verification = detection.image_orig
 
@@ -40,20 +36,20 @@ class Evaluator:
             utils.to_gray(image_reference)
         )
 
-        h, w = image_reference.shape[0], image_reference.shape[1]
-        dst_size = (w, h)
-
-        evaluation_result = {}
-
-        for blob, result in detection.results.items():
+        for algorithm, result in detection.results.items():
             image_mask, regions = result
 
-            image_mask_warped = cv.warpPerspective(image_mask, homo_mat, dst_size)
-            evaluation_result[f'{blob}_text_ratio'] = self._calc_iou_ratio(image_mask_warped, image_ref_mask_text)
+            image_mask_warped = cv.warpPerspective(
+                image_mask, homo_mat, image_reference.shape[:2][::-1]
+            )
 
-            evaluation_result[f'{blob}_regions_amount'] = len(regions)
+            self.dict_result[f'{algorithm}_text_ratio'] = self._calc_iou_ratio(
+                image_mask_warped, image_ref_mask_text
+            )
 
-        return evaluation_result
+            self.dict_result[f'{algorithm}_regions_amount'] = len(regions)
+
+        return self.dict_result
 
     @classmethod
     def _calc_iou_ratio(cls, image_verification_mask: np.ndarray, image_reference_mask: np.ndarray) -> float:
