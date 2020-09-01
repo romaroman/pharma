@@ -167,7 +167,7 @@ def find_homography(image_ref: np.ndarray, image_ver: np.ndarray) -> Union[np.nd
     flann = cv.FlannBasedMatcher(dict(algorithm=0, trees=5), dict(checks=50))
     matches = flann.knnMatch(descriptors_ref, descriptors_ver, k=2)
 
-    valid_matches = []
+    valid_matches = list()
     for m, n in matches:
         if m.distance < 0.7 * n.distance:
             valid_matches.append(m)

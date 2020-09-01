@@ -6,35 +6,20 @@
   <component name="ChangeListManager">
     <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/CONTRIBUTING.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/data.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/data_util.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/lars_optimizer.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/model.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/model_util.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/objective.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/resnet.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_google/run.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_unige/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_unige/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_unige/data.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_unige/loss.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_unige/models.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_unige/train_classifier.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_unige/train_features.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/simclr_unige/utils.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/etc/matlab_get_text_region.py" beforeDir="false" afterPath="$PROJECT_DIR$/etc/matlab_get_text_region.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/annotation.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/annotation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/detector.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/evaluator.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/file_info.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/file_info.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/textdetector/referencer.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/referencer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/run.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/writer.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/writer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/calc.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/calc.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/improc.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/improc.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/io.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/io.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/profiler.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/profiler.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -278,7 +263,8 @@
       <workItem from="1597237974254" duration="2963000" />
       <workItem from="1597309455463" duration="4731000" />
       <workItem from="1598165110648" duration="31591000" />
-      <workItem from="1598374308277" duration="1401000" />
+      <workItem from="1598374308277" duration="2641000" />
+      <workItem from="1598961073396" duration="13619000" />
     </task>
     <task id="LOCAL-00001" summary="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment">
       <created>1594663231122</created>
@@ -323,10 +309,10 @@
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="740" y="229" key="#com.intellij.ide.macro.MacrosDialog/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1590395661906" />
-    <state x="765" y="240" key="#com.intellij.ide.util.MemberChooser" timestamp="1597145482062">
+    <state x="765" y="240" key="#com.intellij.ide.util.MemberChooser" timestamp="1598975620597">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state x="765" y="240" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597145482062" />
+    <state x="765" y="240" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598975620597" />
     <state x="640" y="260" key="#com.intellij.openapi.updateSettings.impl.PluginUpdateInfoDialog" timestamp="1597237715710">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
@@ -384,28 +370,28 @@
       <screen x="28" y="0" width="1338" height="768" />
     </state>
     <state width="1338" height="710" key="GridCell.Tab.-1.right/28.0.1338.768@28.0.1338.768" timestamp="1590668019668" />
-    <state width="1921" height="994" key="GridCell.Tab.0.bottom" timestamp="1598381435865">
+    <state width="1921" height="994" key="GridCell.Tab.0.bottom" timestamp="1598978170612">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598381435865" />
+    <state width="1921" height="994" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598978170612" />
     <state width="1921" height="994" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
     <state width="1338" height="710" key="GridCell.Tab.0.bottom/28.0.1338.768@28.0.1338.768" timestamp="1590668176349" />
-    <state width="1921" height="994" key="GridCell.Tab.0.center" timestamp="1598381435865">
+    <state width="1921" height="994" key="GridCell.Tab.0.center" timestamp="1598978170612">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598381435865" />
+    <state width="1921" height="994" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598978170612" />
     <state width="1921" height="994" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
     <state width="1338" height="710" key="GridCell.Tab.0.center/28.0.1338.768@28.0.1338.768" timestamp="1590668176348" />
-    <state width="1921" height="994" key="GridCell.Tab.0.left" timestamp="1598381435864">
+    <state width="1921" height="994" key="GridCell.Tab.0.left" timestamp="1598978170612">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598381435864" />
+    <state width="1921" height="994" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598978170612" />
     <state width="1921" height="994" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
     <state width="1338" height="710" key="GridCell.Tab.0.left/28.0.1338.768@28.0.1338.768" timestamp="1590668176348" />
-    <state width="1921" height="994" key="GridCell.Tab.0.right" timestamp="1598381435865">
+    <state width="1921" height="994" key="GridCell.Tab.0.right" timestamp="1598978170612">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1921" height="994" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598381435865" />
+    <state width="1921" height="994" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598978170612" />
     <state width="1921" height="994" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
     <state width="1338" height="710" key="GridCell.Tab.0.right/28.0.1338.768@28.0.1338.768" timestamp="1590668176348" />
     <state x="461" y="169" key="SettingsEditor" timestamp="1597169089262">
@@ -424,14 +410,14 @@
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="769" y="438" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597240492558" />
-    <state x="667" y="258" width="585" height="534" key="find.popup" timestamp="1598356651738">
+    <state x="667" y="258" width="585" height="534" key="find.popup" timestamp="1598977231389">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state x="667" y="258" width="585" height="534" key="find.popup/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598356651738" />
-    <state x="623" y="227" width="672" height="678" key="search.everywhere.popup" timestamp="1598381331833">
+    <state x="667" y="258" width="585" height="534" key="find.popup/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598977231389" />
+    <state x="623" y="227" width="672" height="678" key="search.everywhere.popup" timestamp="1598964748019">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state x="623" y="227" width="672" height="678" key="search.everywhere.popup/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598381331833" />
+    <state x="623" y="227" width="672" height="678" key="search.everywhere.popup/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598964748019" />
     <state x="462" y="166" width="672" height="496" key="search.everywhere.popup/28.0.1338.768@28.0.1338.768" timestamp="1590668044506" />
   </component>
   <component name="XDebuggerManager">
@@ -458,9 +444,19 @@
           <option name="timeStamp" value="159" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/textdetector/referencer.py</url>
-          <line>71</line>
-          <option name="timeStamp" value="188" />
+          <url>file://$PROJECT_DIR$/textdetector/run.py</url>
+          <line>64</line>
+          <option name="timeStamp" value="202" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/textdetector/run.py</url>
+          <line>58</line>
+          <option name="timeStamp" value="206" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/textdetector/writer.py</url>
+          <line>91</line>
+          <option name="timeStamp" value="208" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -479,7 +475,7 @@
     <SUITE FILE_PATH="coverage/pharmapack_recognition$logger.coverage" NAME="logger Coverage Results" MODIFIED="1597312113408" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$edges.coverage" NAME="edges Coverage Results" MODIFIED="1592420665567" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/text_detection" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$args.coverage" NAME="args Coverage Results" MODIFIED="1597225340611" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/pharmapack_recognition$run.coverage" NAME="run Coverage Results" MODIFIED="1598381435841" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$run.coverage" NAME="run Coverage Results" MODIFIED="1598978170582" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$evaluator.coverage" NAME="evaluator Coverage Results" MODIFIED="1597233779906" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$scratch_1.coverage" NAME="scratch_1 Coverage Results" MODIFIED="1597166799467" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/scratches" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$get_text_region.coverage" NAME="get_text_region Coverage Results" MODIFIED="1589383348662" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/matlab-integration" />

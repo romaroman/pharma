@@ -41,7 +41,7 @@ for number, source_image in enumerate(glob.glob(source + "*.png"), start=1):
 
     number_of_detected_areas = coords_ds.shape[0]
 
-    coords_pairs = []
+    coords_pairs = list()
     for i in range(number_of_detected_areas):
         coords_array = coords_file[coords_ds[i][0]][()]
         coords_pairs.append(list(zip(coords_array[0], coords_array[1])))

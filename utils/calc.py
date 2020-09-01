@@ -19,7 +19,7 @@ def calc_points_distance(point1: Tuple[int, int], point2: Tuple[int, int]) -> fl
 
 # TODO: implement
 def calc_rrects_distance(coords1: np.ndarray, coords2: np.ndarray) -> float:
-    distances = {}
+    distances = dict()
 
     for idx1, point1 in enumerate(coords1, start=0):
         for idx2, point2 in enumerate(coords2, start=0):
