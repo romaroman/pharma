@@ -1,19 +1,21 @@
 import logging
 from pathlib import Path
 
+from textdetector.file_info import Database
+
 
 base_folder: Path = Path("D:/pharmapack")
-database: str = "Enrollment"
-root_folder: Path = base_folder / database
+database: Database = Database.Enrollment
+root_folder: Path = base_folder / str(database)
 
 logging_level: int = logging.INFO
 
 write: bool = True
 shuffle: bool = True
-percentage: int = 100
+percentage: int = 10
 debug: bool = True
-visualize: bool = False
-profile: bool = False
+visualize: bool = True
+profile: bool = True
 evaluate: bool = True
 clear_output: bool = True
 

@@ -1,20 +1,33 @@
 import re
 import pathlib
 
+from abc import ABC
+from enum import Enum, auto
 from collections import OrderedDict
 from typing import NoReturn, Union, Dict, List, Pattern
-from enum import Enum
-from abc import ABC, abstractmethod
+
+import utils
 
 
 class Phone(Enum):
 
-    def __str__(self) -> NoReturn:
-        return str(self.value)
+    def __str__(self) -> str:
+        return str(self.name)
 
-    Phone1 = 1,
-    Phone2 = 2,
-    Phone3 = 3
+    Phone1 = auto(),
+    Phone2 = auto(),
+    Phone3 = auto()
+
+
+class Database(Enum):
+
+    def __str__(self) -> str:
+        return str(self.name)
+
+    Enrollment = auto(),
+    PharmaPack_R_I_S1 = auto(),
+    PharmaPack_R_I_S2 = auto(),
+    PharmaPack_R_I_S3 = auto(),
 
 
 class FileInfo(ABC):
@@ -27,6 +40,16 @@ class FileInfo(ABC):
         'size': r'C[0-9]'
     }
 
+    @staticmethod
+    def get_file_info(file_path: str, database: Database) -> Union["FileInfoEnrollment", "FileInfoRecognition"]:
+
+        if database is Database.Enrollment:
+            return FileInfoEnrollment(file_path)
+        if database in [Database.PharmaPack_R_I_S1, Database.PharmaPack_R_I_S2, Database.PharmaPack_R_I_S3]:
+            return FileInfoRecognition(file_path)
+        else:
+            raise ValueError
+
     def __init__(self, file_path: str) -> NoReturn:
         self.filename = pathlib.Path(file_path).stem
 
@@ -36,9 +59,8 @@ class FileInfo(ABC):
         self.sample = self._extract_numerical_info('sample')
         self.size = self._extract_numerical_info('size')
 
-    @abstractmethod
     def get_annotation_pattern(self) -> Pattern:
-        pass
+        return re.compile(f"PFP_Ph._P{str(self.package_class).zfill(4)}_D0._S00._C._az..._side.")
 
     def to_dict(self) -> Dict[str, int]:
         return {
@@ -77,11 +99,8 @@ class FileInfoEnrollment(FileInfo):
         self.angle = self._extract_numerical_info('angle')
         self.side = self._extract_numerical_info('side')
 
-    def get_annotation_pattern(self) -> Pattern:
-        return re.compile(f"PFP_Ph._P{str(self.package_class).zfill(4)}_D0._S00._C._az..._side.")
-
     def to_dict(self) -> Dict[str, int]:
-        return OrderedDict(super(FileInfoEnrollment, self).to_dict(), **{'angle': self.angle, 'side': self.side})
+        return dict(super(FileInfoEnrollment, self).to_dict(), **{'angle': self.angle, 'side': self.side})
 
     def to_list(self) -> List[Union[str, int]]:
         return super(FileInfoEnrollment, self).to_list() + [self.angle, self.side]
@@ -100,18 +119,8 @@ class FileInfoRecognition(FileInfo):
         super().__init__(filename)
         self.RS = self._extract_numerical_info('RS')
 
-    def get_annotation_pattern(self) -> Pattern:
-        raise NotImplemented
-
     def to_dict(self) -> Dict[str, int]:
-        return OrderedDict(super(FileInfoRecognition, self).to_dict(), **{'RS': self.RS})
+        return dict(super(FileInfoRecognition, self).to_dict(), **{'RS': self.RS})
 
     def to_list(self) -> List[Union[str, int]]:
         return super(FileInfoRecognition, self).to_list() + [self.RS]
-
-
-def get_file_info(file_path: str, database: str) -> Union[FileInfoEnrollment, FileInfoRecognition]:
-    if database == 'Enrollment':
-        return FileInfoEnrollment(file_path)
-    if database.startswith('PharmaPack'):
-        return FileInfoRecognition(file_path)

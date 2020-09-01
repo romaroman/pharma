@@ -5,7 +5,7 @@ from abc import ABC
 from enum import Enum
 from pathlib import Path
 import xml.etree.ElementTree as ET
-from typing import List, Tuple, NoReturn, Union, Pattern
+from typing import List, Tuple, NoReturn, Union, Pattern, Dict
 
 import cv2 as cv
 import numpy as np
@@ -15,17 +15,32 @@ import utils
 
 
 class AnnotationLabel(Enum):
+
+    def __str__(self):
+        return str(self.name)
+
+    @staticmethod
+    def get_from_str(blob: str) -> "AnnotationLabel":
+        return {
+            'text': AnnotationLabel.Text,
+            'number': AnnotationLabel.Number,
+            'watermark': AnnotationLabel.Watermark,
+            'image': AnnotationLabel.Image,
+            'barcode': AnnotationLabel.Barcode,
+        }.get(blob.lower(), AnnotationLabel.Unknown)
+
     Text = (255, 0, 255),
     Number = (0, 255, 255),
     Watermark = (0, 0, 255),
     Image = (255, 0, 0),
-    Barcode = (255, 255, 0)
+    Barcode = (255, 255, 0),
+    Unknown = (255, 255, 255)
 
 
 class BoundingRectangleABC(ABC):
 
     def __init__(self, rectangle: ET.Element) -> NoReturn:
-        self.label: str = rectangle.find('name').text
+        self.label: AnnotationLabel = AnnotationLabel.get_from_str(rectangle.find('name').text)
 
         self.width: Union[int, float] = 0
         self.height: Union[int, float] = 0
@@ -45,7 +60,7 @@ class BoundingRectangleABC(ABC):
         return [self.label, self.height, self.width, self.get_area(), self.get_ratio()]
 
     def _set_color(self):
-        self.draw_color = AnnotationLabel[self.label.capitalize()].value[0]
+        self.draw_color = self.label.value[0]
 
 
 class BoundingRectangle(BoundingRectangleABC):
@@ -200,8 +215,8 @@ class Annotation:
     def _get_bounding_rectangles(self) -> Tuple[List[BoundingRectangle], List[BoundingRectangleRotated]]:
         rectangles = self.root.findall('object')
 
-        bounding_rectangles = []
-        bounding_rectangles_rotated = []
+        bounding_rectangles = list()
+        bounding_rectangles_rotated = list()
 
         for rectangle in rectangles:
             rectangle_type = rectangle.find('type').text
@@ -248,7 +263,7 @@ class Annotation:
     def load_reference_image(self, base_folder: Path) -> np.ndarray:
         return cv.imread(str(base_folder / Path(self.filename + ".png")), cv.IMREAD_COLOR)
 
-    def get_amount_of_regions_by_labels(self, labels: List[str]) -> int:
+    def get_amount_of_regions_by_labels(self, labels: List[AnnotationLabel]) -> int:
         amount = 0
 
         for bounding_rectangle in self.bounding_rectangles:
@@ -261,20 +276,23 @@ class Annotation:
 
         return amount
 
-    def get_list_of_labels_amount(self) -> NoReturn:
+    def get_list_of_labels_amount(self) -> List[int]:
         return [self.get_amount_of_regions_by_labels([label]) for label in AnnotationLabel]
 
-    def get_dict_of_labels_amount(self) -> NoReturn:
+    def get_dict_of_labels_amount(self) -> Dict[str, int]:
         result = dict()
 
         result['total'] = 0
         for label in AnnotationLabel:
             current_amount = self.get_amount_of_regions_by_labels([label])
 
-            result[label] = current_amount
+            result[str(label).lower()] = current_amount
             result['total'] += current_amount
 
         return result
+
+    def to_dict(self) -> Dict[str, Union[int, str]]:
+        return {'filename': self.filename, **self.get_dict_of_labels_amount()}
 
     @staticmethod
     def load_annotation_by_pattern(root_folder: Path, pattern: Pattern) -> 'Annotation':
