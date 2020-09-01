@@ -20,20 +20,20 @@ class _Profiler(metaclass=utils.Singleton):
         self._timestamp = time.time()
 
     def add_timestamp(self, message: str) -> NoReturn:
+        difference = round(time.time() - self._timestamp, 4)
         if config.profile:
-            logger.debug(f"{message} --- {(time.time() - self._timestamp)} sec ---")
+            logger.debug(f"{message} --- {difference} sec ---")
 
         entry_text = message.lower().replace(' ', '_')
-        self._dict_results[entry_text] = self._timestamp
+        self._dict_results[entry_text] = difference
 
         self._update_timestamp()
-
-    def get_results(self) -> Dict[str, float]:
-        self._update_timestamp()
-        return self._dict_results
 
     def to_dict(self) -> Dict[str, float]:
+        self._update_timestamp()
+
         dict_copy = deepcopy(self._dict_results)
+        self._dict_results.clear()
 
         for key, value in dict_copy:
             dict_copy[key] = round(value, 4)

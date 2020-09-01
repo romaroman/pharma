@@ -1,5 +1,6 @@
 import json
 import logging
+import warnings
 from pathlib import Path
 
 from typing import NoReturn, List, Union, Any
@@ -94,3 +95,7 @@ def init_path(path_str: str) -> Path:
         return path.absolute()
     else:
         raise FileNotFoundError
+
+def supress_warnings() -> NoReturn:
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', r'Mean of empty slice.')

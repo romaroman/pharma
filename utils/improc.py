@@ -156,7 +156,7 @@ def MSER(image_gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     return image_mask, image_text_only, image_visualization
 
 
-def find_homography(image_ref: np.ndarray, image_ver: np.ndarray) -> Union[np.ndarray, None]:
+def find_homography_matrix(image_ref: np.ndarray, image_ver: np.ndarray) -> Union[np.ndarray, None]:
     sift = cv.xfeatures2d.SIFT_create()
 
     MIN_MATCH_COUNT = 10
@@ -184,13 +184,3 @@ def find_homography(image_ref: np.ndarray, image_ver: np.ndarray) -> Union[np.nd
 
 def scale(image: np.ndarray, scale: float) -> np.ndarray:
     return cv.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)))
-
-
-def random_forest_edge_detection(image: np.ndarray) -> np.ndarray:
-    detector = cv.ximgproc_StructuredEdgeDetection()
-
-    edges = detector.detectEdges(image)
-    orientation = detector.computeOrientation(edges)
-    edges_supressed = detector.edgesNms(edges, orientation, r=2, s=0, m=1, isParallel=True)
-
-    return edges_supressed
