@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import warnings
@@ -99,3 +100,6 @@ def init_path(path_str: str) -> Path:
 def supress_warnings() -> NoReturn:
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', r'Mean of empty slice.')
+
+def get_str_timestamp() -> str:
+    return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")

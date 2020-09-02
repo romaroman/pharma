@@ -8,11 +8,6 @@ import numpy as np
 import utils
 
 
-class TunableVariables:
-
-    otsu_threshold_adjustment: int = -10
-
-
 def align_package_to_corners(image_rgb: np.ndarray) -> Tuple[bool, Union[np.ndarray, None]]:
     image_gray = cv.cvtColor(image_rgb, cv.COLOR_BGR2GRAY)
 
@@ -37,15 +32,11 @@ def align_package_to_corners(image_rgb: np.ndarray) -> Tuple[bool, Union[np.ndar
     return True, image_aligned
 
 
-def find_package_mask(image_gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray, bool]:
+def find_package_mask(image_bw: np.ndarray) -> Tuple[bool, np.ndarray]:
     valid_mask_to_image_area_ratio = 0.3
     valid_minrect_contour_area_ratio = 0.2
 
     is_mask_partial = False
-
-    thresh_value, _ = cv.threshold(image_gray, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
-    thresh_value += TunableVariables.otsu_threshold_adjustment
-    _, image_bw = cv.threshold(image_gray, thresh_value, 255, cv.THRESH_BINARY)
 
     image_dilated = cv.dilate(image_bw, kernel=np.ones((9, 9)))
 
@@ -68,7 +59,7 @@ def find_package_mask(image_gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray, b
         cv.drawContours(image_mask, [points], -1, 1, -1)
         is_mask_partial = True
 
-    return image_mask, image_bw, is_mask_partial
+    return is_mask_partial, image_mask
 
 
 def extract_edges(
