@@ -52,7 +52,9 @@ class FileInfo(ABC):
         self.size = self._extract_numerical_info('size')
 
     def get_annotation_pattern(self) -> Pattern:
-        return re.compile(f"PFP_Ph._P{str(self.package_class).zfill(4)}_D0._S00._C._az..._side.")
+        return re.compile(
+            f"PFP_Ph._P{str(self.package_class).zfill(4)}_D{str(self.distinct).zfill(2)}_S00._C._az..._side."
+        )
 
     def to_dict(self) -> Dict[str, int]:
         return {
