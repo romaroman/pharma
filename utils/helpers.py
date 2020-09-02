@@ -20,3 +20,7 @@ class CustomEnum(Enum):
     @classmethod
     def to_list(cls) -> List[Any]:
         return list(map(lambda c: c, cls))
+
+    @classmethod
+    def to_string_list(cls) -> str:
+        return ", ".join([str(c) for c in cls])

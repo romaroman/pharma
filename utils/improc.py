@@ -184,3 +184,8 @@ def find_homography_matrix(image_ref: np.ndarray, image_ver: np.ndarray) -> Unio
 
 def scale(image: np.ndarray, scale: float) -> np.ndarray:
     return cv.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)))
+
+def thresh(image_gray: np.ndarray) -> np.ndarray:
+    thresh_value, _ = cv.threshold(image_gray, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
+    _, image_bw = cv.threshold(image_gray, thresh_value - 10, 255, cv.THRESH_BINARY)
+    return image_bw
