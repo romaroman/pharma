@@ -1,5 +1,5 @@
 import logging
-from enum import Enum, auto
+from enum import auto
 from typing import List, NoReturn, Dict, Tuple, Union
 
 import cv2 as cv
@@ -7,7 +7,6 @@ import numpy as np
 
 import utils
 import textdetector.morph as morph
-
 
 logger = logging.getLogger('detector')
 
@@ -19,20 +18,19 @@ class Algorithm(utils.CustomEnum):
     Segmentation_Vertical = auto(),
     Segmentation_Horizontal = auto(),
     MSER = auto(),
-    Referencer = auto()
+    MajorVoting = auto()
 
 
 class Detector:
 
     def __init__(self, image_orig: np.ndarray) -> NoReturn:
         self.is_image_orig_aligned, self.image_orig = morph.align_package_to_corners(image_orig)
-
         self.image_gray: np.ndarray = cv.cvtColor(self.image_orig, cv.COLOR_BGR2GRAY)
+        self.image_bw = utils.thresh(self.image_gray)
 
         self.is_mask_partial: bool = False
         self.image_mask: np.ndarray = np.zeros_like(self.image_gray)
 
-        self.image_bw: np.ndarray = np.zeros_like(self.image_gray)
         self.image_std_filtered: np.ndarray = utils.std_filter(self.image_gray, 5)
 
         self.image_edges: np.ndarray = np.zeros_like(self.image_gray)
@@ -44,7 +42,7 @@ class Detector:
         self.results: Dict[str, Tuple[np.ndarray, List['Region']]] = dict()
 
     def detect(self, algorithms: List[Algorithm]) -> NoReturn:
-        self.image_mask, self.image_bw, self.is_mask_partial = morph.find_package_mask(self.image_std_filtered)
+        self.is_mask_partial, self.image_mask = morph.find_package_mask(self.image_bw)
 
         if self.is_mask_partial:
             self._apply_mask()
@@ -75,8 +73,6 @@ class Detector:
             image_MSER_bw = self._get_MSER_mask()
             self._save_result(Algorithm.MSER, image_MSER_bw)
 
-        # if Algorithm.Referencer in algorithms:
-        #     self._save_result(Algorithm.Referencer, )
 
     def to_dict(self) -> Dict[str, Dict[int, Dict[str, Union[int, float]]]]:
         dict_to_dump = dict()
@@ -188,7 +184,7 @@ class Detector:
             if len(contours) < 2:
                 mean_distance = 25
             else:
-                mean_distance = max(int(1.5 * np.mean(np.asarray([v for _, v in distances.items()]))), 10)
+                mean_distance = max(int(1.5 * np.mean(np.asarray([v for _, v in distances.items()]))), 15)
 
             _, morphed = morph.apply_line_morphology(filled, mean_distance, key='min')
             x, y, w, h = region.brect
@@ -246,6 +242,8 @@ class Detector:
 
         image_bw = cv.bitwise_xor(image_MSER_s, image_MSER_v)
         image_bw = utils.fill_holes(image_bw)
+
+        morph.apply_line_morphology(image_bw, 30, )
 
         return image_bw
 
