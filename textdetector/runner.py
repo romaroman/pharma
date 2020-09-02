@@ -9,7 +9,7 @@ import cv2 as cv
 
 import textdetector.config as config
 from textdetector.annotation import Annotation
-from textdetector.detector import Detector, Algorithm
+from textdetector.detector import Detector
 from textdetector.referencer import Referencer
 from textdetector.file_info import FileInfo
 from textdetector.evaluator import Evaluator
@@ -21,18 +21,17 @@ import utils
 logger = logging.getLogger('runner')
 
 
-class Run:
+class Runner:
 
     def __init__(self) -> NoReturn:
         self.image_paths: List[str] = list()
-
         self._load_images()
 
         if config.evaluate:
             self.evaluator: Evaluator = Evaluator()
 
     def process(self) -> NoReturn:
-        logger.info(f'Preparing to process {len(self.image_paths)} images...\n\n')
+        logger.info(f'Preparing to process {len(self.image_paths)} images...\n\n\n')
 
         writer = Writer()
 
@@ -42,15 +41,17 @@ class Run:
             file_info = FileInfo.get_file_info(image_path, config.database)
             writer.add_dict_result('file_info', file_info.to_dict())
 
-            image_orig = cv.imread(image_path)
+            image_input = cv.imread(image_path)
 
-            detection = Detector(image_orig)
-            detection.detect(Algorithm.to_list())
-            writer.add_dict_result('detection', detection.to_dict())
+            detection = Detector(image_input)
+            detection.detect(config.algorithms)
+
+            writer.add_dict_result('detection_result', detection.to_dict())
 
             if config.extract_reference:
-                referencer = Referencer(image_orig, file_info)
+                referencer = Referencer(image_input, file_info)
                 referencer.extract_reference_regions()
+                writer.save_reference_results(referencer, file_info.filename)
 
             if config.evaluate:
                 annotation = Annotation.load_annotation_by_pattern(config.root_folder, file_info.get_annotation_pattern())
@@ -63,7 +64,7 @@ class Run:
                 writer.add_dict_result('profiling', utils.profiler.to_dict())
 
             if config.write:
-                writer.save_results(detection, file_info.filename)
+                writer.save_all_results(detection, file_info.filename)
 
             writer.update_dataframe()
 
@@ -75,18 +76,24 @@ class Run:
         self.image_paths = glob.glob(str(config.root_folder / "cropped/*.png"))
 
         if config.shuffle:
+            if config.random_seed:
+                random.seed(123)
             random.shuffle(self.image_paths)
 
-        if config.percentage is not None:
-            if config.percentage < 100:
-                self.image_paths = self.image_paths[:int(len(self.image_paths) * abs(config.percentage)/100)]
+        if config.percentage < 100:
+            self.image_paths = self.image_paths[:int(len(self.image_paths) * abs(config.percentage)/100)]
+
+
+def setup() -> NoReturn:
+    utils.setup_logger('textdetector', config.logging_level)
+    utils.supress_warnings()
+    logger.info(f"Currently used configuration:\n{config.to_dict()}")
 
 
 def main() -> int:
-    utils.setup_logger('textdetector', config.logging_level)
-    utils.supress_warnings()
+    setup()
 
-    runner = Run()
+    runner = Runner()
     runner.process()
 
     return sys.exit(0)
