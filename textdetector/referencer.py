@@ -25,6 +25,8 @@ class Referencer:
 
         self.image_ref: np.ndarray = self.annotation.load_reference_image(config.root_folder / "references")
 
+        self.dict_results: Dict[str, Tuple[np.ndarray, np.nda]] = dict()
+
     def extract_reference_regions(self) -> NoReturn:
 
         if self.annotation.is_empty():
@@ -48,23 +50,21 @@ class Referencer:
             bx, by, bw, bh = cv.boundingRect(contour)
 
             image_part = image_part_masked[by:by + bh, bx:bx + bw]
-            points = cv.boxPoints(cv.minAreaRect(contour))
+            coords = np.transpose(np.asarray(cv.boxPoints(cv.minAreaRect(contour)), dtype=np.int0)).ravel()
 
-            return image_part, points
+            return image_part, coords
 
         homo_mat = utils.find_homography_matrix(
             utils.to_gray(self.image_ref),
             utils.to_gray(self.image_ver),
         )
 
-        image_parts = list()
-        points = list()
-        for brect in self.annotation.bounding_rectangles:
-            image_part, points_part = extract_reference_region(brect)
-            image_parts.append(image_part)
-            points.append(points_part)
+        for index, brect in enumerate(self.annotation.bounding_rectangles, start=1):
+            dict_key = f"{str(index).zfill(4)}_{brect.label}"
+            try:
+                self.dict_results[dict_key] = extract_reference_region(brect)
+            except:
+                logger.warning(f"SKIPPED {dict_key} from {self.file_info.filename}")
 
-        for rbrect in self.annotation.bounding_rectangles_rotated:
-            image_part, points_part = extract_reference_region(rbrect)
-            image_parts.append(image_part)
-            points.append(points_part)
+    def get_coordinates(self) -> List[np.ndarray]:
+        return [v[1] for _, v in self.dict_results.items()]
