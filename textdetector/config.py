@@ -4,11 +4,18 @@ from typing import List, Any, Dict
 
 from textdetector.file_info import Database
 from textdetector.detector import Algorithm
+from textdetector.args import parser
 
 
-base_folder: Path = Path("D:/pharmapack")
+import utils
+
+
+args = parser.parse_args()
+
 database: Database = Database.Enrollment
-root_folder: Path = base_folder / str(database)
+
+src_folder: Path = utils.init_path(args.src_folder) / str(database)
+dst_folder: Path = utils.init_path(args.dst_folder)
 
 logging_level: int = logging.DEBUG
 
@@ -32,9 +39,9 @@ extract_reference: bool = True
 def to_dict() -> Dict[str, Any]:
     dict_result = dict()
 
-    dict_result['base_folder'] = str(base_folder)
+    dict_result['src_folder'] = str(src_folder)
+    dict_result['dst_folder'] = str(src_folder)
     dict_result['database'] = str(database)
-    dict_result['root_folder'] = str(root_folder)
 
     dict_result['logging_level'] = logging_level
 

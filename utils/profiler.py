@@ -4,7 +4,6 @@ from copy import deepcopy
 from typing import Dict, NoReturn
 
 import utils
-import textdetector.config as config
 
 
 logger = logging.getLogger('profiler')
@@ -21,8 +20,7 @@ class _Profiler(metaclass=utils.Singleton):
 
     def add_timestamp(self, message: str) -> NoReturn:
         difference = round(time.time() - self._timestamp, 4)
-        if config.profile:
-            logger.debug(f"{message} --- {difference} sec ---")
+        logger.debug(f"{message} --- {difference} sec ---")
 
         entry_text = message.lower().replace(' ', '_')
         self._dict_results[entry_text] = difference

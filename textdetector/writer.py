@@ -24,7 +24,7 @@ class Writer:
         self._dicts_result: Dict[str, Dict[str, Union[int, float]]] = dict()
         self._failed_files: Dict[str, str] = dict()
 
-        self._output_folder = config.root_folder / "output_python" / utils.get_str_timestamp()
+        self._output_folder = config.dst_folder / utils.get_str_timestamp()
 
         if config.clear_output:
             shutil.rmtree(self._output_folder, ignore_errors=True)

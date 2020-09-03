@@ -54,7 +54,7 @@ class Runner:
                 writer.save_reference_results(referencer, file_info.filename)
 
             if config.evaluate:
-                annotation = Annotation.load_annotation_by_pattern(config.root_folder, file_info.get_annotation_pattern())
+                annotation = Annotation.load_annotation_by_pattern(config.src_folder, file_info.get_annotation_pattern())
                 writer.add_dict_result('annotation_info', annotation.to_dict())
 
                 self.evaluator.evaluate(detection, annotation)
@@ -73,7 +73,7 @@ class Runner:
         writer.save_dataframe()
 
     def _load_images(self):
-        self.image_paths = glob.glob(str(config.root_folder / "cropped/*.png"))
+        self.image_paths = glob.glob(str(config.src_folder / "cropped/*.png"))
 
         if config.shuffle:
             if config.random_seed:
@@ -85,14 +85,13 @@ class Runner:
 
 
 def setup() -> NoReturn:
-    utils.setup_logger('textdetector', config.logging_level)
-    utils.supress_warnings()
-    logger.info(f"Currently used configuration:\n{config.to_dict()}")
+    utils.setup_logger('text_detector', config.logging_level)
+    utils.suppress_warnings()
+    logger.info(f"Currently used configuration:\n{utils.pretty(config.to_dict())}")
 
 
 def main() -> int:
     setup()
-
     runner = Runner()
     runner.process()
 

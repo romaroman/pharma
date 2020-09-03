@@ -23,7 +23,7 @@ class Evaluator:
         self.dict_result: Dict[str, float] = dict()
 
     def evaluate(self, detection: Detector, annotation: Annotation) -> NoReturn:
-        image_reference = annotation.load_reference_image(config.root_folder / "references")
+        image_reference = annotation.load_reference_image(config.src_folder / "references")
 
         image_ref_mask_text = utils.to_gray(annotation.create_mask_by_labels(
             labels=[AnnotationLabel.Text, AnnotationLabel.Number]

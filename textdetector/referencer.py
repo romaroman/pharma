@@ -21,9 +21,9 @@ class Referencer:
 
         self.file_info: FileInfo = file_info
         self.annotation: Annotation = \
-            Annotation.load_annotation_by_pattern(config.root_folder, self.file_info.get_annotation_pattern())
+            Annotation.load_annotation_by_pattern(config.src_folder, self.file_info.get_annotation_pattern())
 
-        self.image_ref: np.ndarray = self.annotation.load_reference_image(config.root_folder / "references")
+        self.image_ref: np.ndarray = self.annotation.load_reference_image(config.src_folder / "references")
 
         self.dict_results: Dict[str, Tuple[np.ndarray, np.nda]] = dict()
 
