@@ -26,7 +26,8 @@ class Evaluator:
         image_reference = annotation.load_reference_image(config.src_folder / "references")
 
         image_ref_mask_text = utils.to_gray(annotation.create_mask_by_labels(
-            labels=[AnnotationLabel.Text, AnnotationLabel.Number]
+            labels=[AnnotationLabel.Text, AnnotationLabel.Number],
+            color=(255, 255, 255)
         ))
 
         image_verification = detection.image_orig
@@ -40,14 +41,18 @@ class Evaluator:
             image_mask, regions = result
 
             image_mask_warped = cv.warpPerspective(
-                image_mask, homo_mat, image_reference.shape[:2][::-1]
+                image_mask, homo_mat, utils.swap_dimensions(image_reference.shape)
             )
 
-            self.dict_result[f'{algorithm}_text_ratio'] = self._calc_iou_ratio(
+            self.dict_result[f'{algorithm}_iou_ratio'] = self._calc_iou_ratio(
                 image_mask_warped, image_ref_mask_text
             )
 
-            self.dict_result[f'{algorithm}_regions_amount'] = len(regions)
+            self.dict_result[f'{algorithm}_false_ratio'] = self._calc_false_ratio(
+                image_mask_warped, image_ref_mask_text
+            )
+
+            self.dict_result[f'{algorithm}_reg_amount'] = len(regions)
 
     def to_dict(self) -> Dict[str, float]:
         return self.dict_result
@@ -62,3 +67,12 @@ class Evaluator:
 
         tp_ratio = area_overlap / area_union
         return abs(1 - tp_ratio)
+
+    @classmethod
+    def _calc_false_ratio(cls, image_verification_mask: np.ndarray, image_reference_mask: np.ndarray) -> float:
+        image_false_detection = cv.bitwise_and(image_verification_mask, ~image_reference_mask)
+
+        area_false_detection = cv.countNonZero(image_false_detection)
+        area_reference = cv.countNonZero(image_reference_mask)
+
+        return area_false_detection / area_reference

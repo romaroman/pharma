@@ -1,3 +1,4 @@
+import itertools
 import logging
 from enum import auto
 from typing import List, NoReturn, Dict, Tuple, Union
@@ -13,11 +14,12 @@ logger = logging.getLogger('detector')
 
 class Algorithm(utils.CustomEnum):
 
-    MATLAB_Iteration1 = auto(),
-    MATLAB_Iteration2 = auto(),
-    Segmentation_Vertical = auto(),
+    MorphologyIteration1 = auto(),
+    MorphologyIteration2 = auto(),
+    LineSegmentation = auto(),
     Segmentation_Horizontal = auto(),
     MSER = auto(),
+    
     MajorVoting = auto()
 
 
@@ -53,26 +55,26 @@ class Detector:
         self.image_filled = utils.fill_holes(self.image_cleared_borders)
         self.image_filtered = morph.filter_non_text_blobs(self.image_filled)
 
-        if Algorithm.MATLAB_Iteration1 in algorithms or Algorithm.MATLAB_Iteration2 in algorithms:
+        if Algorithm.MorphologyIteration1 in algorithms:
             self.image_morphed = morph.apply_line_morphology(self.image_filtered, 30)[1]
-            self._save_result(Algorithm.MATLAB_Iteration1, self.image_morphed)
+            self._save_result(Algorithm.MorphologyIteration1.name, self.image_morphed)
 
-        if Algorithm.MATLAB_Iteration2 in algorithms:
-            image_iteration2_result = self._detect_words(self.get_result_by_algorithm(Algorithm.MATLAB_Iteration1)[1])
-            self._save_result(Algorithm.MATLAB_Iteration2, image_iteration2_result)
+        if Algorithm.MorphologyIteration2 in algorithms:
+            image_iteration2_result = self._detect_words(self.get_result_by_algorithm(Algorithm.MorphologyIteration1)[1])
+            self._save_result(Algorithm.MorphologyIteration2.name, image_iteration2_result)
 
-        if Algorithm.Segmentation_Vertical in algorithms:
+        if Algorithm.LineSegmentation in algorithms:
             image_lines_v = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=0))
-            self._save_result(Algorithm.Segmentation_Vertical, image_lines_v)
-
-        if Algorithm.Segmentation_Horizontal in algorithms:
             image_lines_h = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=1))
-            self._save_result(Algorithm.Segmentation_Horizontal, image_lines_h)
+            self._save_result(Algorithm.LineSegmentation.name, cv.bitwise_or(image_lines_h, image_lines_v))
 
         if Algorithm.MSER in algorithms:
             image_MSER_bw = self._get_MSER_mask()
-            self._save_result(Algorithm.MSER, image_MSER_bw)
+            self._save_result(Algorithm.MSER.name, image_MSER_bw)
 
+        if Algorithm.MajorVoting in algorithms:
+            for algorithm, mask in self._perform_major_voting().items():
+                self._save_result(algorithm, mask)
 
     def to_dict(self) -> Dict[str, Dict[int, Dict[str, Union[int, float]]]]:
         dict_to_dump = dict()
@@ -243,19 +245,36 @@ class Detector:
         image_bw = cv.bitwise_xor(image_MSER_s, image_MSER_v)
         image_bw = utils.fill_holes(image_bw)
 
-        morph.apply_line_morphology(image_bw, 30, )
+        morph.apply_line_morphology(image_bw, 30)
 
         return image_bw
 
-    def _save_result(self, algorithm: Algorithm, image_mask: np.ndarray) -> NoReturn:
+    def _save_result(self, algorithm: str, image_mask: np.ndarray) -> NoReturn:
         regions, _ = self._find_regions(image_mask)
 
         image_regions, image_mask = self._draw_regions_and_mask(regions)
 
-        if str(algorithm) in self.results.keys():
+        if algorithm in self.results.keys():
             logger.warning(f"{algorithm} result already exists, overwriting...")
 
-        self.results[str(algorithm)] = image_mask, regions
+        self.results[algorithm] = image_mask, regions
+
+    def _perform_major_voting(self) -> Dict[str, np.ndarray]:
+        resulting_masks = dict()
+
+        combinations = list(itertools.combinations(list(self.results.keys()), 3))
+        for combination in combinations:
+            alg1, alg2, alg3 = combination
+
+            mask1, mask2, mask3 = self.results[alg1][0], self.results[alg2][0], self.results[alg3][0]
+
+            alg12 = cv.bitwise_and(mask1, mask1)
+            alg13 = cv.bitwise_and(mask1, mask3)
+            alg23 = cv.bitwise_and(mask2, mask3)
+
+            resulting_masks["+".join([alg1, alg2, alg3])] = cv.bitwise_or(cv.bitwise_or(alg12, alg13), alg23)
+
+        return resulting_masks
 
 
 class Region:
@@ -290,16 +309,7 @@ class Region:
             return cv.copyTo(image, self.image_blob)[y:y + h, x:x + w]
 
     def coordinates_to_dict(self) -> Dict[str, int]:
-        return {
-            'x1': self.coordinates_ravel[0],
-            'y1': self.coordinates_ravel[1],
-            'x2': self.coordinates_ravel[2],
-            'y2': self.coordinates_ravel[3],
-            'x3': self.coordinates_ravel[4],
-            'y3': self.coordinates_ravel[5],
-            'x4': self.coordinates_ravel[6],
-            'y4': self.coordinates_ravel[7]
-        }
+        return dict(zip(['x1', 'y1', 'x2', 'y2', 'x3', 'y3', 'x4', 'y4'], self.coordinates_ravel))
 
     def to_dict(self) -> Dict[str, Union[int, float]]:
         coords = self.coordinates_to_dict()

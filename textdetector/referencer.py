@@ -42,7 +42,7 @@ class Referencer:
 
             image_mask_warped = cv.warpPerspective(
                 image_mask, homo_mat,
-                (self.image_ver.shape[1], self.image_ver.shape[0])
+                utils.swap_dimensions(self.image_ver.shape)
             )
             image_part_masked = cv.bitwise_and(self.image_ver, utils.to_rgb(image_mask_warped))
 
