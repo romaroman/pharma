@@ -27,9 +27,6 @@ class Runner:
         self.image_paths: List[str] = list()
         self._load_images()
 
-        if config.evaluate:
-            self.evaluator: Evaluator = Evaluator()
-
     def process(self) -> NoReturn:
         logger.info(f'Preparing to process {len(self.image_paths)} images...\n\n\n')
 
@@ -57,11 +54,12 @@ class Runner:
                 annotation = Annotation.load_annotation_by_pattern(config.src_folder, file_info.get_annotation_pattern())
                 writer.add_dict_result('annotation_info', annotation.to_dict())
 
-                self.evaluator.evaluate(detection, annotation)
-                writer.add_dict_result('evaluation_result', self.evaluator.to_dict())
+                evaluator = Evaluator()
+                evaluator.evaluate(detection, annotation)
+                writer.add_dict_result('evaluation_result', evaluator.to_dict())
 
             if config.profile:
-                writer.add_dict_result('profiling', utils.profiler.to_dict())
+                writer.add_dict_result('profiling_result', utils.profiler.to_dict())
 
             if config.write:
                 writer.save_all_results(detection, file_info.filename)
@@ -87,6 +85,8 @@ class Runner:
 def setup() -> NoReturn:
     utils.setup_logger('text_detector', config.logging_level)
     utils.suppress_warnings()
+
+    config.validate()
     logger.info(f"Currently used configuration:\n{utils.pretty(config.to_dict())}")
 
 
@@ -94,7 +94,6 @@ def main() -> int:
     setup()
     runner = Runner()
     runner.process()
-
     return sys.exit(0)
 
 
