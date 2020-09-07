@@ -64,7 +64,6 @@ def morph_line(length: int, angle: int) -> np.ndarray:
     contours, _ = cv.findContours(element_rotated, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
     x, y, w, h = cv.boundingRect(contours[0])
-
     element_cropped = element_rotated[y:y+h, x:x+w]
 
     return element_cropped
@@ -129,9 +128,7 @@ def apply_watershed(image_rgb: np.ndarray, image_bw: np.ndarray) -> np.ndarray:
     markers_amount, image_markers = cv.connectedComponents(image_foreground)
 
     image_markers += 1
-
     image_markers[image_unknown == 255] = 0
-
     image_markers = cv.watershed(image_rgb, image_markers)
 
     return image_markers
@@ -184,6 +181,7 @@ def find_homography_matrix(image_ref: np.ndarray, image_ver: np.ndarray) -> Unio
 
 def scale(image: np.ndarray, scale: float) -> np.ndarray:
     return cv.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)))
+
 
 def thresh(image_gray: np.ndarray) -> np.ndarray:
     thresh_value, _ = cv.threshold(image_gray, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
