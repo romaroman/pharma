@@ -22,7 +22,7 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="Implement multithreading in Runner&#10;Separate Writer logic for multithreading needs">
+    <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/runner.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/uio.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/uio.py" afterDir="false" />
@@ -280,7 +280,7 @@
       <workItem from="1599150590226" duration="1624000" />
       <workItem from="1599492662793" duration="4843000" />
       <workItem from="1599560371642" duration="929000" />
-      <workItem from="1599561647152" duration="1220000" />
+      <workItem from="1599561647152" duration="2549000" />
     </task>
     <task id="LOCAL-00001" summary="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment">
       <created>1594663231122</created>
@@ -296,7 +296,14 @@
       <option name="project" value="LOCAL" />
       <updated>1599560839384</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Updates for gallager">
+      <created>1599562896484</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1599562896484</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -317,7 +324,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment" />
     <MESSAGE value="Implement multithreading in Runner&#10;Separate Writer logic for multithreading needs" />
-    <option name="LAST_COMMIT_MESSAGE" value="Implement multithreading in Runner&#10;Separate Writer logic for multithreading needs" />
+    <MESSAGE value="Updates for gallager" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updates for gallager" />
   </component>
   <component name="WindowStateProjectService">
     <state x="586" y="203" key="#Inspections" timestamp="1597232311183">
@@ -354,11 +362,11 @@
       <screen x="1920" y="-65" width="1920" height="1050" />
     </state>
     <state x="2589" y="55" key="#run/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597143497817" />
-    <state x="465" y="38" width="1108" height="966" key="CommitChangelistDialog2" timestamp="1599562267049">
+    <state x="465" y="38" width="1108" height="966" key="CommitChangelistDialog2" timestamp="1599562896383">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="585" y="92" key="CommitChangelistDialog2/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1594663230362" />
-    <state x="465" y="38" width="1108" height="966" key="CommitChangelistDialog2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599562267049" />
+    <state x="465" y="38" width="1108" height="966" key="CommitChangelistDialog2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599562896383" />
     <state width="1519" height="438" key="DebuggerActiveHint" timestamp="1598381042643">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
@@ -400,11 +408,11 @@
     </state>
     <state x="461" y="169" key="SettingsEditor/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598993991050" />
     <state x="487" y="174" key="SettingsEditor/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599562490679" />
-    <state x="576" y="264" key="Vcs.Push.Dialog.v2" timestamp="1599560842685">
+    <state x="576" y="264" key="Vcs.Push.Dialog.v2" timestamp="1599562898317">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="552" y="257" key="Vcs.Push.Dialog.v2/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1594663235489" />
-    <state x="576" y="264" key="Vcs.Push.Dialog.v2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599560842685" />
+    <state x="576" y="264" key="Vcs.Push.Dialog.v2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599562898317" />
     <state x="2356" y="164" key="com.intellij.execution.console.ConsoleHistoryController$MyBrowseAction$1" timestamp="1592634383990">
       <screen x="1920" y="-65" width="1920" height="1050" />
     </state>
@@ -419,11 +427,11 @@
     </state>
     <state x="667" y="258" width="585" height="534" key="find.popup/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599046694945" />
     <state x="689" y="265" width="575" height="550" key="find.popup/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599497094910" />
-    <state x="646" y="233" width="672" height="698" key="search.everywhere.popup" timestamp="1599496991217">
+    <state x="646" y="233" width="672" height="698" key="search.everywhere.popup" timestamp="1599572760144">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="623" y="227" width="672" height="678" key="search.everywhere.popup/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599059509623" />
-    <state x="646" y="233" width="672" height="698" key="search.everywhere.popup/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599496991217" />
+    <state x="646" y="233" width="672" height="698" key="search.everywhere.popup/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599572760144" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -457,11 +465,6 @@
           <url>file://$PROJECT_DIR$/nnmodels/resnet50.py</url>
           <line>81</line>
           <option name="timeStamp" value="227" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/textdetector/runner.py</url>
-          <line>39</line>
-          <option name="timeStamp" value="246" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

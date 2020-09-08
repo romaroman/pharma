@@ -153,8 +153,8 @@ def suppress_warnings() -> NoReturn:
         warnings.filterwarnings('ignore', r'Mean of empty slice')
         warnings.filterwarnings('ignore', r'Creating an ndarray from ragged nested sequences')
         warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
-        warnings.filterwarnings('ignore', r'Mean of empty slice.')
-
+        warnings.filterwarnings('ignore', r'Mean of empty slice')
+        warnings.filterwarnings('ignore', r'SIFT_create DEPRECATED')
 
 def get_str_timestamp() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")

@@ -30,10 +30,10 @@ class Runner:
         self._load_images()
 
     def process(self) -> NoReturn:
-        cpus = cpu_count()
+        cpus = cpu_count() - 2
         logger.info(f'Preparing to process {len(self.image_paths)} images via {cpus} threads...\n\n\n')
 
-        for images_chunk in utils.chunks(self.image_paths, cpus):
+        for images_chunk in utils.chunks(self.image_paths, cpus*10):
             with Pool(processes=cpus if config.multiprocessing else 1) as pool:
                 data = pool.map(self._process_thread, images_chunk)
                 pool.close()
@@ -41,44 +41,48 @@ class Runner:
 
     @staticmethod
     def _process_thread(image_path: str) -> NoReturn:
-        writer = Writer()
+        try:
+            writer = Writer()
 
-        file_info = FileInfo.get_file_info(image_path, config.database)
-        writer.add_dict_result('file_info', file_info.to_dict())
+            file_info = FileInfo.get_file_info(image_path, config.database)
+            writer.add_dict_result('file_info', file_info.to_dict())
 
-        image_input = cv.imread(image_path)
+            image_input = cv.imread(image_path)
 
-        detection = Detector(image_input)
-        detection.detect(config.algorithms)
+            detection = Detector(image_input)
+            detection.detect(config.algorithms)
 
-        writer.add_dict_result('detection_result', detection.to_dict())
+            writer.add_dict_result('detection_result', detection.to_dict())
 
-        if config.extract_reference:
-            referencer = Referencer(image_input, file_info)
-            referencer.extract_reference_regions()
-            writer.save_reference_results(referencer, file_info.filename)
+            if config.extract_reference:
+                referencer = Referencer(image_input, file_info)
+                referencer.extract_reference_regions()
+                writer.save_reference_results(referencer, file_info.filename)
 
-        if config.evaluate:
-            annotation = Annotation.load_annotation_by_pattern(config.src_folder, file_info.get_annotation_pattern())
-            writer.add_dict_result('annotation_info', annotation.to_dict())
+            if config.evaluate:
+                annotation = Annotation.load_annotation_by_pattern(config.src_folder, file_info.get_annotation_pattern())
+                writer.add_dict_result('annotation_info', annotation.to_dict())
 
-            evaluator = Evaluator()
-            evaluator.evaluate(detection, annotation)
-            writer.add_dict_result('evaluation_result', evaluator.to_dict())
+                evaluator = Evaluator()
+                evaluator.evaluate(detection, annotation)
+                writer.add_dict_result('evaluation_result', evaluator.to_dict())
 
-        if config.profile:
-            writer.add_dict_result('profiling_result', utils.profiler.to_dict())
+            if config.profile:
+                writer.add_dict_result('profiling_result', utils.profiler.to_dict())
 
-        if config.write:
-            writer.save_all_results(detection, file_info.filename)
+            if config.write:
+                writer.save_all_results(detection, file_info.filename)
 
-        with counter.get_lock():
-            counter.value += 1
+            with counter.get_lock():
+                counter.value += 1
 
-        writer.add_dict_result('index', {'#': counter.value})
-        logger.info(f'#{str(counter.value).zfill(6)} PROCESSED {image_path}')
+            writer.add_dict_result('index', {'#': counter.value})
+            logger.info(f'#{str(counter.value).zfill(6)} PROCESSED {image_path}')
 
-        return writer.get_current_results()
+            return writer.get_current_results()
+        except:
+            logger.warning(f'#{str(counter.value).zfill(6)} FAILED {image_path}')
+            return {}
 
     def _load_images(self):
         self.image_paths = glob.glob(str(config.src_folder / "cropped/*.png"))
