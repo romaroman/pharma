@@ -12,3 +12,8 @@ def to_tuple(np_array: np.ndarray) -> Union[Tuple, np.ndarray]:
 
 def swap_dimensions(shape: Union[Tuple[int, int, int], Tuple[int, int]]) -> Tuple[int, int]:
     return shape[:2][::-1]
+
+
+def chunks(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]

@@ -5,14 +5,14 @@ import cv2 as cv
 import numpy as np
 
 import textdetector.config as config
-from textdetector.annotation import Annotation, BoundingRectangle, BoundingRectangleRotated
-from textdetector.detector import Detector
 from textdetector.file_info import FileInfo
+from textdetector.annotation import Annotation, BoundingRectangle, BoundingRectangleRotated
 
 import utils
 
 
 logger = logging.getLogger('referencer')
+
 
 class Referencer:
 

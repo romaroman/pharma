@@ -3,7 +3,8 @@ import glob
 import random
 import logging
 
-from typing import NoReturn, List, Union
+from multiprocessing import Pool, cpu_count, Value
+from typing import NoReturn, List
 
 import cv2 as cv
 
@@ -19,6 +20,7 @@ import utils
 
 
 logger = logging.getLogger('runner')
+counter: Value = Value('i', 0)
 
 
 class Runner:
@@ -30,45 +32,53 @@ class Runner:
     def process(self) -> NoReturn:
         logger.info(f'Preparing to process {len(self.image_paths)} images...\n\n\n')
 
+        cpus = cpu_count()
+        for images_chunk in utils.chunks(self.image_paths, cpus):
+            with Pool(processes=cpus if config.multiprocessing else 1) as pool:
+                data = pool.map(self._process_thread, images_chunk)
+                pool.close()
+                Writer.update_dataframe(data)
+
+    @staticmethod
+    def _process_thread(image_path: str) -> NoReturn:
         writer = Writer()
 
-        for index, image_path in enumerate(self.image_paths, start=1):
-            index_b = str(index).zfill(6)
+        file_info = FileInfo.get_file_info(image_path, config.database)
+        writer.add_dict_result('file_info', file_info.to_dict())
 
-            file_info = FileInfo.get_file_info(image_path, config.database)
-            writer.add_dict_result('file_info', file_info.to_dict())
+        image_input = cv.imread(image_path)
 
-            image_input = cv.imread(image_path)
+        detection = Detector(image_input)
+        detection.detect(config.algorithms)
 
-            detection = Detector(image_input)
-            detection.detect(config.algorithms)
+        writer.add_dict_result('detection_result', detection.to_dict())
 
-            writer.add_dict_result('detection_result', detection.to_dict())
+        if config.extract_reference:
+            referencer = Referencer(image_input, file_info)
+            referencer.extract_reference_regions()
+            writer.save_reference_results(referencer, file_info.filename)
 
-            if config.extract_reference:
-                referencer = Referencer(image_input, file_info)
-                referencer.extract_reference_regions()
-                writer.save_reference_results(referencer, file_info.filename)
+        if config.evaluate:
+            annotation = Annotation.load_annotation_by_pattern(config.src_folder, file_info.get_annotation_pattern())
+            writer.add_dict_result('annotation_info', annotation.to_dict())
 
-            if config.evaluate:
-                annotation = Annotation.load_annotation_by_pattern(config.src_folder, file_info.get_annotation_pattern())
-                writer.add_dict_result('annotation_info', annotation.to_dict())
+            evaluator = Evaluator()
+            evaluator.evaluate(detection, annotation)
+            writer.add_dict_result('evaluation_result', evaluator.to_dict())
 
-                evaluator = Evaluator()
-                evaluator.evaluate(detection, annotation)
-                writer.add_dict_result('evaluation_result', evaluator.to_dict())
+        if config.profile:
+            writer.add_dict_result('profiling_result', utils.profiler.to_dict())
 
-            if config.profile:
-                writer.add_dict_result('profiling_result', utils.profiler.to_dict())
+        if config.write:
+            writer.save_all_results(detection, file_info.filename)
 
-            if config.write:
-                writer.save_all_results(detection, file_info.filename)
+        with counter.get_lock():
+            counter.value += 1
 
-            writer.update_dataframe()
+        writer.add_dict_result('index', {'#': counter.value})
+        logger.info(f'#{str(counter.value).zfill(6)} PROCESSED {image_path}')
 
-            logger.info(f'#{index_b} PROCESSED {image_path}')
-
-        writer.save_dataframe()
+        return writer.get_current_results()
 
     def _load_images(self):
         self.image_paths = glob.glob(str(config.src_folder / "cropped/*.png"))
@@ -87,6 +97,7 @@ def setup() -> NoReturn:
     utils.suppress_warnings()
 
     config.validate()
+    Writer.prepare_output_folder()
     logger.info(f"Currently used configuration:\n{utils.pretty(config.to_dict())}")
 
 

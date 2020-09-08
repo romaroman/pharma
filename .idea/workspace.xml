@@ -3,17 +3,33 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="I">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/detector.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/evaluator.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/referencer.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/referencer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/runner.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/textdetector/writer.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/writer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/convert.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/convert.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/improc.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/improc.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -268,6 +284,7 @@
       <workItem from="1599158143069" duration="3096000" />
       <workItem from="1599150590226" duration="1624000" />
       <workItem from="1599492662793" duration="4843000" />
+      <workItem from="1599560371642" duration="396000" />
     </task>
     <task id="LOCAL-00001" summary="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment">
       <created>1594663231122</created>
@@ -281,6 +298,18 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment" />
@@ -308,10 +337,11 @@
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="640" y="260" key="#com.intellij.openapi.updateSettings.impl.PluginUpdateInfoDialog/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597237715710" />
-    <state x="432" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog" timestamp="1599042285738">
-      <screen x="0" y="0" width="1920" height="1050" />
+    <state x="458" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog" timestamp="1599559196382">
+      <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="432" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599042285738" />
+    <state x="458" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599559196382" />
     <state x="728" y="354" width="463" height="497" key="#com.intellij.tools.ToolEditorDialog" timestamp="1597169021829">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
@@ -337,35 +367,35 @@
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="788" y="287" key="FileChooserDialogImpl/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597173416223" />
-    <state width="1912" height="1017" key="GridCell.Tab.0.bottom" timestamp="1599497194486">
+    <state width="1886" height="249" key="GridCell.Tab.0.bottom" timestamp="1599559959948">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state width="1921" height="346" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599052110879" />
     <state width="1921" height="994" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
-    <state width="1912" height="1017" key="GridCell.Tab.0.bottom/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599497194486" />
-    <state width="1912" height="1017" key="GridCell.Tab.0.center" timestamp="1599497194486">
+    <state width="1886" height="249" key="GridCell.Tab.0.bottom/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599559959948" />
+    <state width="1886" height="249" key="GridCell.Tab.0.center" timestamp="1599559959948">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state width="1921" height="346" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599052110879" />
     <state width="1921" height="994" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
-    <state width="1912" height="1017" key="GridCell.Tab.0.center/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599497194486" />
-    <state width="1912" height="1017" key="GridCell.Tab.0.left" timestamp="1599497194486">
+    <state width="1886" height="249" key="GridCell.Tab.0.center/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599559959948" />
+    <state width="1886" height="249" key="GridCell.Tab.0.left" timestamp="1599559959948">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state width="1921" height="346" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599052110879" />
     <state width="1921" height="994" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
-    <state width="1912" height="1017" key="GridCell.Tab.0.left/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599497194486" />
-    <state width="1912" height="1017" key="GridCell.Tab.0.right" timestamp="1599497194486">
+    <state width="1886" height="249" key="GridCell.Tab.0.left/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599559959948" />
+    <state width="1886" height="249" key="GridCell.Tab.0.right" timestamp="1599559959948">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state width="1921" height="346" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599052110879" />
     <state width="1921" height="994" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
-    <state width="1912" height="1017" key="GridCell.Tab.0.right/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599497194486" />
-    <state x="487" y="174" key="SettingsEditor" timestamp="1599074635302">
+    <state width="1886" height="249" key="GridCell.Tab.0.right/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599559959948" />
+    <state x="487" y="174" key="SettingsEditor" timestamp="1599554441226">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="461" y="169" key="SettingsEditor/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598993991050" />
-    <state x="487" y="174" key="SettingsEditor/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599074635302" />
+    <state x="487" y="174" key="SettingsEditor/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599554441226" />
     <state x="552" y="257" key="Vcs.Push.Dialog.v2" timestamp="1594663235489">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
@@ -423,6 +453,11 @@
           <line>81</line>
           <option name="timeStamp" value="227" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/textdetector/writer.py</url>
+          <line>115</line>
+          <option name="timeStamp" value="245" />
+        </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
         <breakpoint type="python-exception">
@@ -436,7 +471,7 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/pharmapack_recognition$edges.coverage" NAME="edges Coverage Results" MODIFIED="1592420665567" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/text_detection" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$scratch_2.coverage" NAME="scratch_2 Coverage Results" MODIFIED="1598346599992" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/pharmapack_recognition$runner.coverage" NAME="runner Coverage Results" MODIFIED="1599497194436" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$runner.coverage" NAME="runner Coverage Results" MODIFIED="1599559959942" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$annotation.coverage" NAME="annotation Coverage Results" MODIFIED="1594651872629" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/annotations" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$discarded.coverage" NAME="discarded Coverage Results" MODIFIED="1599051935808" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$logger.coverage" NAME="logger Coverage Results" MODIFIED="1597312113408" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />

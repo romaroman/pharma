@@ -15,7 +15,7 @@ args = parser.parse_args()
 database: Database = Database.Enrollment
 
 src_folder: Path = utils.init_path(args.src_folder) / str(database)
-dst_folder: Path = utils.init_path(args.dst_folder)
+dst_folder: Path = utils.init_path(args.dst_folder) / utils.get_str_timestamp()
 
 logging_level: int = logging.DEBUG
 
@@ -35,7 +35,7 @@ algorithms: List[Algorithm] = Algorithm.to_list()
 evaluate: bool = True
 extract_reference: bool = True
 
-multiprocessing: bool = False
+multiprocessing: bool = True
 
 
 def to_dict() -> Dict[str, Any]:

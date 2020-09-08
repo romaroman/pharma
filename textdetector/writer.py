@@ -1,5 +1,4 @@
 import os
-import datetime
 import json
 import shutil
 from pathlib import Path
@@ -11,38 +10,13 @@ import pandas as pd
 
 import textdetector.config as config
 from textdetector.detector import Detector
-
-import utils
 from textdetector.referencer import Referencer
 
 
 class Writer:
 
     def __init__(self):
-        self._df_result: pd.DataFrame = pd.DataFrame()
-
         self._dicts_result: Dict[str, Dict[str, Union[int, float]]] = dict()
-        self._failed_files: Dict[str, str] = dict()
-
-        self._output_folder = config.dst_folder / utils.get_str_timestamp()
-
-        if config.clear_output:
-            shutil.rmtree(self._output_folder, ignore_errors=True)
-        os.makedirs(self._output_folder, exist_ok=True)
-
-        self._save_config()
-
-    def update_dataframe(self):
-        dict_combined = dict()
-
-        for key, dict_result in self._dicts_result.items():
-            dict_combined.update(dict_result)
-
-        self._clear_current_results()
-        self._df_result = self._df_result.append(pd.Series(dict_combined), ignore_index=True)
-
-        if len(self._df_result.index) % 10:
-            self.save_dataframe()
 
     def add_dict_result(
         self, blob: str,
@@ -50,23 +24,21 @@ class Writer:
     ) -> NoReturn:
         self._dicts_result[blob] = dict_result
 
-    def add_failed_file(self, file: str, error: str) -> NoReturn:
-        self._failed_files[file] = error
-
-    def save_dataframe(self):
-        self._df_result.to_csv(self._output_folder / "result.csv", index=False)
-
-    def _clear_current_results(self):
+    def clear_current_results(self) -> NoReturn:
         self._dicts_result.clear()
 
-    def _write_entity(
-            self,
+    def get_current_results(self) -> Dict[str, Dict[str, Union[int, float]]]:
+        return self._dicts_result
+
+    @classmethod
+    def write_entity(
+            cls,
             entity: Union[List[np.ndarray], np.ndarray, int, Dict[str, Dict[str, Union[int, float]]]],
             folder_suffix: str,
             filename: str,
             extension: str
     ) -> NoReturn:
-        dst_folder = self._output_folder / folder_suffix
+        dst_folder = config.dst_folder / folder_suffix
         os.makedirs(str(dst_folder.resolve()), exist_ok=True)
         dst_path = str(dst_folder / Path(filename + f".{extension}"))
 
@@ -77,17 +49,18 @@ class Writer:
             np.savetxt(dst_path, entity, delimiter=",", fmt='%i')
 
         elif extension == "json":
-            self._write_json(entity, dst_path)
+            cls.write_json(entity, dst_path)
 
-    def _write_image_region(self, image: np.ndarray, folder_suffix: str, filename: str, order: str) -> NoReturn:
-        dst_folder = self._output_folder / folder_suffix / filename
+    @staticmethod
+    def write_image_region(image: np.ndarray, folder_suffix: str, filename: str, order: str) -> NoReturn:
+        dst_folder = config.dst_folder / folder_suffix / filename
         os.makedirs(str(dst_folder.resolve()), exist_ok=True)
         dst_path = str(dst_folder / f"{order}.png")
 
         cv.imwrite(dst_path, image)
 
     @classmethod
-    def _write_json(cls, data: Any, path: str) -> NoReturn:
+    def write_json(cls, data: Any, path: str) -> NoReturn:
         with open(path, 'w+') as file:
             json.dump(data, file, indent=2, sort_keys=True)
 
@@ -96,24 +69,50 @@ class Writer:
         for algorithm, result in detection.results.items():
             image_mask, regions = result
 
-            self._write_entity(detection.get_coordinates_from_regions(regions), f"{algorithm}/coords", filename, "csv")
-            self._write_entity(image_mask, f"{algorithm}/masks", filename, "png")
+            self.write_entity(detection.get_coordinates_from_regions(regions), f"{algorithm}/coords", filename, "csv")
+            self.write_entity(image_mask, f"{algorithm}/masks", filename, "png")
 
             for index, region in enumerate(regions, start=1):
-                self._write_image_region(region.image_orig, f"{algorithm}/parts", filename, str(index).zfill(4))
+                self.write_image_region(region.image_orig, f"{algorithm}/parts", filename, str(index).zfill(4))
 
-        self._write_entity(self._dicts_result, "jsons", filename, "json")
+        self.write_entity(self._dicts_result, "jsons", filename, "json")
 
         if config.visualize:
-            self._write_entity(detection.create_visualization(), "visualizations", filename, "png")
+            self.write_entity(detection.create_visualization(), "visualizations", filename, "png")
 
     def save_reference_results(self, referencer: Referencer, filename: str) -> NoReturn:
-        self._write_entity(referencer.get_coordinates(), f"reference/coords", filename, "csv")
+        self.write_entity(referencer.get_coordinates(), f"reference/coords", filename, "csv")
 
         for label, result in referencer.dict_results.items():
             image_region, _ = result
-            self._write_image_region(image_region, f"reference/parts", filename, label)
+            self.write_image_region(image_region, f"reference/parts", filename, label)
+
+    @classmethod
+    def prepare_output_folder(cls) -> NoReturn:
+        if config.clear_output:
+            shutil.rmtree(config.dst_folder, ignore_errors=True)
+            os.makedirs(config.dst_folder, exist_ok=True)
+        cls.write_json(config.to_dict(), str(config.dst_folder / "config.json"))
+
+    @staticmethod
+    def update_dataframe(map_dict_results: List[Dict[str, Dict[str, Union[int, float]]]]) -> NoReturn:
+        if os.path.exists(config.dst_folder / "result.csv"):
+            df = pd.read_csv(config.dst_folder / "result.csv", index_col=False)
+        else:
+            df = pd.DataFrame()
+
+        for single_result in map_dict_results:
+            dict_combined = dict()
+
+            for key_general, dict_result in single_result.items():
+                dict_result_general = {}
+                for key_short, value in dict_result.items():
+                    dict_result_general[f"{key_general}_{key_short}"] = value
+
+                dict_combined.update(dict_result_general)
+
+            df = df.append(pd.Series(dict_combined), ignore_index=True)
+
+        df.to_csv(config.dst_folder / "result.csv", index=False)
 
 
-    def _save_config(self):
-        self._write_json(config.to_dict(), str(self._output_folder / "config.json"))
