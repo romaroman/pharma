@@ -1,33 +1,27 @@
-import itertools
 import logging
-from enum import auto
+import itertools
 from typing import List, NoReturn, Dict, Tuple, Union
 
 import cv2 as cv
 import numpy as np
 
+from textdetector import morph, config
+from textdetector.enums import DetectionAlgorithm
+
 import utils
-import textdetector.morph as morph
+
 
 logger = logging.getLogger('detector')
-
-
-class Algorithm(utils.CustomEnum):
-
-    MorphologyIteration1 = auto(),
-    MorphologyIteration2 = auto(),
-    LineSegmentation = auto(),
-    Segmentation_Horizontal = auto(),
-    MSER = auto(),
-    
-    MajorVoting = auto()
 
 
 class Detector:
 
     def __init__(self, image_orig: np.ndarray) -> NoReturn:
-        self.is_image_orig_aligned, self.image_orig = morph.align_package_to_corners(image_orig)
-        self.image_gray: np.ndarray = cv.cvtColor(self.image_orig, cv.COLOR_BGR2GRAY)
+        self.image_orig: np.ndarray = image_orig
+        self.image_orig_scaled: np.ndarray = utils.scale(image_orig, config.scale_factor)
+
+        self.is_image_orig_aligned, self.image_orig_scaled = morph.align_package_to_corners(self.image_orig_scaled)
+        self.image_gray: np.ndarray = cv.cvtColor(self.image_orig_scaled, cv.COLOR_BGR2GRAY)
         self.image_bw = utils.thresh(self.image_gray)
 
         self.is_mask_partial: bool = False
@@ -43,7 +37,7 @@ class Detector:
 
         self.results: Dict[str, Tuple[np.ndarray, List['Region']]] = dict()
 
-    def detect(self, algorithms: List[Algorithm]) -> NoReturn:
+    def detect(self, algorithms: List[DetectionAlgorithm]) -> NoReturn:
         self.is_mask_partial, self.image_mask = morph.find_package_mask(self.image_bw)
 
         if self.is_mask_partial:
@@ -55,24 +49,25 @@ class Detector:
         self.image_filled = utils.fill_holes(self.image_cleared_borders)
         self.image_filtered = morph.filter_non_text_blobs(self.image_filled)
 
-        if Algorithm.MorphologyIteration1 in algorithms:
+        if DetectionAlgorithm.MorphologyIteration1 in algorithms:
             self.image_morphed = morph.apply_line_morphology(self.image_filtered, 30)[1]
-            self._save_result(Algorithm.MorphologyIteration1.name, self.image_morphed)
+            self._save_result(DetectionAlgorithm.MorphologyIteration1.name, self.image_morphed)
 
-        if Algorithm.MorphologyIteration2 in algorithms:
-            image_iteration2_result = self._detect_words(self.get_result_by_algorithm(Algorithm.MorphologyIteration1)[1])
-            self._save_result(Algorithm.MorphologyIteration2.name, image_iteration2_result)
+        if DetectionAlgorithm.MorphologyIteration2 in algorithms:
+            image_iteration2_result = self._detect_words(self.get_result_by_algorithm(
+                DetectionAlgorithm.MorphologyIteration1)[1])
+            self._save_result(DetectionAlgorithm.MorphologyIteration2.name, image_iteration2_result)
 
-        if Algorithm.LineSegmentation in algorithms:
+        if DetectionAlgorithm.LineSegmentation in algorithms:
             image_lines_v = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=0))
             image_lines_h = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=1))
-            self._save_result(Algorithm.LineSegmentation.name, cv.bitwise_or(image_lines_h, image_lines_v))
+            self._save_result(DetectionAlgorithm.LineSegmentation.name, cv.bitwise_or(image_lines_h, image_lines_v))
 
-        if Algorithm.MSER in algorithms:
+        if DetectionAlgorithm.MSER in algorithms:
             image_MSER_bw = self._get_MSER_mask()
-            self._save_result(Algorithm.MSER.name, image_MSER_bw)
+            self._save_result(DetectionAlgorithm.MSER.name, image_MSER_bw)
 
-        if Algorithm.MajorVoting in algorithms:
+        if DetectionAlgorithm.MajorVoting in algorithms:
             for algorithm, mask in self._perform_major_voting().items():
                 self._save_result(algorithm, mask)
 
@@ -90,7 +85,7 @@ class Detector:
 
         return dict_to_dump
 
-    def get_result_by_algorithm(self, algorithm: Algorithm) -> Tuple[np.ndarray, List["Region"]]:
+    def get_result_by_algorithm(self, algorithm: DetectionAlgorithm) -> Tuple[np.ndarray, List["Region"]]:
         return self.results[str(algorithm)]
 
     @staticmethod
@@ -99,7 +94,7 @@ class Detector:
 
     def _apply_mask(self) -> NoReturn:
         self.image_gray = self.image_gray * self.image_mask
-        self.image_orig = self.image_orig * utils.to_rgb(self.image_mask)
+        self.image_orig_scaled = self.image_orig_scaled * utils.to_rgb(self.image_mask)
 
         self.image_bw = self.image_bw * self.image_mask
         self.image_std_filtered = self.image_std_filtered * self.image_mask
@@ -250,14 +245,15 @@ class Detector:
         return image_bw
 
     def _save_result(self, algorithm: str, image_mask: np.ndarray) -> NoReturn:
-        regions, _ = self._find_regions(image_mask)
+        image_mask_orig_size = utils.scale(image_mask, 1 / config.scale_factor)
+        regions, _ = self._find_regions(image_mask_orig_size)
 
-        image_regions, image_mask = self._draw_regions_and_mask(regions)
+        # image_regions, image_mask = self._draw_regions_and_mask(regions)
 
         if algorithm in self.results.keys():
             logger.warning(f"{algorithm} result already exists, overwriting...")
 
-        self.results[algorithm] = image_mask, regions
+        self.results[algorithm] = image_mask_orig_size, regions
 
     def _perform_major_voting(self) -> Dict[str, np.ndarray]:
         resulting_masks = dict()
@@ -289,18 +285,14 @@ class Region:
 
         self.brect = cv.boundingRect(self.contour)
 
-        self.rrect_area = self.rrect[1][0] * self.rrect[1][1]
         self.contour_area = cv.contourArea(self.contour)
 
-        self.image_orig = self._crop_by_bounding_rect(detection.image_orig)
-        self.image_gray = self._crop_by_bounding_rect(detection.image_gray)
-        self.image_preprocessed = self._crop_by_bounding_rect(detection.image_edges)
-        self.image_std_filtered = self._crop_by_bounding_rect(detection.image_std_filtered)
-        self.image_bw = self._crop_by_bounding_rect(detection.image_bw)
+        self.image_orig = self.crop_by_brect(detection.image_orig)
+        self.image_gray = self.crop_by_brect(detection.image_gray)
+        self.image_std_filtered = self.crop_by_brect(detection.image_std_filtered)
+        self.image_bw = self.crop_by_brect(detection.image_bw)
 
-        self.image_edges = np.zeros_like(self.image_gray)
-
-    def _crop_by_bounding_rect(self, image: np.ndarray) -> np.ndarray:
+    def crop_by_brect(self, image: np.ndarray) -> np.ndarray:
         x, y, w, h = self.brect
 
         if len(image.shape) == 3:

@@ -1,14 +1,12 @@
 import logging
-from typing import NoReturn, Dict, List, Union
+from typing import NoReturn, Dict
 
 import cv2 as cv
 import numpy as np
-import pandas as pd
 
-import textdetector.config as config
-from textdetector.annotation import Annotation, AnnotationLabel
+from textdetector import config, AnnotationLabel
+from textdetector.annotation import Annotation
 from textdetector.detector import Detector
-from textdetector.file_info import FileInfo
 
 import utils
 
@@ -19,8 +17,7 @@ logger = logging.getLogger('evaluator')
 class Evaluator:
 
     def __init__(self) -> NoReturn:
-        self.df_result: pd.Pandas = pd.DataFrame()
-        self.dict_result: Dict[str, float] = dict()
+        self._results: Dict[str, float] = dict()
 
     def evaluate(self, detection: Detector, annotation: Annotation) -> NoReturn:
         image_reference = annotation.load_reference_image(config.src_folder / "references")
@@ -44,18 +41,18 @@ class Evaluator:
                 image_mask, homo_mat, utils.swap_dimensions(image_reference.shape)
             )
 
-            self.dict_result[f'{algorithm}_iou_ratio'] = self._calc_iou_ratio(
+            self._results[f'{algorithm}_iou_ratio'] = self._calc_iou_ratio(
                 image_mask_warped, image_ref_mask_text
             )
 
-            self.dict_result[f'{algorithm}_false_ratio'] = self._calc_false_ratio(
+            self._results[f'{algorithm}_false_ratio'] = self._calc_false_ratio(
                 image_mask_warped, image_ref_mask_text
             )
 
-            self.dict_result[f'{algorithm}_reg_amount'] = len(regions)
+            self._results[f'{algorithm}_reg_amount'] = len(regions)
 
     def to_dict(self) -> Dict[str, float]:
-        return self.dict_result
+        return self._results
 
     @classmethod
     def _calc_iou_ratio(cls, image_verification_mask: np.ndarray, image_reference_mask: np.ndarray) -> float:

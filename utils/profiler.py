@@ -13,7 +13,7 @@ class _Profiler(metaclass=utils.Singleton):
 
     def __init__(self):
         self._timestamp = time.time()
-        self._dict_results: Dict[str, float] = dict()
+        self._results: Dict[str, float] = dict()
 
     def _update_timestamp(self) -> NoReturn:
         self._timestamp = time.time()
@@ -23,15 +23,15 @@ class _Profiler(metaclass=utils.Singleton):
         logger.debug(f"{message} --- {difference} sec ---")
 
         entry_text = message.lower().replace(' ', '_')
-        self._dict_results[entry_text] = difference
+        self._results[entry_text] = difference
 
         self._update_timestamp()
 
     def to_dict(self) -> Dict[str, float]:
         self._update_timestamp()
 
-        dict_copy = deepcopy(self._dict_results)
-        self._dict_results.clear()
+        dict_copy = deepcopy(self._results)
+        self._results.clear()
 
         for key, value in dict_copy:
             dict_copy[key] = round(value, 4)

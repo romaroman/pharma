@@ -4,7 +4,7 @@ import logging
 import warnings
 from pathlib import Path
 
-from typing import NoReturn, List, Union, Any
+from typing import NoReturn, List, Union
 
 import cv2 as cv
 import numpy as np
@@ -98,15 +98,20 @@ def show_image_as_window(image: np.ndarray, title: str = "") -> NoReturn:
     cv.destroyWindow(title)
 
 
-def setup_logger(name: str, level: int):
+def setup_logger(name: str, level: int, filename: str):
     log = logging.Logger(name)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s | %(processName)-10s | %(name)s | %(levelname)-8s | %(message)s')
     logging.basicConfig(level=level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     ch = logging.StreamHandler()
     ch.setLevel(level)
     ch.setFormatter(formatter)
     log.addHandler(ch)
+
+    fh = logging.FileHandler(filename)
+    fh.setLevel(level)
+    fh.setFormatter(formatter)
+    log.addHandler(fh)
 
 
 def combine_images(images: List[np.ndarray]) -> Union[np.ndarray, None]:
@@ -155,6 +160,7 @@ def suppress_warnings() -> NoReturn:
         warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
         warnings.filterwarnings('ignore', r'Mean of empty slice')
         warnings.filterwarnings('ignore', r'SIFT_create DEPRECATED')
+
 
 def get_str_timestamp() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")

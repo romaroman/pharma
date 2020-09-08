@@ -2,24 +2,9 @@ import re
 import pathlib
 
 from abc import ABC
-from enum import Enum, auto
-from collections import OrderedDict
 from typing import NoReturn, Union, Dict, List, Pattern
 
-import utils
-
-
-class Phone(utils.CustomEnum):
-    Phone1 = auto(),
-    Phone2 = auto(),
-    Phone3 = auto()
-
-
-class Database(utils.CustomEnum):
-    Enrollment = auto(),
-    PharmaPack_R_I_S1 = auto(),
-    PharmaPack_R_I_S2 = auto(),
-    PharmaPack_R_I_S3 = auto(),
+from textdetector import FileDatabase
 
 
 class FileInfo(ABC):
@@ -33,11 +18,11 @@ class FileInfo(ABC):
     }
 
     @staticmethod
-    def get_file_info(file_path: str, database: Database) -> Union["FileInfoEnrollment", "FileInfoRecognition"]:
+    def get_file_info(file_path: str, database: FileDatabase) -> Union["FileInfoEnrollment", "FileInfoRecognition"]:
 
-        if database is Database.Enrollment:
+        if database is FileDatabase.Enrollment:
             return FileInfoEnrollment(file_path)
-        if database in [Database.PharmaPack_R_I_S1, Database.PharmaPack_R_I_S2, Database.PharmaPack_R_I_S3]:
+        if database in [FileDatabase.PharmaPack_R_I_S1, FileDatabase.PharmaPack_R_I_S2, FileDatabase.PharmaPack_R_I_S3]:
             return FileInfoRecognition(file_path)
         else:
             raise ValueError

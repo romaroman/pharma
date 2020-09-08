@@ -78,7 +78,7 @@ def fill_holes(image_bw: np.ndarray) -> np.ndarray:
 
 
 def find_magnitude_and_angle(image_gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    image_sobel_x = cv.Sobel(image_gray, cv.CV_64F, 1, 0)  # Find x and y gradients
+    image_sobel_x = cv.Sobel(image_gray, cv.CV_64F, 1, 0)
     image_sobel_y = cv.Sobel(image_gray, cv.CV_64F, 0, 1)
 
     image_magnitude = np.sqrt(image_sobel_x ** 2.0 + image_sobel_y ** 2.0)
@@ -140,12 +140,10 @@ def MSER(image_gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     image_visualization = image_gray.copy()
 
     regions, _ = mser.detectRegions(image_gray)
-
     hulls = [cv.convexHull(r.reshape(-1, 1, 2)) for r in regions]
     cv.polylines(image_visualization, hulls, 1, (0, 255, 0))
 
     image_mask = np.zeros_like(image_gray)
-
     cv.drawContours(image_mask, hulls, -1, 255, -1)
 
     image_text_only = cv.bitwise_and(image_gray, image_gray, mask=image_mask)
@@ -187,3 +185,9 @@ def thresh(image_gray: np.ndarray) -> np.ndarray:
     thresh_value, _ = cv.threshold(image_gray, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
     _, image_bw = cv.threshold(image_gray, thresh_value - 10, 255, cv.THRESH_BINARY)
     return image_bw
+
+
+def prepare_image(image: np.ndarray, scale_factor: float) -> np.ndarray:
+    m = int(1 / scale_factor)
+    h, w = image.shape[:2]
+    return image[:h - h % m, :w - w % m]

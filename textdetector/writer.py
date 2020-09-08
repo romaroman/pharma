@@ -83,7 +83,7 @@ class Writer:
     def save_reference_results(self, referencer: Referencer, filename: str) -> NoReturn:
         self.write_entity(referencer.get_coordinates(), f"reference/coords", filename, "csv")
 
-        for label, result in referencer.dict_results.items():
+        for label, result in referencer._results.items():
             image_region, _ = result
             self.write_image_region(image_region, f"reference/parts", filename, label)
 
@@ -95,16 +95,18 @@ class Writer:
         cls.write_json(config.to_dict(), str(config.dst_folder / "config.json"))
 
     @staticmethod
-    def update_dataframe(map_dict_results: List[Dict[str, Dict[str, Union[int, float]]]]) -> NoReturn:
-        if os.path.exists(config.dst_folder / "result.csv"):
-            df = pd.read_csv(config.dst_folder / "result.csv", index_col=False)
+    def update_session(results: List[Dict[str, Dict[str, Union[int, float]]]]) -> NoReturn:
+        df_file = "session.csv"
+
+        if os.path.exists(config.dst_folder / df_file):
+            df = pd.read_csv(config.dst_folder / df_file, index_col=False)
         else:
             df = pd.DataFrame()
 
-        for single_result in map_dict_results:
+        for result in results:
             dict_combined = dict()
 
-            for key_general, dict_result in single_result.items():
+            for key_general, dict_result in result.items():
                 dict_result_general = {}
                 for key_short, value in dict_result.items():
                     dict_result_general[f"{key_general}_{key_short}"] = value
@@ -113,6 +115,4 @@ class Writer:
 
             df = df.append(pd.Series(dict_combined), ignore_index=True)
 
-        df.to_csv(config.dst_folder / "result.csv", index=False)
-
-
+        df.to_csv(config.dst_folder / df_file, index=False)

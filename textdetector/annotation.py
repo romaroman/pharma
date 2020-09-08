@@ -10,20 +10,9 @@ import cv2 as cv
 import numpy as np
 import pandas as pd
 
+from textdetector.enums import AnnotationLabel
+
 import utils
-
-
-class AnnotationLabel(utils.CustomEnum):
-
-    def get_color(self):
-        return self.value[0]
-
-    Text = (255, 0, 255),
-    Number = (0, 255, 255),
-    Watermark = (0, 0, 255),
-    Image = (255, 0, 0),
-    Barcode = (255, 255, 0),
-    Unknown = (255, 255, 255)
 
 
 class BoundingRectangleABC(ABC):
