@@ -30,9 +30,9 @@ class Runner:
         self._load_images()
 
     def process(self) -> NoReturn:
-        logger.info(f'Preparing to process {len(self.image_paths)} images...\n\n\n')
-
         cpus = cpu_count()
+        logger.info(f'Preparing to process {len(self.image_paths)} images via {cpus} threads...\n\n\n')
+
         for images_chunk in utils.chunks(self.image_paths, cpus):
             with Pool(processes=cpus if config.multiprocessing else 1) as pool:
                 data = pool.map(self._process_thread, images_chunk)

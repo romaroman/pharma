@@ -22,14 +22,10 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="I">
+    <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="Implement multithreading in Runner&#10;Separate Writer logic for multithreading needs">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/referencer.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/referencer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/runner.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/writer.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/writer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/convert.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/convert.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/uio.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/uio.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -170,7 +166,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="runner" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="runner" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="pharmapack-recognition" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -215,15 +211,14 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Python.runner" />
       <item itemvalue="Python.detector" />
       <item itemvalue="Python.scratch_2" />
-      <item itemvalue="Python.runner" />
       <item itemvalue="Python.discarded" />
       <item itemvalue="Python.resnet50" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.runner" />
         <item itemvalue="Python.detector" />
         <item itemvalue="Python.resnet50" />
         <item itemvalue="Python.discarded" />
@@ -284,7 +279,8 @@
       <workItem from="1599158143069" duration="3096000" />
       <workItem from="1599150590226" duration="1624000" />
       <workItem from="1599492662793" duration="4843000" />
-      <workItem from="1599560371642" duration="396000" />
+      <workItem from="1599560371642" duration="929000" />
+      <workItem from="1599561647152" duration="1220000" />
     </task>
     <task id="LOCAL-00001" summary="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment">
       <created>1594663231122</created>
@@ -293,7 +289,14 @@
       <option name="project" value="LOCAL" />
       <updated>1594663231122</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Implement multithreading in Runner&#10;Separate Writer logic for multithreading needs">
+      <created>1599560839384</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1599560839384</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -313,18 +316,19 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment" />
-    <option name="LAST_COMMIT_MESSAGE" value="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment" />
+    <MESSAGE value="Implement multithreading in Runner&#10;Separate Writer logic for multithreading needs" />
+    <option name="LAST_COMMIT_MESSAGE" value="Implement multithreading in Runner&#10;Separate Writer logic for multithreading needs" />
   </component>
   <component name="WindowStateProjectService">
     <state x="586" y="203" key="#Inspections" timestamp="1597232311183">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="586" y="203" key="#Inspections/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597232311183" />
-    <state x="441" y="184" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1599150061346">
+    <state x="441" y="184" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1599562641599">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="414" y="179" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598205078071" />
-    <state x="441" y="184" key="#com.intellij.execution.impl.EditConfigurationsDialog/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599150061346" />
+    <state x="441" y="184" key="#com.intellij.execution.impl.EditConfigurationsDialog/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599562641599" />
     <state x="707" y="326" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1594738830246">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
@@ -350,11 +354,11 @@
       <screen x="1920" y="-65" width="1920" height="1050" />
     </state>
     <state x="2589" y="55" key="#run/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597143497817" />
-    <state x="183" y="37" width="1108" height="966" key="CommitChangelistDialog2" timestamp="1599150576708">
+    <state x="465" y="38" width="1108" height="966" key="CommitChangelistDialog2" timestamp="1599562267049">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="585" y="92" key="CommitChangelistDialog2/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1594663230362" />
-    <state x="183" y="37" width="1108" height="966" key="CommitChangelistDialog2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599150576708" />
+    <state x="465" y="38" width="1108" height="966" key="CommitChangelistDialog2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599562267049" />
     <state width="1519" height="438" key="DebuggerActiveHint" timestamp="1598381042643">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
@@ -391,15 +395,16 @@
     <state width="1921" height="346" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599052110879" />
     <state width="1921" height="994" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
     <state width="1886" height="249" key="GridCell.Tab.0.right/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599559959948" />
-    <state x="487" y="174" key="SettingsEditor" timestamp="1599554441226">
+    <state x="487" y="174" key="SettingsEditor" timestamp="1599562490679">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="461" y="169" key="SettingsEditor/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598993991050" />
-    <state x="487" y="174" key="SettingsEditor/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599554441226" />
-    <state x="552" y="257" key="Vcs.Push.Dialog.v2" timestamp="1594663235489">
-      <screen x="0" y="0" width="1920" height="1050" />
+    <state x="487" y="174" key="SettingsEditor/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599562490679" />
+    <state x="576" y="264" key="Vcs.Push.Dialog.v2" timestamp="1599560842685">
+      <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="552" y="257" key="Vcs.Push.Dialog.v2/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1594663235489" />
+    <state x="576" y="264" key="Vcs.Push.Dialog.v2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599560842685" />
     <state x="2356" y="164" key="com.intellij.execution.console.ConsoleHistoryController$MyBrowseAction$1" timestamp="1592634383990">
       <screen x="1920" y="-65" width="1920" height="1050" />
     </state>
@@ -454,9 +459,9 @@
           <option name="timeStamp" value="227" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/textdetector/writer.py</url>
-          <line>115</line>
-          <option name="timeStamp" value="245" />
+          <url>file://$PROJECT_DIR$/textdetector/runner.py</url>
+          <line>39</line>
+          <option name="timeStamp" value="246" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -471,7 +476,7 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/pharmapack_recognition$edges.coverage" NAME="edges Coverage Results" MODIFIED="1592420665567" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/text_detection" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$scratch_2.coverage" NAME="scratch_2 Coverage Results" MODIFIED="1598346599992" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/pharmapack_recognition$runner.coverage" NAME="runner Coverage Results" MODIFIED="1599559959942" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$runner.coverage" NAME="runner Coverage Results" MODIFIED="1599561676348" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$annotation.coverage" NAME="annotation Coverage Results" MODIFIED="1594651872629" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/annotations" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$discarded.coverage" NAME="discarded Coverage Results" MODIFIED="1599051935808" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$logger.coverage" NAME="logger Coverage Results" MODIFIED="1597312113408" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />

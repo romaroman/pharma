@@ -147,7 +147,12 @@ def init_path(path_str: str) -> Path:
 
 
 def suppress_warnings() -> NoReturn:
+    warnings.filterwarnings('ignore')
+
     with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', r'Mean of empty slice')
+        warnings.filterwarnings('ignore', r'Creating an ndarray from ragged nested sequences')
+        warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
         warnings.filterwarnings('ignore', r'Mean of empty slice.')
 
 
