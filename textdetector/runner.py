@@ -3,7 +3,7 @@ import random
 import logging
 import traceback
 
-from multiprocessing import Pool, cpu_count, Value
+from multiprocessing import Pool, Value, cpu_count
 from typing import NoReturn, List, Dict, Union
 
 import cv2 as cv
@@ -17,6 +17,7 @@ from textdetector.evaluator import Evaluator
 from textdetector.writer import Writer
 
 import utils
+
 
 logger = logging.getLogger('runner')
 counter: Value = Value('i', 0)
@@ -39,8 +40,8 @@ class Runner:
 
     def process(self) -> NoReturn:
         cpus = cpu_count() - 2
-        logger.info(f"Preparing to process {len(self.image_paths)} images"
-                    f"{f' via {cpus} threads' if not config.debug else ''}...\n\n\n")
+        logger.info(f"\nPreparing to process {len(self.image_paths)} images"
+                    f"{f' via {cpus} threads' if not config.debug else ''}...\n")
 
         if config.debug:
             for image_path in self.image_paths:
@@ -113,7 +114,7 @@ class Runner:
             logger.info(f"#{str(counter.value).zfill(6)} | {status.upper()} | {file_info.filename}")
             return writer.get_current_results()
 
-    def _load_images(self):
+    def _load_images(self) -> NoReturn:
         if DEBUG_FILES:
             for file in DEBUG_FILES:
                 self.image_paths.append(str(config.src_folder / f"cropped/{file}.png"))

@@ -4,6 +4,10 @@ import cv2 as cv
 import numpy as np
 
 
+sift = cv.SIFT.create()
+mser = cv.MSER.create()
+
+
 def to_rgb(image_1c: np.ndarray) -> np.ndarray:
     return np.stack((image_1c,) * 3, axis=-1)
 
@@ -88,7 +92,7 @@ def apply_watershed(image_rgb: np.ndarray, image_bw: np.ndarray) -> np.ndarray:
 
 
 def MSER(image_gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    mser = cv.MSER_create()
+    global mser
 
     image_visualization = image_gray.copy()
 
@@ -105,7 +109,7 @@ def MSER(image_gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 
 def find_homography_matrix(image_ref: np.ndarray, image_ver: np.ndarray) -> Union[np.ndarray, None]:
-    sift = cv.xfeatures2d.SIFT_create()
+    global sift
 
     MIN_MATCH_COUNT = 10
 
