@@ -16,18 +16,18 @@ logger = logging.getLogger('detector')
 
 class Detector:
 
-    def __init__(self, image_orig: np.ndarray) -> NoReturn:
-        self.image_orig: np.ndarray = image_orig
-        self.image_orig_scaled: np.ndarray = utils.scale(image_orig, config.scale_factor)
+    def __init__(self, image_input: np.ndarray) -> NoReturn:
+        self.is_image_aligned, self.image_not_scaled = morph.align_package_to_corners(np.copy(image_input))
+        self.image_not_scaled = morph.prepare_image(self.image_not_scaled, config.scale_factor)
 
-        self.is_image_orig_aligned, self.image_orig_scaled = morph.align_package_to_corners(self.image_orig_scaled)
-        self.image_gray: np.ndarray = cv.cvtColor(self.image_orig_scaled, cv.COLOR_BGR2GRAY)
+        self.image_rgb = morph.mscale(self.image_not_scaled)
+        self.image_gray: np.ndarray = cv.cvtColor(self.image_rgb, cv.COLOR_BGR2GRAY)
         self.image_bw = utils.thresh(self.image_gray)
 
         self.is_mask_partial: bool = False
         self.image_mask: np.ndarray = np.zeros_like(self.image_gray)
 
-        self.image_std_filtered: np.ndarray = utils.std_filter(self.image_gray, 5)
+        self.image_std_filtered: np.ndarray = utils.std_filter(self.image_gray, 6)
 
         self.image_edges: np.ndarray = np.zeros_like(self.image_gray)
         self.image_filled: np.ndarray = np.zeros_like(self.image_gray)
@@ -38,24 +38,18 @@ class Detector:
         self.results: Dict[str, Tuple[np.ndarray, List['Region']]] = dict()
 
     def detect(self, algorithms: List[DetectionAlgorithm]) -> NoReturn:
-        self.is_mask_partial, self.image_mask = morph.find_package_mask(self.image_bw)
-
-        if self.is_mask_partial:
-            self._apply_mask()
-
         self.image_edges = morph.extract_edges(self.image_std_filtered, self.image_bw, post_morph=True)
-        self.image_cleared_borders = utils.clear_borders(self.image_edges)
+        self.image_cleared_borders = morph.clear_borders(self.image_edges)
 
         self.image_filled = utils.fill_holes(self.image_cleared_borders)
         self.image_filtered = morph.filter_non_text_blobs(self.image_filled)
 
         if DetectionAlgorithm.MorphologyIteration1 in algorithms:
-            self.image_morphed = morph.apply_line_morphology(self.image_filtered, 30)[1]
+            self.image_morphed = morph.apply_line_morphology(self.image_filtered, morph.mscale(30))[1]
             self._save_result(DetectionAlgorithm.MorphologyIteration1.name, self.image_morphed)
 
         if DetectionAlgorithm.MorphologyIteration2 in algorithms:
-            image_iteration2_result = self._detect_words(self.get_result_by_algorithm(
-                DetectionAlgorithm.MorphologyIteration1)[1])
+            image_iteration2_result = self._detect_words(self.get_result_by_algorithm(DetectionAlgorithm.MorphologyIteration1)[1])
             self._save_result(DetectionAlgorithm.MorphologyIteration2.name, image_iteration2_result)
 
         if DetectionAlgorithm.LineSegmentation in algorithms:
@@ -94,7 +88,7 @@ class Detector:
 
     def _apply_mask(self) -> NoReturn:
         self.image_gray = self.image_gray * self.image_mask
-        self.image_orig_scaled = self.image_orig_scaled * utils.to_rgb(self.image_mask)
+        self.image_rgb = self.image_rgb * utils.to_rgb(self.image_mask)
 
         self.image_bw = self.image_bw * self.image_mask
         self.image_std_filtered = self.image_std_filtered * self.image_mask
@@ -109,7 +103,7 @@ class Detector:
                 if x_min > x_max:
                     x_max, x_min = x_min, x_max
 
-                if x_max - x_min < 15:
+                if x_max - x_min < morph.mscale(15):
                     continue
 
                 image_filtered = self.image_filtered[x_min:x_max, y_min:y_max]
@@ -141,24 +135,23 @@ class Detector:
 
             region = Region(self, image_blob)
 
-            if region.contour_area > 400:
+            if region.contour_area > morph.mscale(25) ** 2:
                 regions.append(region)
 
         return regions, image_text_labeled
 
     def _detect_words(self, regions: List['Region']) -> np.ndarray:
-        image_word_linearly_morphed = np.zeros_like(self.image_gray)
+        image_word_linearly_morphed = np.zeros(self.image_not_scaled.shape[:2], dtype=np.uint8)
 
         for region in regions:
-
-            edges = morph.extract_edges(region.image_std_filtered, region.image_bw, post_morph=False)
+            edges = region.crop_by_brect(morph.mscale(self.image_edges, down=False))
             edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, np.ones((3, 3)))
+
             filtered = morph.filter_enclosed_contours(edges)
             filled = utils.fill_holes(filtered)
 
             contours, _ = cv.findContours(filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-
-            contours = list(filter(lambda x: cv.contourArea(x) > 200, contours))
+            contours = list(filter(lambda x: cv.contourArea(x) > morph.mscale(200), contours))
 
             points = [cv.boxPoints(cv.minAreaRect(contour)) for contour in contours if len(contour) > 4]
             distances = dict()
@@ -179,9 +172,12 @@ class Detector:
                         distances[idx1] = min_distance
 
             if len(contours) < 2:
-                mean_distance = 25
+                mean_distance = morph.mscale(25)
             else:
-                mean_distance = max(int(1.5 * np.mean(np.asarray([v for _, v in distances.items()]))), 15)
+                mean_distance = max(
+                    int(1.5 * np.mean(np.asarray([v for _, v in distances.items()]))),
+                    morph.mscale(20)
+                )
 
             _, morphed = morph.apply_line_morphology(filled, mean_distance, key='min')
             x, y, w, h = region.brect
@@ -189,7 +185,7 @@ class Detector:
             image_word_linearly_morphed[y:y + h, x:x + w] = cv.bitwise_xor(
                 morphed, image_word_linearly_morphed[y:y + h, x:x + w]
             )
-        return image_word_linearly_morphed
+        return morph.mscale(image_word_linearly_morphed)
 
     def _draw_regions_and_mask(
             self,
@@ -197,7 +193,7 @@ class Detector:
             color: int = 255
     ) -> Tuple[np.ndarray, np.ndarray]:
 
-        image_regions = np.copy(self.image_orig)
+        image_regions = np.copy(self.image_rgb)
         image_masks = np.zeros_like(self.image_gray)
 
         for region in regions:
@@ -212,7 +208,7 @@ class Detector:
             return cv.putText(np.copy(image), text, (50, 50), cv.FONT_HERSHEY_COMPLEX, 2, (0, 255, 0), 1)
 
         images = [
-            add_text(self.image_orig, "orig"),
+            add_text(self.image_rgb, "orig"),
             add_text(self.image_mask * 255, "mask"),
             add_text(self.image_edges, "edges"),
             add_text(self.image_cleared_borders, "clear borders"),
@@ -231,7 +227,7 @@ class Detector:
         return utils.combine_images(images)
 
     def _get_MSER_mask(self) -> np.ndarray:
-        image_hsv = cv.cvtColor(self.image_orig, cv.COLOR_BGR2HSV)
+        image_hsv = cv.cvtColor(self.image_rgb, cv.COLOR_BGR2HSV)
         _, image_channel_s, image_channel_v = cv.split(image_hsv)
 
         image_MSER_s = utils.MSER(image_channel_s)[0]
@@ -240,20 +236,20 @@ class Detector:
         image_bw = cv.bitwise_xor(image_MSER_s, image_MSER_v)
         image_bw = utils.fill_holes(image_bw)
 
-        morph.apply_line_morphology(image_bw, 30)
+        morph.apply_line_morphology(image_bw, morph.mscale(30))
 
         return image_bw
 
     def _save_result(self, algorithm: str, image_mask: np.ndarray) -> NoReturn:
-        image_mask_orig_size = utils.scale(image_mask, 1 / config.scale_factor)
+        image_mask_orig_size = morph.mscale(image_mask, down=False)
         regions, _ = self._find_regions(image_mask_orig_size)
 
-        # image_regions, image_mask = self._draw_regions_and_mask(regions)
+        image_regions, image_mask = self._draw_regions_and_mask(regions)
 
         if algorithm in self.results.keys():
             logger.warning(f"{algorithm} result already exists, overwriting...")
 
-        self.results[algorithm] = image_mask_orig_size, regions
+        self.results[algorithm] = image_mask, regions
 
     def _perform_major_voting(self) -> Dict[str, np.ndarray]:
         resulting_masks = dict()
@@ -276,7 +272,7 @@ class Detector:
 class Region:
 
     def __init__(self, detection: Detector, image_blob: np.ndarray) -> NoReturn:
-        self.image_blob = image_blob
+        self.image_blob = np.copy(image_blob)
         self.contour = cv.findContours(image_blob, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0][0]
 
         self.rrect = cv.minAreaRect(self.contour)
@@ -285,12 +281,10 @@ class Region:
 
         self.brect = cv.boundingRect(self.contour)
 
+        self.rrect_area = self.rrect[1][0] * self.rrect[1][1]
         self.contour_area = cv.contourArea(self.contour)
 
-        self.image_orig = self.crop_by_brect(detection.image_orig)
-        self.image_gray = self.crop_by_brect(detection.image_gray)
-        self.image_std_filtered = self.crop_by_brect(detection.image_std_filtered)
-        self.image_bw = self.crop_by_brect(detection.image_bw)
+        self.image_rgb = self.crop_by_brect(detection.image_not_scaled)
 
     def crop_by_brect(self, image: np.ndarray) -> np.ndarray:
         x, y, w, h = self.brect

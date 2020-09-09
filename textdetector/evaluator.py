@@ -27,7 +27,7 @@ class Evaluator:
             color=(255, 255, 255)
         ))
 
-        image_verification = detection.image_orig
+        image_verification = detection.image_not_scaled
 
         homo_mat = utils.find_homography_matrix(
             utils.to_gray(image_verification),

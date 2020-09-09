@@ -22,23 +22,21 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="Suppress additional warnings&#10;Improve multithread support">
-      <change afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/textdetector/enums.py" afterDir="false" />
+    <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="Move enums to separate files&#10;Rename some enums&#10;Add debug session handling&#10;Duplicate configuration logic with args&#10;Rename file_info&#10;Introduce reduced scaling for faster algorithm runtime&#10;Fix little bugs&#10;Add log writing to file&#10;Improve multithreading and session writing&#10;Move running to main.py">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/annotation.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/annotation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/args.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/args.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/detector.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/evaluator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/file_info.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/fileinfo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/textdetector/fileinfo.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/fileinfo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/textdetector/morph.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/morph.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/referencer.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/referencer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/runner.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/writer.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/writer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/improc.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/improc.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/profiler.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/profiler.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/uio.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/uio.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -91,7 +89,7 @@
       <recent name="C:\Users\r.chaban\Projects\pharmapack-recognition\models" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.test">
+  <component name="RunManager" selected="Python.main">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="pharmapack-recognition" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -256,10 +254,10 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.test" />
         <item itemvalue="Python.main" />
-        <item itemvalue="Python.referencer" />
         <item itemvalue="Python.detector" />
+        <item itemvalue="Python.test" />
+        <item itemvalue="Python.referencer" />
         <item itemvalue="Python.resnet50" />
       </list>
     </recent_temporary>
@@ -318,7 +316,8 @@
       <workItem from="1599150590226" duration="1624000" />
       <workItem from="1599492662793" duration="4843000" />
       <workItem from="1599560371642" duration="929000" />
-      <workItem from="1599561647152" duration="16367000" />
+      <workItem from="1599561647152" duration="25543000" />
+      <workItem from="1599658831039" duration="8474000" />
     </task>
     <task id="LOCAL-00001" summary="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment">
       <created>1594663231122</created>
@@ -348,7 +347,14 @@
       <option name="project" value="LOCAL" />
       <updated>1599572854893</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Move enums to separate files&#10;Rename some enums&#10;Add debug session handling&#10;Duplicate configuration logic with args&#10;Rename file_info&#10;Introduce reduced scaling for faster algorithm runtime&#10;Fix little bugs&#10;Add log writing to file&#10;Improve multithreading and session writing&#10;Move running to main.py">
+      <created>1599592464213</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1599592464213</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -371,7 +377,8 @@
     <MESSAGE value="Implement multithreading in Runner&#10;Separate Writer logic for multithreading needs" />
     <MESSAGE value="Updates for gallager" />
     <MESSAGE value="Suppress additional warnings&#10;Improve multithread support" />
-    <option name="LAST_COMMIT_MESSAGE" value="Suppress additional warnings&#10;Improve multithread support" />
+    <MESSAGE value="Move enums to separate files&#10;Rename some enums&#10;Add debug session handling&#10;Duplicate configuration logic with args&#10;Rename file_info&#10;Introduce reduced scaling for faster algorithm runtime&#10;Fix little bugs&#10;Add log writing to file&#10;Improve multithreading and session writing&#10;Move running to main.py" />
+    <option name="LAST_COMMIT_MESSAGE" value="Move enums to separate files&#10;Rename some enums&#10;Add debug session handling&#10;Duplicate configuration logic with args&#10;Rename file_info&#10;Introduce reduced scaling for faster algorithm runtime&#10;Fix little bugs&#10;Add log writing to file&#10;Improve multithreading and session writing&#10;Move running to main.py" />
   </component>
   <component name="WindowStateProjectService">
     <state x="586" y="203" key="#Inspections" timestamp="1597232311183">
@@ -416,15 +423,16 @@
       <screen x="1920" y="-65" width="1920" height="1050" />
     </state>
     <state x="2589" y="55" key="#run/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597143497817" />
-    <state x="465" y="38" width="1108" height="966" key="CommitChangelistDialog2" timestamp="1599591617232">
+    <state x="34" y="0" width="1886" height="1080" key="CommitChangelistDialog2" timestamp="1599668610190">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="585" y="92" key="CommitChangelistDialog2/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1594663230362" />
-    <state x="465" y="38" width="1108" height="966" key="CommitChangelistDialog2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599591617232" />
-    <state width="1519" height="438" key="DebuggerActiveHint" timestamp="1598381042643">
-      <screen x="0" y="0" width="1920" height="1050" />
+    <state x="34" y="0" width="1886" height="1080" key="CommitChangelistDialog2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599668610190" />
+    <state width="1493" height="451" key="DebuggerActiveHint" timestamp="1599667471754">
+      <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state width="1519" height="438" key="DebuggerActiveHint/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598381042643" />
+    <state width="1493" height="451" key="DebuggerActiveHint/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599667471754" />
     <state x="601" y="302" width="717" height="679" key="EditFileWatcherDialog" timestamp="1597169087732">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
@@ -433,40 +441,40 @@
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="788" y="287" key="FileChooserDialogImpl/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597173416223" />
-    <state width="1886" height="273" key="GridCell.Tab.0.bottom" timestamp="1599592005089">
+    <state width="1912" height="1017" key="GridCell.Tab.0.bottom" timestamp="1599668411892">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state width="1921" height="346" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599052110879" />
     <state width="1921" height="994" key="GridCell.Tab.0.bottom/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
-    <state width="1886" height="273" key="GridCell.Tab.0.bottom/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599592005089" />
-    <state width="1886" height="273" key="GridCell.Tab.0.center" timestamp="1599592005089">
+    <state width="1912" height="1017" key="GridCell.Tab.0.bottom/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599668411892" />
+    <state width="1912" height="1017" key="GridCell.Tab.0.center" timestamp="1599668411892">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state width="1921" height="346" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599052110879" />
     <state width="1921" height="994" key="GridCell.Tab.0.center/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
-    <state width="1886" height="273" key="GridCell.Tab.0.center/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599592005089" />
-    <state width="1886" height="273" key="GridCell.Tab.0.left" timestamp="1599592005088">
+    <state width="1912" height="1017" key="GridCell.Tab.0.center/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599668411892" />
+    <state width="1912" height="1017" key="GridCell.Tab.0.left" timestamp="1599668411892">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state width="1921" height="346" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599052110879" />
     <state width="1921" height="994" key="GridCell.Tab.0.left/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
-    <state width="1886" height="273" key="GridCell.Tab.0.left/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599592005088" />
-    <state width="1886" height="273" key="GridCell.Tab.0.right" timestamp="1599592005089">
+    <state width="1912" height="1017" key="GridCell.Tab.0.left/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599668411892" />
+    <state width="1912" height="1017" key="GridCell.Tab.0.right" timestamp="1599668411892">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state width="1921" height="346" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599052110879" />
     <state width="1921" height="994" key="GridCell.Tab.0.right/0.0.1920.1050/1920.-65.1920.1050@1920.-65.1920.1050" timestamp="1591714494023" />
-    <state width="1886" height="273" key="GridCell.Tab.0.right/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599592005089" />
+    <state width="1912" height="1017" key="GridCell.Tab.0.right/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599668411892" />
     <state x="487" y="174" key="SettingsEditor" timestamp="1599562490679">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="461" y="169" key="SettingsEditor/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598993991050" />
     <state x="487" y="174" key="SettingsEditor/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599562490679" />
-    <state x="576" y="264" key="Vcs.Push.Dialog.v2" timestamp="1599572855637">
+    <state x="576" y="264" key="Vcs.Push.Dialog.v2" timestamp="1599592465371">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="552" y="257" key="Vcs.Push.Dialog.v2/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1594663235489" />
-    <state x="576" y="264" key="Vcs.Push.Dialog.v2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599572855637" />
+    <state x="576" y="264" key="Vcs.Push.Dialog.v2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599592465371" />
     <state x="2356" y="164" key="com.intellij.execution.console.ConsoleHistoryController$MyBrowseAction$1" timestamp="1592634383990">
       <screen x="1920" y="-65" width="1920" height="1050" />
     </state>
@@ -480,16 +488,16 @@
       <screen x="1920" y="0" width="1920" height="1080" />
     </state>
     <state x="2042" y="0" width="1235" height="1066" maximized="true" key="dock-window-1/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599585699624" />
-    <state x="689" y="265" width="575" height="550" key="find.popup" timestamp="1599588997070">
+    <state x="689" y="265" width="575" height="550" key="find.popup" timestamp="1599660095728">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="667" y="258" width="585" height="534" key="find.popup/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599046694945" />
-    <state x="689" y="265" width="575" height="550" key="find.popup/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599588997070" />
-    <state x="646" y="233" width="672" height="698" key="search.everywhere.popup" timestamp="1599590926474">
+    <state x="689" y="265" width="575" height="550" key="find.popup/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599660095728" />
+    <state x="646" y="233" width="672" height="698" key="search.everywhere.popup" timestamp="1599667695756">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="623" y="227" width="672" height="678" key="search.everywhere.popup/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1599059509623" />
-    <state x="646" y="233" width="672" height="698" key="search.everywhere.popup/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599590926474" />
+    <state x="646" y="233" width="672" height="698" key="search.everywhere.popup/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599667695756" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -526,38 +534,8 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/textdetector/referencer.py</url>
-          <line>73</line>
+          <line>71</line>
           <option name="timeStamp" value="264" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/textdetector/runner.py</url>
-          <line>105</line>
-          <option name="timeStamp" value="267" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/textdetector/referencer.py</url>
-          <line>59</line>
-          <option name="timeStamp" value="269" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/textdetector/detector.py</url>
-          <line>40</line>
-          <option name="timeStamp" value="276" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/textdetector/detector.py</url>
-          <line>247</line>
-          <option name="timeStamp" value="277" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/textdetector/detector.py</url>
-          <line>289</line>
-          <option name="timeStamp" value="279" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/test.py</url>
-          <line>15</line>
-          <option name="timeStamp" value="281" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -572,9 +550,9 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/pharmapack_recognition$edges.coverage" NAME="edges Coverage Results" MODIFIED="1592420665567" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/text_detection" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$scratch_2.coverage" NAME="scratch_2 Coverage Results" MODIFIED="1598346599992" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/pharmapack_recognition$main.coverage" NAME="main Coverage Results" MODIFIED="1599591106104" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/pharmapack_recognition$runner.coverage" NAME="runner Coverage Results" MODIFIED="1599561676348" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/pharmapack_recognition$test.coverage" NAME="test Coverage Results" MODIFIED="1599592005072" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$main.coverage" NAME="main Coverage Results" MODIFIED="1599668411871" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$runner.coverage" NAME="runner Coverage Results" MODIFIED="1599666918322" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$test.coverage" NAME="test Coverage Results" MODIFIED="1599650011584" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$annotation.coverage" NAME="annotation Coverage Results" MODIFIED="1594651872629" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/annotations" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$discarded.coverage" NAME="discarded Coverage Results" MODIFIED="1599051935808" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$logger.coverage" NAME="logger Coverage Results" MODIFIED="1597312113408" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
@@ -590,6 +568,6 @@
     <SUITE FILE_PATH="coverage/pharmapack_recognition$scratch_1.coverage" NAME="scratch_1 Coverage Results" MODIFIED="1597166799467" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/scratches" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$align.coverage" NAME="align Coverage Results" MODIFIED="1593609683712" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/text_detection" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$referencer.coverage" NAME="referencer Coverage Results" MODIFIED="1599587277266" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/pharmapack_recognition$detector.coverage" NAME="detector Coverage Results" MODIFIED="1599495756290" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$detector.coverage" NAME="detector Coverage Results" MODIFIED="1599654407368" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

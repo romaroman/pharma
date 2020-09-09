@@ -5,7 +5,34 @@ import skimage.measure
 import cv2 as cv
 import numpy as np
 
+from textdetector import config
+
 import utils
+
+
+def mscale(
+        obj: Union[int, float, Tuple[int, int], np.ndarray],
+        down: bool = True
+) -> Union[int, float, Tuple[int, int], np.ndarray]:
+    if config.scale_factor == 1.0:
+        return obj
+
+    scale_f = float(config.scale_factor if down else 1 / config.scale_factor)
+
+    if type(obj) is int:
+        return int(obj * scale_f)
+    elif type(obj) is float:
+        return obj * scale_f
+    elif type(obj) is tuple:
+        return int(obj[0] * scale_f), int(obj[1] * scale_f)
+    elif type(obj) is np.ndarray:
+        return utils.scale_image(obj, scale_f)
+
+
+def prepare_image(image: np.ndarray, scale_factor: float) -> np.ndarray:
+    m = int(1 / scale_factor)
+    h, w = image.shape[:2]
+    return image[:h - h % m, :w - w % m]
 
 
 def align_package_to_corners(image_rgb: np.ndarray) -> Tuple[bool, Union[np.ndarray, None]]:
@@ -14,17 +41,17 @@ def align_package_to_corners(image_rgb: np.ndarray) -> Tuple[bool, Union[np.ndar
     threshold, _ = cv.threshold(image_gray, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
     _, image_bw = cv.threshold(image_gray, threshold - 30, 255, cv.THRESH_BINARY)
 
-    image_closed = cv.morphologyEx(image_bw, cv.MORPH_CLOSE, (15, 15))
-    image_dilated = cv.dilate(image_closed, (10, 10))
+    image_closed = cv.morphologyEx(image_bw, cv.MORPH_CLOSE, mscale((15, 15)))
+    image_dilated = cv.dilate(image_closed, mscale((10, 10)))
 
     image_filled = utils.fill_holes(image_dilated)
-    image_filled = cv.erode(image_filled, np.ones((10, 10)))
+    image_filled = cv.erode(image_filled, np.ones(mscale((10, 10))))
 
     contours, _ = cv.findContours(image_filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
     contour = max(contours, key=lambda x: cv.contourArea(x))
 
-    if cv.contourArea(contour) / image_filled.size < 0.3:
+    if abs(1 - cv.contourArea(contour) / image_filled.size) < 0.5:
         return False, image_rgb
 
     image_aligned = crop_and_align_contour(image_rgb, contour)
@@ -38,7 +65,7 @@ def find_package_mask(image_bw: np.ndarray) -> Tuple[bool, np.ndarray]:
 
     is_mask_partial = False
 
-    image_dilated = cv.dilate(image_bw, kernel=np.ones((9, 9)))
+    image_dilated = cv.dilate(image_bw, kernel=np.ones(mscale((9, 9))))
 
     contours, _ = cv.findContours(image_dilated, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     contours = np.asarray(contours)
@@ -68,6 +95,30 @@ def extract_edges(
         nbins: int = 7,
         post_morph: bool = False
 ) -> np.ndarray:
+    def filter_small_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbins: int = 7) -> np.ndarray:
+        image_new_ind = np.zeros_like(image_ind)
+
+        for j in range(1, nbins + 1):
+            image_current_bin = np.copy(image_ind)
+            image_current_bin[image_current_bin != j] = 0
+            image_current_bin[image_current_bin != 0] = 1
+            image_current_bin = image_current_bin * image_binary_mask
+
+            image_current_bin = cv.dilate(image_current_bin, kernel=np.ones(mscale((15, 15))))
+
+            contours, _ = cv.findContours(image_current_bin, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+            valid_contours = list(filter(lambda c: cv.contourArea(c) > mscale(20) ** 2, contours))
+
+            image_bw = np.zeros_like(image_current_bin)
+            cv.drawContours(image_bw, valid_contours, -1, 1, -1)
+
+            image_current_bin = np.copy(image_ind)
+            image_current_bin[image_current_bin != j] = 0
+
+            image_new_ind = image_new_ind + image_bw * image_current_bin
+
+        return image_new_ind
+
     if image_mask is None:
         image_mask = np.full(image_gray.shape, 255)
 
@@ -80,12 +131,12 @@ def extract_edges(
 
     image_ind = (np.ceil((image_angle + 180) / (360 / (nbins - 1))) + 1).astype(np.uint8)
 
-    threshold = 0.075
+    threshold = 0.025
     image_binary_mask = (image_magnitude > threshold).astype(np.uint8) * 255
 
-    image_ind = utils.filter_small_edges(image_ind, image_binary_mask, nbins)
+    image_ind_filtered = filter_small_edges(image_ind, image_binary_mask, nbins)
 
-    image_edges = (image_binary_mask * image_ind / nbins).astype(np.uint8)
+    image_edges = (image_binary_mask * image_ind_filtered / nbins).astype(np.uint8)
     image_edges[image_edges != 0] = 255
 
     if post_morph:
@@ -108,7 +159,7 @@ def filter_enclosed_contours(image_bw: np.ndarray) -> np.ndarray:
         parent_contour = contour_info[3]
         contour_area = cv.contourArea(contours[index])
 
-        if parent_contour != -1 and contour_area > 20:
+        if parent_contour != -1 and contour_area > mscale(25):
             contour_length = cv.arcLength(contours[index], False)
 
             if parent_contour in occurrences.keys():
@@ -146,7 +197,7 @@ def filter_enclosed_contours(image_bw: np.ndarray) -> np.ndarray:
             if solidity_ratio < 0.2 and length_ratio < 0.5 and area_ratio > 1.5:
                 contours_to_delete.append(current_contour)
 
-    cv.drawContours(image_mask_contours, contours_to_delete, -1, 255, 20)
+    cv.drawContours(image_mask_contours, contours_to_delete, -1, 255, mscale(20))
     image_filtered = cv.bitwise_and(image_bw, image_bw, mask=~image_mask_contours)
 
     return image_filtered
@@ -155,10 +206,10 @@ def filter_enclosed_contours(image_bw: np.ndarray) -> np.ndarray:
 def filter_non_text_blobs(image_bw: np.ndarray) -> np.ndarray:
 
     def is_prop_valid(prop: skimage.measure._regionprops._RegionProperties) -> bool:
-        return prop.solidity > 0.25 and prop.area > 200
+        return prop.solidity > 0.25 and prop.area > mscale(8) ** 2
 
     _, image_labeled = cv.connectedComponents(image_bw)
-    props = skimage.measure.regionprops(image_labeled)  # , coordinates='rc'
+    props = skimage.measure.regionprops(image_labeled)
 
     valid_props = list(filter(is_prop_valid, props))
     valid_labels = np.asarray([prop.label for prop in valid_props])
@@ -171,12 +222,10 @@ def filter_non_text_blobs(image_bw: np.ndarray) -> np.ndarray:
 def apply_line_morphology(
         image_bw: np.ndarray,
         line_length: Union[int, None] = None,
-        scale: float = 1,
         key: str = 'min'
 ) -> Tuple[int, np.ndarray]:
-
     if not line_length:
-        line_length = int(max(image_bw.shape) / 10 * scale)
+        line_length = max(image_bw.shape) / 10
 
     line_rotation_angles = [i for i in range(-90, 90, 5)]
 
@@ -201,12 +250,10 @@ def apply_line_morphology(
 
 
 def apply_line_morphology_simplified(
-        cls,
         image_bw: np.ndarray,
         angle: int,
         line_length: int
 ) -> Tuple[int, np.ndarray]:
-
     strel_line_rotated = utils.morph_line(line_length, angle)
     image_linearly_morphed = cv.dilate(image_bw, strel_line_rotated)
 
@@ -247,13 +294,9 @@ def apply_rectangular_segmentation(image_bw: np.ndarray, axis: int = 0) -> np.nd
 
 
 def crop_and_align_contour(image: np.ndarray, contour: np.ndarray) -> np.ndarray:
-
     rrect = cv.minAreaRect(contour)
     box = cv.boxPoints(rrect)
     box = np.asarray(box, dtype=np.int0)
-
-    h = rrect[1][0]
-    w = rrect[1][1]
 
     xs = [i[0] for i in box]
     ys = [i[1] for i in box]
@@ -268,10 +311,42 @@ def crop_and_align_contour(image: np.ndarray, contour: np.ndarray) -> np.ndarray
     size = (x2 - x1, y2 - y1)
     m = cv.getRotationMatrix2D((size[0] / 2, size[1] / 2), angle, 1.0)
 
-    cropped = cv.getRectSubPix(image, size, center)
-    cropped = cv.warpAffine(cropped, m, size)
+    image_cropped = cv.getRectSubPix(image, size, center)
+    image_cropped = cv.warpAffine(image_cropped, m, size)
 
-    hw_img = cv.getRectSubPix(cropped, (int(w), int(h)), (size[0] / 2, size[1] / 2))
-    wh_img = cv.getRectSubPix(cropped, (int(h), int(w)), (size[0] / 2, size[1] / 2))
+    image_bw = utils.thresh(utils.to_gray(image_cropped), thresh_adjust=-50)
+    contours, _ = cv.findContours(image_bw, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    contour_max = max(contours, key=lambda x: cv.contourArea(x))
+    x, y, w, h = cv.boundingRect(contour_max)
+    image_result = image_cropped[y:y+h, x:x+w]
 
-    return hw_img if cv.countNonZero(hw_img[:, :, 0]) > cv.countNonZero(wh_img[:, :, 0]) else wh_img
+    return image_result
+
+
+def clear_borders(image_bw: np.ndarray) -> np.ndarray:
+
+    def is_contour_invalid(contour) -> bool:
+        amount_of_border_pixels_to_omit = mscale(25)
+
+        if len(contour) >= 4 and abs(1 - cv.contourArea(contour) / image_bw.size) < 0.5:
+            for point in contour:
+                point = point[0]
+                if point[0] <= amount_of_border_pixels_to_omit or point[1] == amount_of_border_pixels_to_omit:
+                    return True
+
+        return False
+
+    contour_thickness = int(max(image_bw.shape) * 0.02)
+
+    image_bwd = cv.dilate(image_bw, np.ones(mscale((7, 7))))
+    contours, _ = cv.findContours(image_bwd, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
+
+    contours_to_delete = list(map(lambda p: utils.approximate_contour(p, 0.01), filter(is_contour_invalid, contours)))
+
+    if len(contours_to_delete) == 0:
+        return image_bw
+
+    image_mask_to_delete = cv.drawContours(np.zeros_like(image_bw), contours_to_delete, -1, 255, contour_thickness)
+    image_result = cv.bitwise_and(~image_mask_to_delete, image_bw)
+
+    return clear_borders(image_result)
