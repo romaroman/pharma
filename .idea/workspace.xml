@@ -22,7 +22,7 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="Move enums to separate files&#10;Rename some enums&#10;Add debug session handling&#10;Duplicate configuration logic with args&#10;Rename file_info&#10;Introduce reduced scaling for faster algorithm runtime&#10;Fix little bugs&#10;Add log writing to file&#10;Improve multithreading and session writing&#10;Move running to main.py">
+    <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="Add support of scaling factor in detector.py and morph.py&#10;Move some morphological operations from improc.py to morph.py&#10;Implement recursive image border cleaning&#10;Improve alignment of package to image corners&#10;Create an annotation in thread and pass it to Referencer">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/annotation.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/annotation.py" afterDir="false" />
@@ -317,7 +317,7 @@
       <workItem from="1599492662793" duration="4843000" />
       <workItem from="1599560371642" duration="929000" />
       <workItem from="1599561647152" duration="25543000" />
-      <workItem from="1599658831039" duration="8474000" />
+      <workItem from="1599658831039" duration="8794000" />
     </task>
     <task id="LOCAL-00001" summary="Implement annotation reading&#10;Implement line splitting&#10;Implement package alignment">
       <created>1594663231122</created>
@@ -354,7 +354,14 @@
       <option name="project" value="LOCAL" />
       <updated>1599592464213</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Add support of scaling factor in detector.py and morph.py&#10;Move some morphological operations from improc.py to morph.py&#10;Implement recursive image border cleaning&#10;Improve alignment of package to image corners">
+      <created>1599668934869</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1599668934869</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -378,7 +385,8 @@
     <MESSAGE value="Updates for gallager" />
     <MESSAGE value="Suppress additional warnings&#10;Improve multithread support" />
     <MESSAGE value="Move enums to separate files&#10;Rename some enums&#10;Add debug session handling&#10;Duplicate configuration logic with args&#10;Rename file_info&#10;Introduce reduced scaling for faster algorithm runtime&#10;Fix little bugs&#10;Add log writing to file&#10;Improve multithreading and session writing&#10;Move running to main.py" />
-    <option name="LAST_COMMIT_MESSAGE" value="Move enums to separate files&#10;Rename some enums&#10;Add debug session handling&#10;Duplicate configuration logic with args&#10;Rename file_info&#10;Introduce reduced scaling for faster algorithm runtime&#10;Fix little bugs&#10;Add log writing to file&#10;Improve multithreading and session writing&#10;Move running to main.py" />
+    <MESSAGE value="Add support of scaling factor in detector.py and morph.py&#10;Move some morphological operations from improc.py to morph.py&#10;Implement recursive image border cleaning&#10;Improve alignment of package to image corners" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add support of scaling factor in detector.py and morph.py&#10;Move some morphological operations from improc.py to morph.py&#10;Implement recursive image border cleaning&#10;Improve alignment of package to image corners" />
   </component>
   <component name="WindowStateProjectService">
     <state x="586" y="203" key="#Inspections" timestamp="1597232311183">
@@ -423,11 +431,11 @@
       <screen x="1920" y="-65" width="1920" height="1050" />
     </state>
     <state x="2589" y="55" key="#run/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597143497817" />
-    <state x="34" y="0" width="1886" height="1080" key="CommitChangelistDialog2" timestamp="1599668610190">
+    <state x="34" y="0" width="1886" height="1080" key="CommitChangelistDialog2" timestamp="1599668934734">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="585" y="92" key="CommitChangelistDialog2/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1594663230362" />
-    <state x="34" y="0" width="1886" height="1080" key="CommitChangelistDialog2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599668610190" />
+    <state x="34" y="0" width="1886" height="1080" key="CommitChangelistDialog2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599668934734" />
     <state width="1493" height="451" key="DebuggerActiveHint" timestamp="1599667471754">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
@@ -470,11 +478,11 @@
     </state>
     <state x="461" y="169" key="SettingsEditor/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598993991050" />
     <state x="487" y="174" key="SettingsEditor/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599562490679" />
-    <state x="576" y="264" key="Vcs.Push.Dialog.v2" timestamp="1599592465371">
+    <state x="576" y="264" key="Vcs.Push.Dialog.v2" timestamp="1599668937175">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="552" y="257" key="Vcs.Push.Dialog.v2/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1594663235489" />
-    <state x="576" y="264" key="Vcs.Push.Dialog.v2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599592465371" />
+    <state x="576" y="264" key="Vcs.Push.Dialog.v2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599668937175" />
     <state x="2356" y="164" key="com.intellij.execution.console.ConsoleHistoryController$MyBrowseAction$1" timestamp="1592634383990">
       <screen x="1920" y="-65" width="1920" height="1050" />
     </state>

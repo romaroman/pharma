@@ -73,7 +73,7 @@ class Writer:
             self.write_entity(image_mask, f"{algorithm}/masks", filename, "png")
 
             for index, region in enumerate(regions, start=1):
-                self.write_image_region(region.image_orig, f"{algorithm}/parts", filename, str(index).zfill(4))
+                self.write_image_region(region.image_rgb, f"{algorithm}/parts", filename, str(index).zfill(4))
 
         self.write_entity(self._dicts_result, "jsons", filename, "json")
 

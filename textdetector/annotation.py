@@ -3,7 +3,7 @@ import glob
 
 from abc import ABC
 from pathlib import Path
-import xml.etree.ElementTree as ET
+from xml.etree import ElementTree
 from typing import List, Tuple, NoReturn, Union, Pattern, Dict
 
 import cv2 as cv
@@ -17,7 +17,7 @@ import utils
 
 class BoundingRectangleABC(ABC):
 
-    def __init__(self, rectangle: ET.Element) -> NoReturn:
+    def __init__(self, rectangle: ElementTree.Element) -> NoReturn:
         self.label: AnnotationLabel = AnnotationLabel[rectangle.find('name').text.capitalize()]
 
         self.width: Union[int, float] = 0
@@ -43,7 +43,7 @@ class BoundingRectangleABC(ABC):
 
 class BoundingRectangle(BoundingRectangleABC):
 
-    def __init__(self, rectangle: ET.Element) -> NoReturn:
+    def __init__(self, rectangle: ElementTree.Element) -> NoReturn:
         super().__init__(rectangle)
 
         bndbox = rectangle.find('bndbox')
@@ -87,7 +87,7 @@ class BoundingRectangle(BoundingRectangleABC):
 
 class BoundingRectangleRotated(BoundingRectangleABC):
 
-    def __init__(self, rectangle: ET.Element) -> NoReturn:
+    def __init__(self, rectangle: ElementTree.Element) -> NoReturn:
         super().__init__(rectangle)
 
         robndbox = rectangle.find('robndbox')
@@ -97,7 +97,7 @@ class BoundingRectangleRotated(BoundingRectangleABC):
         self.width: float = float(robndbox.find('w').text)
         self.height: float = float(robndbox.find('h').text)
 
-        self.angle: float = float(robndbox.find("angle").text)
+        self.angle: float = float(robndbox.find('angle').text)
 
         self.points: np.ndarray = self._get_points()
 
@@ -153,16 +153,16 @@ class BoundingRectangleRotated(BoundingRectangleABC):
 
     def _draw_not_filled(self, image: np.ndarray, color: Union[Tuple[int, int, int], None] = None) -> np.ndarray:
 
-        def draw_line(image: np.ndarray, point1: np.ndarray, point2: np.ndarray) -> np.ndarray:
+        def draw_line(image: np.ndarray, point1: np.ndarray, point2: np.ndarray) -> NoReturn:
             point1_tuple = utils.to_tuple(point1)
             point2_tuple = utils.to_tuple(point2)
 
-            return cv.line(image, point1_tuple, point2_tuple, color if color else self.draw_color, thickness=2)
+            cv.line(image, point1_tuple, point2_tuple, color if color else self.draw_color, thickness=2)
 
-        image = draw_line(image, self.points[0], self.points[1])
-        image = draw_line(image, self.points[1], self.points[2])
-        image = draw_line(image, self.points[2], self.points[3])
-        image = draw_line(image, self.points[3], self.points[0])
+        draw_line(image, self.points[0], self.points[1])
+        draw_line(image, self.points[1], self.points[2])
+        draw_line(image, self.points[2], self.points[3])
+        draw_line(image, self.points[3], self.points[0])
 
         return image
 
@@ -175,7 +175,7 @@ class BoundingRectangleRotated(BoundingRectangleABC):
 class Annotation:
 
     def __init__(self, path_xml: str) -> NoReturn:
-        self.root: ET.Element = ET.parse(path_xml).getroot()
+        self.root: ElementTree.Element = ElementTree.parse(path_xml).getroot()
         self.filename: str = self.root.find('filename').text
         self.size: Tuple[int, int, int] = self._get_size()
 
@@ -198,9 +198,9 @@ class Annotation:
         for rectangle in rectangles:
             rectangle_type = rectangle.find('type').text
 
-            if rectangle_type == "bndbox":
+            if rectangle_type == 'bndbox':
                 bounding_rectangles.append(BoundingRectangle(rectangle))
-            elif rectangle_type == "robndbox":
+            elif rectangle_type == 'robndbox':
                 bounding_rectangles.append(BoundingRectangleRotated(rectangle))
 
         return bounding_rectangles

@@ -99,9 +99,11 @@ def show_image_as_window(image: np.ndarray, title: str = "") -> NoReturn:
 
 
 def setup_logger(name: str, level: int, filename: str):
+    format_str = '%(asctime)s | %(processName)-10s | %(name)s | %(levelname)-8s | %(message)s'
+
     log = logging.Logger(name)
-    formatter = logging.Formatter('%(asctime)s | %(processName)-10s | %(name)s | %(levelname)-8s | %(message)s')
-    logging.basicConfig(level=level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(format_str)
+    logging.basicConfig(level=level, format=format_str)
 
     ch = logging.StreamHandler()
     ch.setLevel(level)
