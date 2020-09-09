@@ -18,7 +18,7 @@ src_folder: Path = utils.init_path(args.src_folder) / str(database)
 dst_folder: Path = utils.init_path(args.dst_folder) / timestamp
 
 shuffle: bool = args.shuffle
-random_seed: bool = args.random_seed
+seed: bool = args.seed
 split_on_chunks: bool = args.split_on_chunks
 percentage: int = args.percentage
 
@@ -48,7 +48,7 @@ def to_dict() -> Dict[str, Any]:
     dict_result['dst_folder'] = str(dst_folder)
 
     dict_result['shuffle'] = shuffle
-    dict_result['random_seed'] = random_seed
+    dict_result['seed'] = seed
     dict_result['split_on_chunks'] = split_on_chunks
     dict_result['percentage'] = percentage
 
@@ -71,6 +71,8 @@ def to_dict() -> Dict[str, Any]:
 
 
 def validate():
+    global multithreading, debug, algorithms
+
     if DetectionAlgorithm.MajorVoting in algorithms:
         if len(algorithms) - 1 < 3:
             algorithms.remove(DetectionAlgorithm.MajorVoting)
@@ -81,6 +83,6 @@ def validate():
                        ", adding that to algorithms list")
         algorithms.insert(0, DetectionAlgorithm.MorphologyIteration1)
 
-    # if debug and multithreading:
-    #     logger.warning("Multithreading isn't supported during debug")
-    #     multithreading = False
+    if debug and multithreading:
+        logger.warning("Multithreading isn't supported during debug")
+        multithreading = False

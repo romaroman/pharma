@@ -11,8 +11,8 @@ parser.add_argument('src_folder', type=str, metavar='SRC_DIR', help='Path to sou
 parser.add_argument('dst_folder', type=str, metavar='DST_DIR', help='Path to destination folder')
 
 # Image loading arguments
-parser.add_argument('--shuffle', type=bool, default=False)
-parser.add_argument('--random_seed', type=bool, default=False)
+parser.add_argument('--shuffle', type=bool, default=True)
+parser.add_argument('--seed', type=bool, default=True)
 parser.add_argument('--split_on_chunks', type=bool, default=False)
 parser.add_argument('--percentage', type=int, default=100)
 
@@ -28,7 +28,7 @@ parser.add_argument('--clear_output', type=bool, default=True)
 
 # General processing arguments
 parser.add_argument('--multithreading', type=bool, default=True)
-parser.add_argument('--scale_factor', type=float, default=1/4)
+parser.add_argument('--scale_factor', type=float, default=1)
 parser.add_argument('--algorithms', type=str, default=DetectionAlgorithm.to_string_list())
 
 # Additional processing stages args

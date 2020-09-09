@@ -103,3 +103,13 @@ class FileInfoRecognition(FileInfo):
 
     def to_list(self) -> List[Union[str, int]]:
         return super(FileInfoRecognition, self).to_list() + [self.RS]
+
+
+class FileFilter:
+
+    package_classes = [
+        219, 523
+    ]
+
+    def __init__(self):
+        pass
