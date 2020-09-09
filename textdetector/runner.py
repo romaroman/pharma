@@ -1,6 +1,7 @@
 import glob
 import random
 import logging
+import traceback
 
 from multiprocessing import Pool, cpu_count, Value
 from typing import NoReturn, List, Dict, Union
@@ -21,22 +22,12 @@ logger = logging.getLogger('runner')
 counter: Value = Value('i', 0)
 
 DEBUG_FILES = {
-    # 'PFP_Ph1_P0510_D01_S001_C2_az040_side1',
-    # 'PFP_Ph2_P0506_D01_S001_C2_az180_side1',
-    # 'PFP_Ph2_P0517_D01_S001_C1_az340_side1',
-    # 'PFP_Ph2_P0510_D01_S001_C2_az020_side1',
-    # 'PFP_Ph3_P0507_D01_S001_C2_az080_side1',
-    # 'PFP_Ph2_P0733_D01_S001_C2_az200_side1',
-    # 'PFP_Ph1_P0547_D01_S001_C3_az320_side1',
-    'PFP_Ph3_P0385_D01_S001_C3_az160_side1',
-    # 'PFP_Ph2_P0110_D01_S001_C2_az060_side1',
-    # 'PFP_Ph3_P0516_D01_S001_C1_az300_side1',
-    # 'PFP_Ph1_P0523_D01_S001_C4_az340_side1',
-    # 'PFP_Ph2_P0514_D01_S001_C2_az160_side1',
-    # 'PFP_Ph3_P0237_D01_S001_C3_az180_side1',
-    # 'PFP_Ph3_P0512_D01_S001_C2_az040_side1',
-    # 'PFP_Ph1_P0511_D01_S001_C2_az320_side1',
-    # 'PFP_Ph3_P0509_D01_S001_C2_az100_side1'
+    # 'PFP_Ph2_P0196_D01_S002_C2_az360_side1',
+    # 'PFP_Ph3_P0136_D01_S001_C2_az220_side1',
+    # 'PFP_Ph1_P0790_D01_S001_C1_az160_side1',
+    # 'PFP_Ph1_P0525_D01_S001_C4_az120_side1',
+    # '',
+    # '',
 }
 
 
@@ -66,30 +57,30 @@ class Runner:
     def _process_single_image(image_path: str) -> Dict[str, Dict[str, Union[int, float]]]:
         writer = Writer()
 
+        session_dict = dict()
         status = 'success'
-        exception = None
+
+        file_info = FileInfo.get_file_info(image_path, config.database)
+        writer.add_dict_result('file_info', file_info.to_dict())
 
         try:
-            file_info = FileInfo.get_file_info(image_path, config.database)
-            writer.add_dict_result('file_info', file_info.to_dict())
-
-            image_input = utils.prepare_image(cv.imread(image_path), config.scale_factor)
+            image_input = cv.imread(image_path)
 
             detection = Detector(image_input)
             detection.detect(config.algorithms)
-
             writer.add_dict_result('detection_result', detection.to_dict())
 
-            if config.extract_reference:
-                referencer = Referencer(image_input, file_info)
-                referencer.extract_reference_regions()
-                writer.save_reference_results(referencer, file_info.filename)
-
-            if config.evaluate:
-                annotation = Annotation.load_annotation_by_pattern(config.src_folder,
-                                                                   file_info.get_annotation_pattern())
+            if config.extract_reference or config.evaluate:
+                annotation = Annotation.load_annotation_by_pattern(
+                    config.src_folder, file_info.get_annotation_pattern()
+                )
                 writer.add_dict_result('annotation_info', annotation.to_dict())
 
+            if config.extract_reference:
+                referencer = Referencer(image_input, file_info, annotation)
+                referencer.extract_reference_regions()
+
+            if config.evaluate:
                 evaluator = Evaluator()
                 evaluator.evaluate(detection, annotation)
                 writer.add_dict_result('evaluation_result', evaluator.to_dict())
@@ -99,22 +90,27 @@ class Runner:
 
             if config.write:
                 writer.save_all_results(detection, file_info.filename)
+                if config.extract_reference:
+                    writer.save_reference_results(referencer, file_info.filename)
 
-        except Exception as e:
+        except Exception as exception:
             status = 'fail'
-            exception = e
-            logger.warning(e)
+
+            session_dict.update({
+                'exception': str(exception),
+                'traceback': traceback.format_exc()
+            })
         finally:
             with counter.get_lock():
                 counter.value += 1
 
-            writer.add_dict_result('session', {
+            session_dict.update({
                 'index': counter.value,
-                'status': status,
-                'exception': exception
+                'status': status
             })
+            writer.add_dict_result('session', session_dict)
 
-            logger.info(f"#{str(counter.value).zfill(6)} {status.upper()} {image_path}")
+            logger.info(f"#{str(counter.value).zfill(6)} | {status.upper()} | {file_info.filename}")
             return writer.get_current_results()
 
     def _load_images(self):
@@ -126,8 +122,9 @@ class Runner:
         self.image_paths = glob.glob(str(config.src_folder / "cropped/*.png"))
 
         if config.shuffle:
-            if config.random_seed:
-                random.seed(123)
+            if config.seed:
+                random.seed(666)
+
             random.shuffle(self.image_paths)
 
         if config.percentage < 100:

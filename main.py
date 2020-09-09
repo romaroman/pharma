@@ -21,8 +21,10 @@ def setup() -> NoReturn:
 
 def main() -> int:
     setup()
+
     runner = Runner()
     runner.process()
+
     return sys.exit(0)
 
 

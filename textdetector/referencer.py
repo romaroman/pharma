@@ -16,12 +16,10 @@ logger = logging.getLogger('referencer')
 
 class Referencer:
 
-    def __init__(self, image_orig: np.ndarray, file_info: FileInfo):
+    def __init__(self, image_orig: np.ndarray, file_info: FileInfo, annotation: Annotation):
         self.image_ver: np.ndarray = image_orig
-
         self.file_info: FileInfo = file_info
-        self.annotation: Annotation = \
-            Annotation.load_annotation_by_pattern(config.src_folder, self.file_info.get_annotation_pattern())
+        self.annotation: Annotation = annotation
 
         self.image_ref: np.ndarray = self.annotation.load_reference_image(config.src_folder / "references")
 
