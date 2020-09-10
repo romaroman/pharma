@@ -23,7 +23,7 @@ logger = logging.getLogger('runner')
 counter: Value = Value('i', 0)
 
 DEBUG_FILES = {
-    # 'PFP_Ph2_P0196_D01_S002_C2_az360_side1',
+    'PFP_Ph1_P0538_D02_S001_C3_az360_side1',
     # 'PFP_Ph3_P0136_D01_S001_C2_az220_side1',
     # 'PFP_Ph1_P0790_D01_S001_C1_az160_side1',
     # 'PFP_Ph1_P0525_D01_S001_C4_az120_side1',
@@ -69,7 +69,6 @@ class Runner:
 
             detection = Detector(image_input)
             detection.detect(config.algorithms)
-            writer.add_dict_result('detection_result', detection.to_dict())
 
             if config.extract_reference or config.evaluate:
                 annotation = Annotation.load_annotation_by_pattern(
@@ -101,6 +100,9 @@ class Runner:
                 'exception': str(exception),
                 'traceback': traceback.format_exc()
             })
+
+            if config.debug:
+                traceback.print_exc()
         finally:
             with counter.get_lock():
                 counter.value += 1

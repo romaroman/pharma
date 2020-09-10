@@ -35,10 +35,9 @@ class Evaluator:
         )
 
         for algorithm, result in detection.results.items():
-            image_mask, regions = result
 
             image_mask_warped = cv.warpPerspective(
-                image_mask, homo_mat, utils.swap_dimensions(image_reference.shape)
+                result.get_default_mask(), homo_mat, utils.swap_dimensions(image_reference.shape)
             )
 
             self._results[f'{algorithm}_iou_ratio'] = self._calc_iou_ratio(
@@ -49,7 +48,7 @@ class Evaluator:
                 image_mask_warped, image_ref_mask_text
             )
 
-            self._results[f'{algorithm}_reg_amount'] = len(regions)
+            self._results[f'{algorithm}_reg_amount'] = len(result.get_default_regions())
 
     def to_dict(self) -> Dict[str, float]:
         return self._results
