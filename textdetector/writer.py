@@ -67,13 +67,16 @@ class Writer:
     def save_all_results(self, detection: Detector, filename: str) -> NoReturn:
 
         for algorithm, result in detection.results.items():
-            image_mask, regions = result
+            for method in result.masks.keys():
+                common_part = f"{algorithm}/{method}"
+                # self.write_entity(result.get_coordinates_from_regions(method), f"{common_part}/coords", filename, "csv")
+                self.write_entity(result.masks[method], f"{common_part}/masks", filename, "png")
 
-            self.write_entity(detection.get_coordinates_from_regions(regions), f"{algorithm}/coords", filename, "csv")
-            self.write_entity(image_mask, f"{algorithm}/masks", filename, "png")
-
-            for index, region in enumerate(regions, start=1):
-                self.write_image_region(region.image_rgb, f"{algorithm}/parts", filename, str(index).zfill(4))
+                for index, region in enumerate(result.regions[method], start=1):
+                    self.write_image_region(
+                        region.crop_image(detection.image_not_scaled),
+                        f"{common_part}/parts", filename, str(index).zfill(4)
+                    )
 
         self.write_entity(self._dicts_result, "jsons", filename, "json")
 

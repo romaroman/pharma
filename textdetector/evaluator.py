@@ -54,9 +54,9 @@ class Evaluator:
         return self._results
 
     @classmethod
-    def _calc_iou_ratio(cls, image_verification_mask: np.ndarray, image_reference_mask: np.ndarray) -> float:
-        image_overlap = cv.bitwise_and(image_verification_mask, image_reference_mask)
-        image_union = cv.bitwise_xor(image_verification_mask, image_reference_mask)
+    def _calc_iou_ratio(cls, image_ver: np.ndarray, image_ref: np.ndarray) -> float:
+        image_overlap = cv.bitwise_and(image_ver, image_ref)
+        image_union = cv.bitwise_xor(image_ver, image_ref)
 
         area_overlap = cv.countNonZero(image_overlap)
         area_union = cv.countNonZero(image_union)
@@ -65,10 +65,10 @@ class Evaluator:
         return abs(1 - tp_ratio)
 
     @classmethod
-    def _calc_false_ratio(cls, image_verification_mask: np.ndarray, image_reference_mask: np.ndarray) -> float:
-        image_false_detection = cv.bitwise_and(image_verification_mask, ~image_reference_mask)
+    def _calc_false_ratio(cls, image_ver: np.ndarray, image_ref: np.ndarray) -> float:
+        image_false_detection = cv.bitwise_and(image_ver, ~image_ref)
 
         area_false_detection = cv.countNonZero(image_false_detection)
-        area_reference = cv.countNonZero(image_reference_mask)
+        area_reference = cv.countNonZero(image_ref)
 
         return area_false_detection / area_reference

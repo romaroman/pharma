@@ -211,8 +211,9 @@ class DetectionResult:
 
         def __init__(self, contour: np.ndarray, method: ResultMethod) -> NoReturn:
             self.polygon = self.contour_to_polygon(contour, method)
-            self.polygon_ravel: np.ndarray = np.transpose(self.polygon).ravel()
+            self.polygon_area = cv.contourArea(self.polygon)
 
+            self.polygon_ravel: np.ndarray = np.transpose(self.polygon).ravel()
             self.brect = cv.boundingRect(self.polygon)
 
         @classmethod
@@ -246,7 +247,11 @@ class DetectionResult:
 
     def find_regions(self, method: ResultMethod) -> List['Region']:
         contours, _ = cv.findContours(self.image_input, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-        return [self.Region(contour, method) for contour in contours]
+        return sorted(
+            [self.Region(contour, method) for contour in contours],
+            key=lambda x: x.polygon_area,
+            reverse=True
+        )
 
     def draw_regions_mask(self, method: ResultMethod) -> np.ndarray:
         return cv.fillPoly(
