@@ -1,6 +1,6 @@
 import argparse
 
-from textdetector.enums import DetectionAlgorithm
+from textdetector.enums import DetectionAlgorithm, ResultMethod
 
 
 parser = argparse.ArgumentParser(description='TextDetector')
@@ -30,6 +30,7 @@ parser.add_argument('--clear_output', type=bool, default=True)
 parser.add_argument('--multithreading', type=bool, default=True)
 parser.add_argument('--scale_factor', type=float, default=1)
 parser.add_argument('--algorithms', type=str, default=DetectionAlgorithm.to_string_list())
+parser.add_argument('--approx_method', type=str, default=ResultMethod.Contour.name)
 
 # Additional processing stages args
 parser.add_argument('--evaluate', type=bool, default=True)

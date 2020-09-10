@@ -4,13 +4,19 @@ import utils
 
 
 class DetectionAlgorithm(utils.CustomEnum):
+    MorphologyIteration1 = "MI1",
+    MorphologyIteration2 = "MI2",
+    LineSegmentation = "LS",
+    MSER = "MSER",
+    MajorVoting = "MV"
 
-    MorphologyIteration1 = auto(),
-    MorphologyIteration2 = auto(),
-    LineSegmentation = auto(),
-    Segmentation_Horizontal = auto(),
-    MSER = auto(),
-    MajorVoting = auto()
+
+class ResultMethod(utils.CustomEnum):
+    Contour = auto(),
+    Brect = auto(),
+    Rrect = auto(),
+    Hull = auto(),
+    Approximation = auto(),
 
 
 class FileDatabase(utils.CustomEnum):
