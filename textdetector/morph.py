@@ -95,7 +95,8 @@ def extract_edges(
         nbins: int = 7,
         post_morph: bool = False
 ) -> np.ndarray:
-    def filter_small_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbins: int = 7) -> np.ndarray:
+
+    def remove_long_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbins: int = 7) -> np.ndarray:
         image_new_ind = np.zeros_like(image_ind)
 
         for j in range(1, nbins + 1):
@@ -104,10 +105,11 @@ def extract_edges(
             image_current_bin[image_current_bin != 0] = 1
             image_current_bin = image_current_bin * image_binary_mask
 
-            image_current_bin = cv.dilate(image_current_bin, kernel=np.ones(mscale((15, 15))))
+            image_current_bin = clear_borders(image_current_bin)
+            image_current_bin = cv.dilate(image_current_bin, kernel=np.ones(mscale((3, 3))))
 
             contours, _ = cv.findContours(image_current_bin, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-            valid_contours = list(filter(lambda c: cv.contourArea(c) > mscale(20) ** 2, contours))
+            valid_contours = list(filter(lambda c: cv.contourArea(c) < mscale(50) ** 2, contours))
 
             image_bw = np.zeros_like(image_current_bin)
             cv.drawContours(image_bw, valid_contours, -1, 1, -1)
@@ -122,25 +124,25 @@ def extract_edges(
     if image_mask is None:
         image_mask = np.full(image_gray.shape, 255)
 
-    image_magnitude, image_angle = utils.find_magnitude_and_angle(image_gray)
+    image_magnitude, image_direction = utils.find_magnitude_and_angle(image_gray)
 
     image_mask_from_threshold = (image_mask / 255).astype(np.uint8)
 
     image_magnitude = image_magnitude * image_mask_from_threshold
-    image_angle = image_angle * image_mask_from_threshold
+    image_direction = image_direction * image_mask_from_threshold
 
-    image_ind = (np.ceil((image_angle + 180) / (360 / (nbins - 1))) + 1).astype(np.uint8)
+    image_ind = (np.ceil((image_direction + 180) / (360 / (nbins - 1))) + 1).astype(np.uint8)
 
     threshold = 0.025
     image_binary_mask = (image_magnitude > threshold).astype(np.uint8) * 255
 
-    image_ind_filtered = filter_small_edges(image_ind, image_binary_mask, nbins)
+    image_ind_filtered = remove_long_edges(image_ind, image_binary_mask, nbins)
 
     image_edges = (image_binary_mask * image_ind_filtered / nbins).astype(np.uint8)
     image_edges[image_edges != 0] = 255
 
     if post_morph:
-        image_edges = cv.morphologyEx(image_edges, cv.MORPH_CLOSE, kernel=np.ones((3, 3)))
+        image_edges = cv.morphologyEx(image_edges, cv.MORPH_OPEN, kernel=np.ones((3, 3)))
 
     return image_edges
 
@@ -206,7 +208,7 @@ def filter_enclosed_contours(image_bw: np.ndarray) -> np.ndarray:
 def filter_non_text_blobs(image_bw: np.ndarray) -> np.ndarray:
 
     def is_prop_valid(prop: skimage.measure._regionprops._RegionProperties) -> bool:
-        return prop.solidity > 0.25 and prop.area > mscale(8) ** 2
+        return prop.solidity > 0.25 and prop.area > mscale(7) ** 2
 
     _, image_labeled = cv.connectedComponents(image_bw)
     props = skimage.measure.regionprops(image_labeled)

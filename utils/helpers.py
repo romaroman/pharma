@@ -17,6 +17,9 @@ class CustomEnum(Enum):
     def __str__(self) -> str:
         return str(self.name)
 
+    def vs(self) -> str:
+        return str(self.value[0])
+
     @classmethod
     def to_list(cls) -> List[Any]:
         return list(map(lambda c: c, cls))
