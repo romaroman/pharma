@@ -4,8 +4,12 @@ import cv2 as cv
 import numpy as np
 
 
-sift = cv.SIFT.create()
-mser = cv.MSER.create()
+try:
+    sift = cv.SIFT.create()
+    mser = cv.MSER.create()
+except:
+    sift = cv.x2features.SIFT_create()
+    mser = cv.x2features.MSER_create()
 
 
 def to_rgb(image_1c: np.ndarray) -> np.ndarray:
