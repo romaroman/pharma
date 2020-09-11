@@ -41,29 +41,27 @@ class Detector:
 
         self.results['MI0'] = DetectionResult(self.image_filtered)
 
-        if DetectionAlgorithm.MorphologyIteration1 in algorithms:
-            self.results[DetectionAlgorithm.MorphologyIteration1.vs()] = DetectionResult(morph.apply_line_morphology(
-                self.image_filtered, morph.mscale(30)
-            )[1])
+        for algorithm in algorithms:
+            if algorithm is not DetectionAlgorithm.MajorVoting:
+                self.results[algorithm.vs()] = DetectionResult(self._run_algorithm(algorithm))
+            else:
+                if DetectionAlgorithm.MajorVoting in algorithms:
+                    for algorithm, mask in self._perform_major_voting().items():
+                        self.results[algorithm] = DetectionResult(mask)
 
-        if DetectionAlgorithm.MorphologyIteration2 in algorithms:
-            self.results[DetectionAlgorithm.MorphologyIteration2.vs()] = DetectionResult(self._detect_words(
+    def _run_algorithm(self, algorithm: DetectionAlgorithm) -> np.ndarray:
+        if algorithm is DetectionAlgorithm.MorphologyIteration1:
+            return morph.apply_line_morphology(self.image_filtered, morph.mscale(30))[1]
+        if algorithm is DetectionAlgorithm.MorphologyIteration2:
+            return self._detect_words(
                 self.get_result_by_algorithm(DetectionAlgorithm.MorphologyIteration1).get_default_regions()
-            ))
-
-        if DetectionAlgorithm.LineSegmentation in algorithms:
+            )
+        if algorithm is DetectionAlgorithm.LineSegmentation:
             image_lines_v = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=0))
             image_lines_h = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=1))
-
-            self.results[DetectionAlgorithm.LineSegmentation.vs()] = \
-                DetectionResult(cv.bitwise_or(image_lines_h, image_lines_v))
-
-        if DetectionAlgorithm.MSER in algorithms:
-            self.results[DetectionAlgorithm.MSER.vs()] = DetectionResult(self._get_MSER_mask())
-
-        if DetectionAlgorithm.MajorVoting in algorithms:
-            for algorithm, mask in self._perform_major_voting().items():
-                self.results[algorithm] = DetectionResult(mask)
+            return cv.bitwise_or(image_lines_h, image_lines_v)
+        if algorithm is DetectionAlgorithm.MSER:
+            return self._get_MSER_mask()
 
     def get_result_by_algorithm(self, algorithm: DetectionAlgorithm) -> 'DetectionResult':
         return self.results[algorithm.vs()]
@@ -107,9 +105,7 @@ class Detector:
         for region in regions:
             edges = region.crop_image(morph.mscale(self.image_edges, down=False))
             edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, np.ones((3, 3)))
-
-            filtered = morph.filter_enclosed_contours(edges)
-            filled = utils.fill_holes(filtered)
+            filled = utils.fill_holes(edges)
 
             contours, _ = cv.findContours(filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
             contours = list(filter(lambda x: cv.contourArea(x) > morph.mscale(200), contours))
@@ -172,18 +168,17 @@ class Detector:
         return utils.combine_images(images)
 
     def _get_MSER_mask(self) -> np.ndarray:
-        image_hsv = cv.cvtColor(self.image_rgb, cv.COLOR_BGR2HSV)
-        _, image_channel_s, image_channel_v = cv.split(image_hsv)
+        r, g, b = cv.split(self.image_rgb)
 
-        image_MSER_s = utils.MSER(image_channel_s)[0]
-        image_MSER_v = utils.MSER(image_channel_v)[0]
+        mr = utils.MSER(r)
+        mb = utils.MSER(b)
+        mg = utils.MSER(g)
 
-        image_bw = cv.bitwise_xor(image_MSER_s, image_MSER_v)
-        image_bw = utils.fill_holes(image_bw)
+        image_mser = cv.bitwise_and(cv.bitwise_and(mr, mb), mg)
+        image_mser = utils.fill_holes(image_mser)
+        image_mser = morph.apply_line_morphology(image_mser, morph.mscale(40))[1]
 
-        morph.apply_line_morphology(image_bw, morph.mscale(30))
-
-        return image_bw
+        return image_mser
 
     def _perform_major_voting(self) -> Dict[str, np.ndarray]:
         resulting_masks = dict()
@@ -196,7 +191,7 @@ class Detector:
             mask2 = self.results[alg2].get_default_mask()
             mask3 = self.results[alg3].get_default_mask()
 
-            alg12 = cv.bitwise_and(mask1, mask1)
+            alg12 = cv.bitwise_and(mask1, mask2)
             alg13 = cv.bitwise_and(mask1, mask3)
             alg23 = cv.bitwise_and(mask2, mask3)
 
@@ -223,7 +218,8 @@ class DetectionResult:
             elif method is ResultMethod.Contour:
                 return contour
             elif method is ResultMethod.Rrect:
-                return cv.boxPoints(cv.minAreaRect(contour)).astype(np.int0)
+                s = cv.boxPoints(cv.minAreaRect(contour)).astype(np.int0)
+                return s
             elif method is ResultMethod.Hull:
                 return cv.convexHull(contour).astype(np.int0)
             elif method is ResultMethod.Approximation:
@@ -243,7 +239,7 @@ class DetectionResult:
 
         for method in ResultMethod:
             self.regions[method] = self.find_regions(method)
-            self.masks[method] = self.draw_regions_mask(method)
+            self.masks[method] = self.draw_regions(method)
 
     def find_regions(self, method: ResultMethod) -> List['Region']:
         contours, _ = cv.findContours(self.image_input, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -253,12 +249,11 @@ class DetectionResult:
             reverse=True
         )
 
-    def draw_regions_mask(self, method: ResultMethod) -> np.ndarray:
-        return cv.fillPoly(
-            np.zeros_like(self.image_input),
-            [region.polygon for region in self.regions[method]],
-            255
-        )
+    def draw_regions(self, method: ResultMethod) -> np.ndarray:
+        image_result = np.zeros_like(self.image_input)
+        for polygon in [region.polygon for region in self.regions[method]]:
+            cv.drawContours(image_result, [polygon], -1, 255, -1)
+        return image_result
 
     def get_coordinates_from_regions(self, method: ResultMethod) -> List[np.ndarray]:
         return [region.polygon_ravel for region in self.regions[method]]
