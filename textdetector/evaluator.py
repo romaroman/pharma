@@ -1,9 +1,10 @@
 import logging
-from typing import NoReturn, Dict
+from typing import NoReturn, Dict, Union
 
 import cv2 as cv
 import numpy as np
 
+from textdetector.enums import EvalMetric
 from textdetector import config, AnnotationLabel
 from textdetector.annotation import Annotation
 from textdetector.detector import Detector
@@ -17,13 +18,19 @@ logger = logging.getLogger('evaluator')
 class Evaluator:
 
     def __init__(self) -> NoReturn:
-        self._results: Dict[str, float] = dict()
+        self.results_complete: Dict[str, Dict[str, Dict[str, float]]] = dict()
+        self.results_aggregated: Dict[str, float] = dict()
 
     def evaluate(self, detection: Detector, annotation: Annotation) -> NoReturn:
         image_reference = annotation.load_reference_image(config.src_folder / "references")
 
         image_ref_mask_text = utils.to_gray(annotation.create_mask_by_labels(
             labels=[AnnotationLabel.Text, AnnotationLabel.Number],
+            color=(255, 255, 255)
+        ))
+
+        image_ref_mask_graphics = utils.to_gray(annotation.create_mask_by_labels(
+            labels=[AnnotationLabel.Watermark, AnnotationLabel.Image, AnnotationLabel.Barcode, AnnotationLabel.Unknown],
             color=(255, 255, 255)
         ))
 
@@ -40,35 +47,104 @@ class Evaluator:
                 result.get_default_mask(), homo_mat, utils.swap_dimensions(image_reference.shape)
             )
 
-            self._results[f'{algorithm}_iou_ratio'] = self._calc_iou_ratio(
-                image_mask_warped, image_ref_mask_text
-            )
+            self.results_complete[algorithm] = dict()
+            self._calc_metrics(image_mask_warped, image_ref_mask_text, algorithm)
+            self._calc_metrics(image_mask_warped, image_ref_mask_text, algorithm, ~image_ref_mask_graphics)
 
-            self._results[f'{algorithm}_false_ratio'] = self._calc_false_ratio(
-                image_mask_warped, image_ref_mask_text
-            )
+            self.results_complete[algorithm]['ALL'][EvalMetric.RegionsAmount.vs()] = len(result.get_default_regions())
 
-            self._results[f'{algorithm}_reg_amount'] = len(result.get_default_regions())
+        self._aggregate_results()
 
-    def to_dict(self) -> Dict[str, float]:
-        return self._results
+    def to_dict_aggregated(self) -> Dict[str, float]:
+        dict_result = dict()
+
+        for metric, alg_score_t in self.results_aggregated.items():
+            _, score = alg_score_t
+            dict_result[f'best_{metric}'] = score
+
+        return dict_result
+
+    def to_dict_complete(self) -> Dict[str, float]:
+        dict_result = self.to_dict_aggregated()
+
+        for alg, dict_alg in self.results_complete.items():
+            for mode, dict_mode in dict_alg.items():
+                for metric, score in dict_mode.items():
+                    dict_result['_'.join([alg.upper(), mode.upper(), metric.upper()])] = score
+
+        return dict_result
 
     @classmethod
-    def _calc_iou_ratio(cls, image_ver: np.ndarray, image_ref: np.ndarray) -> float:
+    def calc_true_positive(cls, image_ver: np.ndarray, image_ref: np.ndarray) -> int:
+        return cv.countNonZero(cv.bitwise_and(image_ver, image_ref))
+
+    @classmethod
+    def calc_true_negative(cls, image_ver: np.ndarray, image_ref: np.ndarray) -> int:
+        return cv.countNonZero(cv.bitwise_and(~image_ver, ~image_ref))
+
+    @classmethod
+    def calc_false_positive(cls, image_ver: np.ndarray, image_ref: np.ndarray) -> int:
+        return cv.countNonZero(cv.bitwise_and(image_ver, ~image_ref))
+
+    @classmethod
+    def calc_false_negative(cls, image_ver: np.ndarray, image_ref: np.ndarray) -> int:
+        return cv.countNonZero(cv.bitwise_and(~image_ver, image_ref))
+
+    @classmethod
+    def calc_intersection_over_union(cls, image_ver: np.ndarray, image_ref: np.ndarray) -> float:
         image_overlap = cv.bitwise_and(image_ver, image_ref)
         image_union = cv.bitwise_xor(image_ver, image_ref)
 
         area_overlap = cv.countNonZero(image_overlap)
         area_union = cv.countNonZero(image_union)
 
-        tp_ratio = area_overlap / area_union
-        return abs(1 - tp_ratio)
+        return abs(1 - area_overlap / area_union)
 
-    @classmethod
-    def _calc_false_ratio(cls, image_ver: np.ndarray, image_ref: np.ndarray) -> float:
-        image_false_detection = cv.bitwise_and(image_ver, ~image_ref)
+    def _calc_metrics(
+            self, image_ver: np.ndarray, image_ref: np.ndarray,
+            algorithm: str, image_mask: Union[None, np.ndarray] = None
+    ) -> NoReturn:
+        postfix = 'ALL'
 
-        area_false_detection = cv.countNonZero(image_false_detection)
-        area_reference = cv.countNonZero(image_ref)
+        if image_mask is not None:
+            image_ver = cv.copyTo(image_ver, image_mask)
+            postfix = 'TXT'
 
-        return area_false_detection / area_reference
+        self.results_complete[algorithm][postfix] = dict()
+        cdict = self.results_complete[algorithm][postfix]
+
+        tp = self.calc_true_positive(image_ver, image_ref)
+        tn = self.calc_true_negative(image_ver, image_ref)
+        fp = self.calc_false_positive(image_ver, image_ref)
+        fn = self.calc_false_negative(image_ver, image_ref)
+
+        cdict[EvalMetric.TruePositive.vs()] = tp / cv.countNonZero(image_ver)
+        cdict[EvalMetric.TrueNegative.vs()] = tn / cv.countNonZero(~image_ver)
+        cdict[EvalMetric.FalsePositive.vs()] = fp / cv.countNonZero(image_ver)
+        cdict[EvalMetric.FalseNegative.vs()] = fn / cv.countNonZero(~image_ver)
+
+        cdict[EvalMetric.IntersectionOverUnion.vs()] = self.calc_intersection_over_union(
+            image_ver, image_ref
+        )
+
+        cdict[EvalMetric.Accuracy.vs()] = (tp + tn) / (tp + fp + tn + fn)
+        cdict[EvalMetric.Sensitivity.vs()] = tp / (tp + fn)
+        cdict[EvalMetric.Precision.vs()] = tp / (tp + fp)
+        cdict[EvalMetric.Specificity.vs()] = tn / (tn + fp)
+
+    def _aggregate_results(self) -> NoReturn:
+        self.results_aggregated = dict(zip([
+            EvalMetric.IntersectionOverUnion.vs(),
+            EvalMetric.Accuracy.vs(),
+            EvalMetric.Sensitivity.vs(),
+            EvalMetric.Precision.vs(),
+            EvalMetric.Specificity.vs()
+        ], [('any', 10000000)] * 5))
+
+        for metric in self.results_aggregated.keys():
+            for algorithm in self.results_complete.keys():
+                score = self.results_complete[algorithm]['ALL'][metric]
+                if score < self.results_aggregated[metric][1]:
+                    self.results_aggregated[metric] = (algorithm, score)
+
+        pass

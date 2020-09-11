@@ -6,6 +6,7 @@ import utils
 class DetectionAlgorithm(utils.CustomEnum):
     MorphologyIteration1 = "MI1",
     MorphologyIteration2 = "MI2",
+
     LineSegmentation = "LS",
     MSER = "MSER",
     MajorVoting = "MV"
@@ -21,6 +22,7 @@ class ResultMethod(utils.CustomEnum):
 
 class FileDatabase(utils.CustomEnum):
     Enrollment = auto(),
+
     PharmaPack_R_I_S1 = auto(),
     PharmaPack_R_I_S2 = auto(),
     PharmaPack_R_I_S3 = auto(),
@@ -39,7 +41,24 @@ class AnnotationLabel(utils.CustomEnum):
 
     Text = (255, 0, 255),
     Number = (0, 255, 255),
+
     Watermark = (0, 0, 255),
     Image = (255, 0, 0),
     Barcode = (255, 255, 0),
+
     Unknown = (255, 255, 255)
+
+
+class EvalMetric(utils.CustomEnum):
+    TruePositive = "TP",
+    TrueNegative = "TN",
+    FalsePositive = "FP",
+    FalseNegative = "FN",
+
+    IntersectionOverUnion = "IOU",
+    Accuracy = "ACC",
+    Sensitivity = "SNS",
+    Precision = "PRC",
+    Specificity = "SPC",
+
+    RegionsAmount = "RA"

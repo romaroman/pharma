@@ -97,6 +97,13 @@ def extract_edges(
 ) -> np.ndarray:
 
     def remove_long_edges(image_ind: np.ndarray, image_binary_mask: np.ndarray, nbins: int = 7) -> np.ndarray:
+
+        def is_edge_valid(contour: np.ndarray) -> bool:
+            area = cv.contourArea(contour)
+            # _, shape, _ = cv.minAreaRect(contour)
+            return area < mscale(50) ** 2 # and min(shape) / max(shape) > 1/15
+
+
         image_new_ind = np.zeros_like(image_ind)
 
         for j in range(1, nbins + 1):
@@ -109,7 +116,7 @@ def extract_edges(
             image_current_bin = cv.dilate(image_current_bin, kernel=np.ones(mscale((3, 3))))
 
             contours, _ = cv.findContours(image_current_bin, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-            valid_contours = list(filter(lambda c: cv.contourArea(c) < mscale(50) ** 2, contours))
+            valid_contours = list(filter(lambda c: is_edge_valid(c), contours))
 
             image_bw = np.zeros_like(image_current_bin)
             cv.drawContours(image_bw, valid_contours, -1, 1, -1)
@@ -208,7 +215,10 @@ def filter_enclosed_contours(image_bw: np.ndarray) -> np.ndarray:
 def filter_non_text_blobs(image_bw: np.ndarray) -> np.ndarray:
 
     def is_prop_valid(prop: skimage.measure._regionprops._RegionProperties) -> bool:
-        return prop.solidity > 0.25 and prop.area > mscale(7) ** 2
+        min_row, min_col, max_row, max_col = prop.bbox
+        h, w = max_row - min_row, max_col - min_col
+        aspect = min(h, w) / max(h, w)
+        return prop.solidity > 0.25 and prop.area > mscale(7) ** 2 and aspect > 0.2
 
     _, image_labeled = cv.connectedComponents(image_bw)
     props = skimage.measure.regionprops(image_labeled)
