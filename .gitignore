@@ -133,4 +133,4 @@ dmypy.json
 *.csv
 *.asv
 *.mat
-.idea/workspace.xml
+.idea
