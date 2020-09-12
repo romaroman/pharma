@@ -23,7 +23,7 @@ def crop_image_by_contour(
     if roughly_by_brect:
         return image_in[y:y + h, x:x + w]
     else:
-        image_mask = get_mask_by_contour(image_in, contour)
+        image_mask = get_mask_by_contour(image_in[:, :, 1] if len(image_in.shape) == 3 else image_in, contour)
         return cv.copyTo(image_in, image_mask)[y:y + h, x:x + w]
 
 

@@ -3,10 +3,9 @@ from typing import Tuple, Union
 import cv2 as cv
 import numpy as np
 
-
 try:
     sift = cv.SIFT.create()
-    mser = cv.MSER.create()
+    mser = cv.MSER.create(_max_variation=0.1, _max_area=7500)
 except:
     sift = cv.x2features.SIFT_create()
     mser = cv.x2features.MSER_create()
@@ -100,11 +99,9 @@ def MSER(image_gray: np.ndarray) -> np.ndarray:
 
     regions, _ = mser.detectRegions(image_gray)
     hulls = [cv.convexHull(r.reshape(-1, 1, 2)) for r in regions]
+    mask = cv.drawContours(np.zeros_like(image_gray), hulls, -1, 255, -1)
 
-    image_mask = np.zeros_like(image_gray)
-    cv.drawContours(image_mask, hulls, -1, 255, -1)
-
-    return image_mask
+    return mask
 
 
 def find_homography_matrix(image_ref: np.ndarray, image_ver: np.ndarray) -> Union[np.ndarray, None]:
@@ -141,6 +138,9 @@ def thresh(image_gray: np.ndarray, thresh_adjust: int = -10, otsu: bool = False)
     thresh_value, image_otsu = cv.threshold(image_gray, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
     if otsu:
         return image_otsu
+
+    if thresh_value + thresh_adjust <= 0:
+        thresh_adjust = - thresh_value + 1
 
     _, image_bw = cv.threshold(image_gray, thresh_value + thresh_adjust, 255, cv.THRESH_BINARY)
     return image_bw

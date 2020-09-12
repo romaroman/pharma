@@ -4,7 +4,7 @@ import logging
 import warnings
 from pathlib import Path
 
-from typing import NoReturn, List, Union
+from typing import NoReturn, List, Union, Tuple
 
 import cv2 as cv
 import numpy as np
@@ -64,7 +64,7 @@ class Formatter(object):
 pretty = Formatter()
 
 
-def display(image: np.ndarray) -> NoReturn:
+def display(image: np.ndarray, figsize: Union[Tuple[int, int], None] = None) -> NoReturn:
     image_display = np.copy(image)
 
     if len(image.shape) == 3:
@@ -73,7 +73,10 @@ def display(image: np.ndarray) -> NoReturn:
     elif len(image.shape) == 2:
         h, w = image.shape
 
-    fig = plt.figure(figsize=(max(int(w / 100), 3), max(int(h / 100), 3)), frameon=False)
+    if not figsize:
+        figsize = (max(int(w / 100), 3), max(int(h / 100), 3))
+
+    fig = plt.figure(figsize=figsize, frameon=False)
     fig.subplots_adjust(0, 0, 1, 1)
     fig.tight_layout()
     fig.patch.set_visible(False)
