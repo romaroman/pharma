@@ -5,7 +5,7 @@ import cv2 as cv
 import numpy as np
 
 from textdetector.enums import EvalMetric
-from textdetector import config, AnnotationLabel
+from textdetector import AnnotationLabel
 from textdetector.annotation import Annotation
 from textdetector.detector import Detector
 
@@ -22,34 +22,26 @@ class Evaluator:
         self.results_aggregated: Dict[str, float] = dict()
 
     def evaluate(self, detection: Detector, annotation: Annotation) -> NoReturn:
-        image_reference = annotation.load_reference_image(config.src_folder / "references")
+        image_ref = annotation.image_ref
+        image_ver = detection.image_not_scaled
+
+        homo_mat = utils.find_homography_matrix(utils.to_gray(image_ver), utils.to_gray(image_ref))
 
         image_ref_mask_text = utils.to_gray(annotation.create_mask_by_labels(
-            labels=[AnnotationLabel.Text, AnnotationLabel.Number],
-            color=(255, 255, 255)
+            labels=AnnotationLabel.get_list_of_text_labels(), color=(255, 255, 255)
         ))
-
-        image_ref_mask_graphics = utils.to_gray(annotation.create_mask_by_labels(
-            labels=[AnnotationLabel.Watermark, AnnotationLabel.Image, AnnotationLabel.Barcode, AnnotationLabel.Unknown],
-            color=(255, 255, 255)
+        image_ref_mask_graphic = utils.to_gray(annotation.create_mask_by_labels(
+            labels=AnnotationLabel.get_list_of_graphic_labels(), color=(255, 255, 255)
         ))
-
-        image_verification = detection.image_not_scaled
-
-        homo_mat = utils.find_homography_matrix(
-            utils.to_gray(image_verification),
-            utils.to_gray(image_reference)
-        )
 
         for algorithm, result in detection.results.items():
-
             image_mask_warped = cv.warpPerspective(
-                result.get_default_mask(), homo_mat, utils.swap_dimensions(image_reference.shape)
+                result.get_default_mask(), homo_mat, utils.swap_dimensions(image_ref.shape)
             )
 
             self.results_complete[algorithm] = dict()
             self._calc_metrics(image_mask_warped, image_ref_mask_text, algorithm)
-            self._calc_metrics(image_mask_warped, image_ref_mask_text, algorithm, ~image_ref_mask_graphics)
+            self._calc_metrics(image_mask_warped, image_ref_mask_text, algorithm, ~image_ref_mask_graphic)
 
             self.results_complete[algorithm]['ALL'][EvalMetric.RegionsAmount.vs()] = len(result.get_default_regions())
 
@@ -60,7 +52,7 @@ class Evaluator:
 
         for metric, alg_score_t in self.results_aggregated.items():
             _, score = alg_score_t
-            dict_result[f'best_{metric}'] = score
+            dict_result[f'MIN_{metric}'] = score
 
         return dict_result
 
@@ -118,14 +110,17 @@ class Evaluator:
         fp = self.calc_false_positive(image_ver, image_ref)
         fn = self.calc_false_negative(image_ver, image_ref)
 
+        if tp == 0 or fp == 0:
+            for metric in EvalMetric.to_list():
+                cdict[metric.vs()] = np.nan
+            return
+
         cdict[EvalMetric.TruePositive.vs()] = tp / cv.countNonZero(image_ver)
         cdict[EvalMetric.TrueNegative.vs()] = tn / cv.countNonZero(~image_ver)
         cdict[EvalMetric.FalsePositive.vs()] = fp / cv.countNonZero(image_ver)
         cdict[EvalMetric.FalseNegative.vs()] = fn / cv.countNonZero(~image_ver)
 
-        cdict[EvalMetric.IntersectionOverUnion.vs()] = self.calc_intersection_over_union(
-            image_ver, image_ref
-        )
+        cdict[EvalMetric.IntersectionOverUnion.vs()] = self.calc_intersection_over_union(image_ver, image_ref)
 
         cdict[EvalMetric.Accuracy.vs()] = (tp + tn) / (tp + fp + tn + fn)
         cdict[EvalMetric.Sensitivity.vs()] = tp / (tp + fn)
