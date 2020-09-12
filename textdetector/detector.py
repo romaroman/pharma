@@ -1,6 +1,6 @@
 import logging
 import itertools
-from typing import List, NoReturn, Dict
+from typing import List, NoReturn, Dict, Union
 
 import cv2 as cv
 import numpy as np
@@ -17,8 +17,7 @@ logger = logging.getLogger('detector')
 class Detector:
 
     def __init__(self, image_input: np.ndarray) -> NoReturn:
-        self.is_image_aligned, self.image_not_scaled = morph.align_package_to_corners(np.copy(image_input))
-        self.image_not_scaled = morph.prepare_image(self.image_not_scaled, config.scale_factor)
+        self.image_not_scaled = morph.prepare_image(image_input, config.scale_factor)
 
         self.image_rgb = morph.mscale(self.image_not_scaled)
         self.image_gray: np.ndarray = cv.cvtColor(self.image_rgb, cv.COLOR_BGR2GRAY)
@@ -31,6 +30,7 @@ class Detector:
         self.image_cleared_borders: np.ndarray = np.zeros_like(self.image_gray)
         self.image_filtered: np.ndarray = np.zeros_like(self.image_gray)
 
+        self.visualization: Union[np.ndarray, None] = None
         self.results: Dict[str, DetectionResult] = dict()
 
     def detect(self, algorithms: List[DetectionAlgorithm]) -> NoReturn:
@@ -70,17 +70,17 @@ class Detector:
         image_bw: np.ndarray = np.zeros_like(self.image_gray)
 
         for line_region in lines:
-            try:
-                x_min, x_max, y_min, y_max = line_region[0][1], line_region[1][1], line_region[0][0], line_region[1][0]
+            x_min, x_max, y_min, y_max = line_region[0][1], line_region[1][1], line_region[0][0], line_region[1][0]
 
-                if x_min > x_max:
-                    x_max, x_min = x_min, x_max
+            if x_min > x_max:
+                x_max, x_min = x_min, x_max
 
-                if x_max - x_min < morph.mscale(15):
-                    continue
+            if x_max - x_min < morph.mscale(15):
+                continue
 
-                image_filtered = self.image_filtered[x_min:x_max, y_min:y_max]
+            image_filtered = self.image_filtered[x_min:x_max, y_min:y_max]
 
+            if image_filtered.shape[0] != 0 and image_filtered.shape[0] != 0:
                 contours, _ = cv.findContours(image_filtered, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
                 min_sides = list()
@@ -88,14 +88,16 @@ class Detector:
                     x, y, w, h = cv.boundingRect(contour)
                     min_sides.append(min(w, h))
 
-                mean_min_side = np.mean(min_sides)
-                morph_line_length = int(mean_min_side / 1.5)
+                try:
+                    mean_min_side = np.mean(min_sides)
+                    if mean_min_side < 10:
+                        raise ValueError
+                    morph_line_length = int(mean_min_side / 1.5)
+                except ValueError:
+                    morph_line_length = 10
 
-                angle, image_morphed = morph.apply_line_morphology(image_filtered, morph_line_length, key='min')
-
+                angle, image_morphed = morph.apply_line_morphology(image_filtered, morph.mscale(morph_line_length), key='min')
                 image_bw[x_min:x_max, y_min:y_max] = cv.bitwise_xor(image_morphed, image_bw[x_min:x_max, y_min:y_max])
-            except:
-                pass
 
         return image_bw
 
@@ -108,33 +110,34 @@ class Detector:
             filled = utils.fill_holes(edges)
 
             contours, _ = cv.findContours(filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-            contours = list(filter(lambda x: cv.contourArea(x) > morph.mscale(200), contours))
+            contours = list(filter(lambda x: cv.contourArea(x) > morph.mscale(12) ** 2, contours))
 
             points = [cv.boxPoints(cv.minAreaRect(contour)) for contour in contours if len(contour) > 4]
-            distances = dict()
-            for idx1, points1 in enumerate(points, start=0):
-                for idx2, points2 in enumerate(points[idx1 + 1:], start=idx1 + 1):
 
-                    min_distance = 1000000
-                    for point1 in points1:
-                        for point2 in points2:
-                            distance = utils.calc_points_distance(point1, point2)
-                            if distance < min_distance:
-                                min_distance = distance
+            if len(points) > 2:
+                distances = dict()
 
-                    if idx1 in distances.keys():
-                        if distances[idx1] > min_distance:
+                for idx1, points1 in enumerate(points, start=0):
+                    for idx2, points2 in enumerate(points[idx1 + 1:], start=idx1 + 1):
+                        min_distance = 1000000
+                        for point1 in points1:
+                            for point2 in points2:
+                                distance = utils.calc_points_distance(point1, point2)
+                                if distance < min_distance:
+                                    min_distance = distance
+
+                        if idx1 in distances.keys():
+                            if distances[idx1] > min_distance:
+                                distances[idx1] = min_distance
+                        else:
                             distances[idx1] = min_distance
-                    else:
-                        distances[idx1] = min_distance
 
-            if len(contours) < 2:
-                mean_distance = morph.mscale(25)
-            else:
                 mean_distance = max(
                     int(1.5 * np.mean(np.asarray([v for _, v in distances.items()]))),
                     morph.mscale(20)
                 )
+            else:
+                mean_distance = morph.mscale(25)
 
             _, morphed = morph.apply_line_morphology(filled, mean_distance, key='min')
             x, y, w, h = region.brect
@@ -142,24 +145,24 @@ class Detector:
             image_word_linearly_morphed[y:y + h, x:x + w] = cv.bitwise_xor(
                 morphed, image_word_linearly_morphed[y:y + h, x:x + w]
             )
-        return morph.mscale(image_word_linearly_morphed)
+        return image_word_linearly_morphed
 
-    def create_visualization(self) -> NoReturn:
+    def get_visualization(self) -> np.ndarray:
+        self.visualization = self._create_visualization()
+        return self.visualization
+
+    def _create_visualization(self) -> NoReturn:
 
         def add_text(image: np.ndarray, text: str) -> np.ndarray:
-            return cv.putText(np.copy(image), text, (50, 50), cv.FONT_HERSHEY_COMPLEX, 2, (0, 255, 0), 1)
+            return cv.putText(
+                img=np.copy(image), text=text, org=morph.mscale((30, 30)),
+                fontFace=cv.FONT_HERSHEY_COMPLEX, fontScale=2, color=(0, 255, 0), thickness=1
+            )
 
-        images = [
-            add_text(self.image_rgb, "orig"),
-            add_text(self.image_edges, "edges"),
-            add_text(self.image_cleared_borders, "clear borders"),
-            add_text(self.image_filled, "filled"),
-            add_text(self.image_filtered, "filtered blobs"),
-        ]
-
-        for blob, result in self.results.items():
-            image_mask, _ = result
-            images.append(add_text(image_mask, blob))
+        images = [self.image_not_scaled]
+        if self.results:
+            for algorithm, result in self.results.items():
+                images.append(add_text(result.get_default_visualization(self.image_not_scaled), algorithm))
 
         for i, image in enumerate(images):
             if len(image.shape) != 3:
@@ -176,7 +179,7 @@ class Detector:
 
         image_mser = cv.bitwise_and(cv.bitwise_and(mr, mb), mg)
         image_mser = utils.fill_holes(image_mser)
-        image_mser = morph.apply_line_morphology(image_mser, morph.mscale(40))[1]
+        image_mser = morph.apply_line_morphology(image_mser, morph.mscale(30))[1]
 
         return image_mser
 
@@ -205,7 +208,7 @@ class DetectionResult:
     class Region:
 
         def __init__(self, contour: np.ndarray, method: ResultMethod) -> NoReturn:
-            self.polygon = self.contour_to_polygon(contour, method)
+            self.polygon = self.contour_to_polygon(contour, method).clip(min=0)
             self.polygon_area = cv.contourArea(self.polygon)
 
             self.polygon_ravel: np.ndarray = np.transpose(self.polygon).ravel()
@@ -239,7 +242,7 @@ class DetectionResult:
 
         for method in ResultMethod:
             self.regions[method] = self.find_regions(method)
-            self.masks[method] = self.draw_regions(method)
+            self.masks[method] = self.create_mask(method)
 
     def find_regions(self, method: ResultMethod) -> List['Region']:
         contours, _ = cv.findContours(self.image_input, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -249,11 +252,17 @@ class DetectionResult:
             reverse=True
         )
 
-    def draw_regions(self, method: ResultMethod) -> np.ndarray:
+    def create_mask(self, method: ResultMethod) -> np.ndarray:
         image_result = np.zeros_like(self.image_input)
         for polygon in [region.polygon for region in self.regions[method]]:
             cv.drawContours(image_result, [polygon], -1, 255, -1)
         return image_result
+
+    def create_visualization(self, image: np.ndarray, method: ResultMethod) -> np.ndarray:
+        return cv.drawContours(np.copy(image), [region.polygon for region in self.regions[method]], -1, (0, 255, 0), 5)
+
+    def get_default_visualization(self, image: np.ndarray) -> np.ndarray:
+        return self.create_visualization(image, config.approx_method)
 
     def get_coordinates_from_regions(self, method: ResultMethod) -> List[np.ndarray]:
         return [region.polygon_ravel for region in self.regions[method]]

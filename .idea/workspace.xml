@@ -23,7 +23,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d5e33279-bb0e-4eb5-8a3e-7c2b447ca848" name="Default Changelist" comment="Add new formatting to logger&#10;Small refactoring in annotation.py">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/textdetector/aligner.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/annotation.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/annotation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/args.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/args.py" afterDir="false" />
@@ -36,9 +36,6 @@
       <change beforePath="$PROJECT_DIR$/textdetector/referencer.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/referencer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/runner.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/textdetector/writer.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/writer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/contours.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/contours.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/improc.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/improc.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/uio.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/uio.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -408,7 +405,21 @@
       <option name="project" value="LOCAL" />
       <updated>1599839446233</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="Add some parameters to MSER creation&#10;Fix thresh method&#10;Fix crop_image_by_contour method">
+      <created>1599914401383</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1599914401383</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Add Aligner class for alignment&#10;Add in respect to aligner.py enumerator and parameters to args and config&#10;Move alignment methods from morph.py to aligner.py&#10;Add listing method to some enums&#10;Fix annotation pattern generation">
+      <created>1599914600387</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1599914600387</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -439,7 +450,9 @@
     <MESSAGE value="Add new formatting to logger&#10;Small refactoring in annotation.py" />
     <MESSAGE value="Improve MSER algorithm&#10;Fix polygon drawing in Result&#10;Implement method for running algorithms in loop" />
     <MESSAGE value="Change approximation method to Hull&#10;Implement advanced metrics calculation in evaluator.py&#10;Implement ranking of algorithms in evaluator.py&#10;Tune filtration methods in morph.py" />
-    <option name="LAST_COMMIT_MESSAGE" value="Change approximation method to Hull&#10;Implement advanced metrics calculation in evaluator.py&#10;Implement ranking of algorithms in evaluator.py&#10;Tune filtration methods in morph.py" />
+    <MESSAGE value="Add some parameters to MSER creation&#10;Fix thresh method&#10;Fix crop_image_by_contour method" />
+    <MESSAGE value="Add Aligner class for alignment&#10;Add in respect to aligner.py enumerator and parameters to args and config&#10;Move alignment methods from morph.py to aligner.py&#10;Add listing method to some enums&#10;Fix annotation pattern generation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add Aligner class for alignment&#10;Add in respect to aligner.py enumerator and parameters to args and config&#10;Move alignment methods from morph.py to aligner.py&#10;Add listing method to some enums&#10;Fix annotation pattern generation" />
   </component>
   <component name="WindowStateProjectService">
     <state x="586" y="203" key="#Inspections" timestamp="1597232311183">
@@ -489,12 +502,12 @@
       <screen x="1920" y="-65" width="1920" height="1050" />
     </state>
     <state x="2589" y="55" key="#run/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1597143497817" />
-    <state x="34" y="0" width="1338" height="769" key="CommitChangelistDialog2" timestamp="1599839930915">
+    <state x="34" y="0" width="1338" height="769" key="CommitChangelistDialog2" timestamp="1599914599612">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="585" y="92" key="CommitChangelistDialog2/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1594663230362" />
     <state x="28" y="-1" width="1338" height="769" key="CommitChangelistDialog2/28.0.1338.768@28.0.1338.768" timestamp="1599753771183" />
-    <state x="34" y="0" width="1886" height="1080" key="CommitChangelistDialog2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599839930915" />
+    <state x="34" y="0" width="1886" height="1080" key="CommitChangelistDialog2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599914599612" />
     <state width="1493" height="451" key="DebuggerActiveHint" timestamp="1599910748822">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
@@ -575,11 +588,11 @@
     </state>
     <state x="461" y="169" key="SettingsEditor/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1598993991050" />
     <state x="769" y="172" key="SettingsEditor/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599829059490" />
-    <state x="576" y="264" key="Vcs.Push.Dialog.v2" timestamp="1599839454434">
+    <state x="576" y="264" key="Vcs.Push.Dialog.v2" timestamp="1599914601928">
       <screen x="34" y="0" width="1886" height="1080" />
     </state>
     <state x="552" y="257" key="Vcs.Push.Dialog.v2/0.0.1920.1050/1920.-65.1920.1050@0.0.1920.1050" timestamp="1594663235489" />
-    <state x="576" y="264" key="Vcs.Push.Dialog.v2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599839454434" />
+    <state x="576" y="264" key="Vcs.Push.Dialog.v2/34.0.1886.1080/1920.0.1920.1080@34.0.1886.1080" timestamp="1599914601928" />
     <state x="2356" y="164" key="com.intellij.execution.console.ConsoleHistoryController$MyBrowseAction$1" timestamp="1592634383990">
       <screen x="1920" y="-65" width="1920" height="1050" />
     </state>

@@ -174,14 +174,15 @@ class BoundingRectangleRotated(BoundingRectangleABC):
 
 class Annotation:
 
-    def __init__(self, path_xml: str) -> NoReturn:
-        self.root: ElementTree.Element = ElementTree.parse(path_xml).getroot()
+    def __init__(self, path: Path) -> NoReturn:
+        self.root: ElementTree.Element = ElementTree.parse(str(path)).getroot()
+
         self.filename: str = self.root.find('filename').text
         self.size: Tuple[int, int, int] = self._get_size()
-
-        self.image_mask: Union[np.ndarray, None] = None
-
         self.bounding_rectangles = self._get_bounding_rectangles()
+
+        self.image_ref: np.ndarray = cv.imread(str(path).replace('.xml', '.png'), cv.IMREAD_COLOR)
+        self.image_mask: np.ndarray = self.create_mask()
 
     def _get_size(self) -> Tuple[int, int, int]:
         width = int(self.root.find('size').find('width').text)
@@ -206,10 +207,16 @@ class Annotation:
         return bounding_rectangles
 
     def is_empty(self) -> bool:
-        return len(self.bounding_rectangles) == 0
+        return self.get_amount_of_regions_by_labels(AnnotationLabel.to_list()) == 0
+
+    def is_empty_text(self) -> bool:
+        return self.get_amount_of_regions_by_labels(AnnotationLabel.get_list_of_text_labels()) == 0
+
+    def is_empty_graphic(self) -> bool:
+        return self.get_amount_of_regions_by_labels(AnnotationLabel.get_list_of_graphic_labels()) == 0
 
     def create_mask(self) -> np.ndarray:
-        self.image_mask = np.zeros(self.size, dtype=np.uint8)
+        self.image_mask = np.zeros_like(self.image_ref)
 
         for bounding_rectangle in self.bounding_rectangles:
             bounding_rectangle.draw(self.image_mask, filled=True)
@@ -222,7 +229,7 @@ class Annotation:
             color: Union[None, Tuple[int, int, int]] = None
     ) -> np.ndarray:
 
-        image_mask = np.zeros(self.size, dtype=np.uint8)
+        image_mask = np.zeros_like(self.image_mask)
 
         for bounding_rectangle in self.bounding_rectangles:
             if bounding_rectangle.label in labels:
@@ -235,9 +242,6 @@ class Annotation:
 
         for bounding_rectangle in self.bounding_rectangles:
             df.loc[len(df.index)] = file_info + bounding_rectangle.get_info()
-
-    def load_reference_image(self, base_folder: Path) -> np.ndarray:
-        return cv.imread(str(base_folder / Path(self.filename + ".png")), cv.IMREAD_COLOR)
 
     def get_amount_of_regions_by_labels(self, labels: List[AnnotationLabel]) -> int:
         amount = 0
