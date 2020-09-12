@@ -3,7 +3,7 @@ from typing import Tuple, Union
 import numpy as np
 import cv2 as cv
 
-from morph import mscale
+from textdetector.morph import mscale
 
 import utils
 
