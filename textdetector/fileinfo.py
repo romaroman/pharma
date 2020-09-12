@@ -19,13 +19,10 @@ class FileInfo(ABC):
 
     @staticmethod
     def get_file_info(file_path: str, database: FileDatabase) -> Union["FileInfoEnrollment", "FileInfoRecognition"]:
-
         if database is FileDatabase.Enrollment:
             return FileInfoEnrollment(file_path)
-        if database in [FileDatabase.PharmaPack_R_I_S1, FileDatabase.PharmaPack_R_I_S2, FileDatabase.PharmaPack_R_I_S3]:
+        elif database in FileDatabase.get_list_of_recognition_databases():
             return FileInfoRecognition(file_path)
-        else:
-            raise ValueError
 
     def __init__(self, file_path: str) -> NoReturn:
         self.filename = pathlib.Path(file_path).stem
@@ -37,9 +34,7 @@ class FileInfo(ABC):
         self.size = self._extract_numerical_info('size')
 
     def get_annotation_pattern(self) -> Pattern:
-        return re.compile(
-            f"PFP_Ph._P{str(self.package_class).zfill(4)}_D{str(self.distinct).zfill(2)}_S00._C._az..._side."
-        )
+        return re.compile(f"PFP_Ph._P{str(self.package_class).zfill(4)}_D0{self.distinct}_S00._C._az..._side.")
 
     def to_dict(self) -> Dict[str, int]:
         return {

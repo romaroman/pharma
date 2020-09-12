@@ -1,4 +1,5 @@
 from enum import auto
+from typing import List
 
 import utils
 
@@ -27,6 +28,10 @@ class FileDatabase(utils.CustomEnum):
     PharmaPack_R_I_S2 = auto(),
     PharmaPack_R_I_S3 = auto(),
 
+    @staticmethod
+    def get_list_of_recognition_databases() -> List['FileDatabase']:
+        return [FileDatabase.PharmaPack_R_I_S1, FileDatabase.PharmaPack_R_I_S2, FileDatabase.PharmaPack_R_I_S3]
+
 
 class FilePhone(utils.CustomEnum):
     Phone1 = auto(),
@@ -48,6 +53,14 @@ class AnnotationLabel(utils.CustomEnum):
 
     Unknown = (255, 255, 255)
 
+    @staticmethod
+    def get_list_of_text_labels() -> List['AnnotationLabel']:
+        return [AnnotationLabel.Text, AnnotationLabel.Number]
+
+    @staticmethod
+    def get_list_of_graphic_labels() -> List['AnnotationLabel']:
+        return [AnnotationLabel.Watermark, AnnotationLabel.Image, AnnotationLabel.Barcode]
+
 
 class EvalMetric(utils.CustomEnum):
     TruePositive = "TP",
@@ -62,3 +75,8 @@ class EvalMetric(utils.CustomEnum):
     Specificity = "SPC",
 
     RegionsAmount = "RA"
+
+
+class AlignmentMethod(utils.CustomEnum):
+    Reference = auto(),
+    ToCorners = auto()

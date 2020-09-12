@@ -35,60 +35,6 @@ def prepare_image(image: np.ndarray, scale_factor: float) -> np.ndarray:
     return image[:h - h % m, :w - w % m]
 
 
-def align_package_to_corners(image_rgb: np.ndarray) -> Tuple[bool, Union[np.ndarray, None]]:
-    image_gray = cv.cvtColor(image_rgb, cv.COLOR_BGR2GRAY)
-
-    threshold, _ = cv.threshold(image_gray, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
-    _, image_bw = cv.threshold(image_gray, threshold - 30, 255, cv.THRESH_BINARY)
-
-    image_closed = cv.morphologyEx(image_bw, cv.MORPH_CLOSE, mscale((15, 15)))
-    image_dilated = cv.dilate(image_closed, mscale((10, 10)))
-
-    image_filled = utils.fill_holes(image_dilated)
-    image_filled = cv.erode(image_filled, np.ones(mscale((10, 10))))
-
-    contours, _ = cv.findContours(image_filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-
-    contour = max(contours, key=lambda x: cv.contourArea(x))
-
-    if abs(1 - cv.contourArea(contour) / image_filled.size) < 0.5:
-        return False, image_rgb
-
-    image_aligned = crop_and_align_contour(image_rgb, contour)
-
-    return True, image_aligned
-
-
-def find_package_mask(image_bw: np.ndarray) -> Tuple[bool, np.ndarray]:
-    valid_mask_to_image_area_ratio = 0.3
-    valid_minrect_contour_area_ratio = 0.2
-
-    is_mask_partial = False
-
-    image_dilated = cv.dilate(image_bw, kernel=np.ones(mscale((9, 9))))
-
-    contours, _ = cv.findContours(image_dilated, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-    contours = np.asarray(contours)
-
-    max_area_contour = max(contours, key=lambda x: cv.contourArea(x))
-    points = cv.boxPoints(cv.minAreaRect(max_area_contour)).astype(np.int0)
-
-    minrect_contour_area_ratio = abs(1 - cv.contourArea(points) / cv.contourArea(max_area_contour))
-    mask_to_image_area_ratio = cv.contourArea(points) / image_bw.size
-
-    image_mask = np.zeros_like(image_bw)
-    if mask_to_image_area_ratio < valid_mask_to_image_area_ratio or \
-            minrect_contour_area_ratio > valid_minrect_contour_area_ratio:
-
-        image_mask = np.full(image_bw.shape, 1, dtype=np.uint8)
-
-    else:
-        cv.drawContours(image_mask, [points], -1, 1, -1)
-        is_mask_partial = True
-
-    return is_mask_partial, image_mask
-
-
 def extract_edges(
         image_gray: np.ndarray,
         image_mask: np.ndarray = None,
@@ -100,9 +46,7 @@ def extract_edges(
 
         def is_edge_valid(contour: np.ndarray) -> bool:
             area = cv.contourArea(contour)
-            # _, shape, _ = cv.minAreaRect(contour)
-            return area < mscale(50) ** 2 # and min(shape) / max(shape) > 1/15
-
+            return area < mscale(50) ** 2
 
         image_new_ind = np.zeros_like(image_ind)
 
@@ -112,7 +56,6 @@ def extract_edges(
             image_current_bin[image_current_bin != 0] = 1
             image_current_bin = image_current_bin * image_binary_mask
 
-            image_current_bin = clear_borders(image_current_bin)
             image_current_bin = cv.dilate(image_current_bin, kernel=np.ones(mscale((3, 3))))
 
             contours, _ = cv.findContours(image_current_bin, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -218,7 +161,7 @@ def filter_non_text_blobs(image_bw: np.ndarray) -> np.ndarray:
         min_row, min_col, max_row, max_col = prop.bbox
         h, w = max_row - min_row, max_col - min_col
         aspect = min(h, w) / max(h, w)
-        return prop.solidity > 0.25 and prop.area > mscale(7) ** 2 and aspect > 0.2
+        return prop.solidity > 0.25 and prop.area > mscale(10) ** 2 and aspect > 0.2
 
     _, image_labeled = cv.connectedComponents(image_bw)
     props = skimage.measure.regionprops(image_labeled)
@@ -229,6 +172,12 @@ def filter_non_text_blobs(image_bw: np.ndarray) -> np.ndarray:
     image_filtered = (np.isin(image_labeled, valid_labels) > 0).astype(np.uint8) * 255
 
     return image_filtered
+
+
+def filter_contours(image: np.ndarray, key) -> np.ndarray:
+    contours, _ = cv.findContours(image, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
+    valid_contours = list(filter(key, contours))
+    return cv.drawContours(np.zeros_like(image), valid_contours, -1, 255, -1)
 
 
 def apply_line_morphology(
@@ -245,7 +194,6 @@ def apply_line_morphology(
     for line_rotation_angle in line_rotation_angles:
         strel_line_rotated = utils.morph_line(line_length, line_rotation_angle)
         image_linearly_morphed = cv.dilate(image_bw, strel_line_rotated)
-
         pixel_amounts.append(cv.countNonZero(image_linearly_morphed))
 
     if key == 'min':
@@ -305,36 +253,6 @@ def apply_rectangular_segmentation(image_bw: np.ndarray, axis: int = 0) -> np.nd
     return horizontal_rectangles
 
 
-def crop_and_align_contour(image: np.ndarray, contour: np.ndarray) -> np.ndarray:
-    rrect = cv.minAreaRect(contour)
-    box = cv.boxPoints(rrect)
-    box = np.asarray(box, dtype=np.int0)
-
-    xs = [i[0] for i in box]
-    ys = [i[1] for i in box]
-    x1, x2, y1, y2 = min(xs), max(xs), min(ys), max(ys)
-
-    angle = rrect[2]
-    if angle < -45:
-        angle += 90
-
-    center = ((x1 + x2) / 2, (y1 + y2) / 2)
-
-    size = (x2 - x1, y2 - y1)
-    m = cv.getRotationMatrix2D((size[0] / 2, size[1] / 2), angle, 1.0)
-
-    image_cropped = cv.getRectSubPix(image, size, center)
-    image_cropped = cv.warpAffine(image_cropped, m, size)
-
-    image_bw = utils.thresh(utils.to_gray(image_cropped), thresh_adjust=-50)
-    contours, _ = cv.findContours(image_bw, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-    contour_max = max(contours, key=lambda x: cv.contourArea(x))
-    x, y, w, h = cv.boundingRect(contour_max)
-    image_result = image_cropped[y:y+h, x:x+w]
-
-    return image_result
-
-
 def clear_borders(image_bw: np.ndarray) -> np.ndarray:
 
     def is_contour_invalid(contour) -> bool:
@@ -355,7 +273,7 @@ def clear_borders(image_bw: np.ndarray) -> np.ndarray:
 
     contours_to_delete = list(map(lambda p: utils.approximate_contour(p, 0.01), filter(is_contour_invalid, contours)))
 
-    if len(contours_to_delete) == 0:
+    if not contours_to_delete:
         return image_bw
 
     image_mask_to_delete = cv.drawContours(np.zeros_like(image_bw), contours_to_delete, -1, 255, contour_thickness)

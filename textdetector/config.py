@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Any, Dict
 
 from textdetector.args import parser
-from textdetector.enums import DetectionAlgorithm, FileDatabase, ResultMethod
+from textdetector.enums import DetectionAlgorithm, FileDatabase, ResultMethod, AlignmentMethod
 
 import utils
 
@@ -34,6 +34,7 @@ multithreading: bool = args.multithreading
 scale_factor: float = args.scale_factor
 algorithms: List[DetectionAlgorithm] = [DetectionAlgorithm[algorithm] for algorithm in args.algorithms.replace(' ', '').split(',')]
 approx_method: ResultMethod = ResultMethod[args.approx_method]
+alignment_method: AlignmentMethod = AlignmentMethod[args.alignment_method]
 
 evaluate: bool = args.evaluate
 extract_reference: bool = args.extract_reference
@@ -64,6 +65,8 @@ def to_dict() -> Dict[str, Any]:
     dict_result['multithreading'] = multithreading
     dict_result['scale_factor'] = scale_factor
     dict_result['algorithms'] = ", ".join([str(alg) for alg in algorithms])
+    dict_result['approx_method'] = str(approx_method)
+    dict_result['alignment_method'] = str(alignment_method)
 
     dict_result['evaluate'] = evaluate
     dict_result['extract_reference'] = extract_reference
