@@ -1,12 +1,11 @@
 from typing import Tuple, Union
 
 import skimage
-import skimage.measure
 import cv2 as cv
 import numpy as np
+import skimage.measure
 
 from textdetector import config
-
 import utils
 
 
@@ -14,10 +13,10 @@ def mscale(
         obj: Union[int, float, Tuple[int, int], np.ndarray],
         down: bool = True
 ) -> Union[int, float, Tuple[int, int], np.ndarray]:
-    if config.scale_factor == 1.0:
+    if config.alg_scale_factor == 1.0:
         return obj
 
-    scale_f = float(config.scale_factor if down else 1 / config.scale_factor)
+    scale_f = float(config.alg_scale_factor if down else 1 / config.alg_scale_factor)
 
     if type(obj) is int:
         return int(obj * scale_f)

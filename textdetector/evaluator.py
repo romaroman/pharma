@@ -4,11 +4,9 @@ from typing import NoReturn, Dict, Union
 import cv2 as cv
 import numpy as np
 
-from textdetector.enums import EvalMetric
-from textdetector import AnnotationLabel
-from textdetector.annotation import Annotation
 from textdetector.detector import Detector
-
+from textdetector.annotation import Annotation
+from textdetector.enums import EvalMetric, AnnotationLabel
 import utils
 
 
@@ -142,4 +140,3 @@ class Evaluator:
                 if score < self.results_aggregated[metric][1]:
                     self.results_aggregated[metric] = (algorithm, score)
 
-        pass

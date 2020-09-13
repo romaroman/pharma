@@ -4,7 +4,7 @@ import pathlib
 from abc import ABC
 from typing import NoReturn, Union, Dict, List, Pattern
 
-from textdetector import FileDatabase
+from . import FileDatabase
 
 
 class FileInfo(ABC):

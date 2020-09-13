@@ -8,7 +8,7 @@ import cv2 as cv
 import numpy as np
 import pandas as pd
 
-import textdetector.config as config
+from textdetector import config
 from textdetector.detector import Detector
 from textdetector.referencer import Referencer
 
@@ -16,19 +16,19 @@ from textdetector.referencer import Referencer
 class Writer:
 
     def __init__(self):
-        self._dicts_result: Dict[str, Dict[str, Union[int, float]]] = dict()
+        self.results: Dict[str, Dict[str, Union[int, float]]] = dict()
 
     def add_dict_result(
         self, blob: str,
         dict_result: Union[Dict[str, Union[int, float]], Dict[str, Dict[int, Dict[str, Union[int, float]]]]]
     ) -> NoReturn:
-        self._dicts_result[blob] = dict_result
+        self.results[blob] = dict_result
 
     def clear_current_results(self) -> NoReturn:
-        self._dicts_result.clear()
+        self.results.clear()
 
     def get_current_results(self) -> Dict[str, Dict[str, Union[int, float]]]:
-        return self._dicts_result
+        return self.results
 
     @classmethod
     def write_entity(
@@ -38,7 +38,7 @@ class Writer:
             filename: str,
             extension: str
     ) -> NoReturn:
-        dst_folder = config.dst_folder / folder_suffix
+        dst_folder = config.dir_source / folder_suffix
         os.makedirs(str(dst_folder.resolve()), exist_ok=True)
         dst_path = str(dst_folder / Path(filename + f".{extension}"))
 
@@ -53,7 +53,7 @@ class Writer:
 
     @staticmethod
     def write_image_region(image: np.ndarray, folder_suffix: str, filename: str, order: str) -> NoReturn:
-        dst_folder = config.dst_folder / folder_suffix / filename
+        dst_folder = config.dir_source / folder_suffix / filename
         os.makedirs(str(dst_folder.resolve()), exist_ok=True)
         dst_path = str(dst_folder / f"{order}.png")
 
@@ -78,9 +78,9 @@ class Writer:
                         f"{common_part}/parts", filename, str(index).zfill(4)
                     )
 
-        self.write_entity(self._dicts_result, "JSON", filename, "json")
+        self.write_entity(self.results, "JSON", filename, "json")
 
-        if config.visualize:
+        if config.wr_visualization:
             self.write_entity(detection.get_visualization(), "visualizations", filename, "png")
 
     def save_reference_results(self, referencer: Referencer, filename: str) -> NoReturn:
@@ -92,17 +92,16 @@ class Writer:
 
     @classmethod
     def prepare_output_folder(cls) -> NoReturn:
-        if config.clear_output:
-            shutil.rmtree(config.dst_folder, ignore_errors=True)
-            os.makedirs(config.dst_folder, exist_ok=True)
-        cls.write_json(config.to_dict(), str(config.dst_folder / "config.json"))
+        if config.wr_clean_before:
+            shutil.rmtree(config.dir_output, ignore_errors=True)
+            os.makedirs(str(config.dir_output.resolve()), exist_ok=True)
 
     @staticmethod
-    def update_session(results: List[Dict[str, Dict[str, Union[int, float]]]]) -> NoReturn:
-        df_file = f"session_{config.timestamp}.csv"
+    def update_session_with_pd(results: List[Dict[str, Dict[str, Union[int, float]]]]) -> NoReturn:
+        df_file = f"session_pd_{config.timestamp}.csv"
 
-        if os.path.exists(config.dst_folder / df_file):
-            df = pd.read_csv(config.dst_folder / df_file, index_col=False)
+        if os.path.exists(str(config.dir_source / df_file)):
+            df = pd.read_csv(config.dir_source / df_file, index_col=False)
         else:
             df = pd.DataFrame()
 
@@ -118,4 +117,4 @@ class Writer:
 
             df = df.append(pd.Series(dict_combined), ignore_index=True)
 
-        df.to_csv(config.dst_folder / df_file, index=False)
+        df.to_csv(config.dir_source / df_file, index=False)

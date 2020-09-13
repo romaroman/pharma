@@ -7,7 +7,6 @@ import numpy as np
 
 from textdetector import morph, config
 from textdetector.enums import DetectionAlgorithm, ResultMethod
-
 import utils
 
 
@@ -17,7 +16,7 @@ logger = logging.getLogger('detector')
 class Detector:
 
     def __init__(self, image_input: np.ndarray) -> NoReturn:
-        self.image_not_scaled = morph.prepare_image(image_input, config.scale_factor)
+        self.image_not_scaled = morph.prepare_image(image_input, config.alg_scale_factor)
 
         self.image_rgb = morph.mscale(self.image_not_scaled)
         self.image_gray: np.ndarray = cv.cvtColor(self.image_rgb, cv.COLOR_BGR2GRAY)
@@ -262,13 +261,13 @@ class DetectionResult:
         return cv.drawContours(np.copy(image), [region.polygon for region in self.regions[method]], -1, (0, 255, 0), 5)
 
     def get_default_visualization(self, image: np.ndarray) -> np.ndarray:
-        return self.create_visualization(image, config.approx_method)
+        return self.create_visualization(image, config.alg_approximation_method)
 
     def get_coordinates_from_regions(self, method: ResultMethod) -> List[np.ndarray]:
         return [region.polygon_ravel for region in self.regions[method]]
 
     def get_default_mask(self) -> np.ndarray:
-        return self.masks[config.approx_method]
+        return self.masks[config.alg_approximation_method]
 
     def get_default_regions(self) -> List['Region']:
-        return self.regions[config.approx_method]
+        return self.regions[config.alg_approximation_method]

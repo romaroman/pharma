@@ -1,92 +1,44 @@
 import logging
+import confuse
 from pathlib import Path
-from typing import List, Any, Dict
 
-from textdetector.args import parser
-from textdetector.enums import DetectionAlgorithm, FileDatabase, ResultMethod, AlignmentMethod
-
+from textdetector.enums import *
 import utils
 
 
 logger = logging.getLogger('config')
-args = parser.parse_args()
-
-timestamp: str = utils.get_str_timestamp()
-
-database: FileDatabase = FileDatabase[args.database]
-src_folder: Path = utils.init_path(args.src_folder) / str(database)
-dst_folder: Path = utils.init_path(args.dst_folder) / timestamp
-
-shuffle: bool = args.shuffle
-seed: bool = args.seed
-split_on_chunks: bool = args.split_on_chunks
-percentage: int = args.percentage
-
-logging_level: int = getattr(logging, args.logging_level)
-debug: bool = args.debug
-profile: bool = args.profile
-
-write: bool = args.write
-visualize: bool = args.visualize
-clear_output: bool = args.clear_output
-
-multithreading: bool = args.multithreading
-scale_factor: float = args.scale_factor
-algorithms: List[DetectionAlgorithm] = [DetectionAlgorithm[algorithm] for algorithm in args.algorithms.replace(' ', '').split(',')]
-approx_method: ResultMethod = ResultMethod[args.approx_method]
-alignment_method: AlignmentMethod = AlignmentMethod[args.alignment_method]
-
-evaluate: bool = args.evaluate
-extract_reference: bool = args.extract_reference
 
 
-def to_dict() -> Dict[str, Any]:
-    dict_result = dict()
+timestamp = utils.get_str_timestamp()
+confuse = confuse.Configuration('_', __name__)
+confuse.set_file('config.yaml')
 
-    dict_result['timestamp'] = timestamp
+mode: Mode = Mode[confuse['Mode'].as_str()]
 
-    dict_result['database'] = str(database)
-    dict_result['src_folder'] = str(src_folder)
-    dict_result['dst_folder'] = str(dst_folder)
+database: FileDatabase = FileDatabase[confuse['Database'].as_str()]
+dir_source: Path = confuse['Dirs']['SourceDir'].as_path() / str(database)
+dir_output: Path = confuse['Dirs']['OutputDir'].as_path()
 
-    dict_result['shuffle'] = shuffle
-    dict_result['seed'] = seed
-    dict_result['split_on_chunks'] = split_on_chunks
-    dict_result['percentage'] = percentage
+imgl_shuffle: bool = confuse['ImageLoading']['Shuffle'].get()
+imgl_seed: bool = confuse['ImageLoading']['Seed'].get()
+imgl_split_on_chunks: bool = confuse['ImageLoading']['SplitOnChunks'].get()
+imgl_percentage: int = confuse['ImageLoading']['Percentage'].as_number()
 
-    dict_result['logging_level'] = logging_level
-    dict_result['debug'] = debug
-    dict_result['profile'] = profile
+out_log_level: int = getattr(logging, confuse['Output']['LogLevel'].as_str())
+out_profile: bool = confuse['Output']['Profile'].get()
 
-    dict_result['write'] = write
-    dict_result['visualize'] = visualize
-    dict_result['clear_output'] = clear_output
+wr_clean_before: bool = confuse['Write']['CleanBefore'].get()
+wr_images: bool = confuse['Write']['Images'].get()
+wr_visualization: bool = confuse['Write']['Visualization'].get()
 
-    dict_result['multithreading'] = multithreading
-    dict_result['scale_factor'] = scale_factor
-    dict_result['algorithms'] = ", ".join([str(alg) for alg in algorithms])
-    dict_result['approx_method'] = str(approx_method)
-    dict_result['alignment_method'] = str(alignment_method)
+run_multithreading: bool = confuse['Runtime']['Multithreading'].get()
 
-    dict_result['evaluate'] = evaluate
-    dict_result['extract_reference'] = extract_reference
+alg_scale_factor: float = confuse['Algorithm']['ScaleFactor'].as_number()
+alg_algorithms: List[DetectionAlgorithm] = \
+    DetectionAlgorithm.load_from_config(confuse['Algorithm']['Algorithms'].as_str())
+alg_approximation_method: ResultMethod = ResultMethod[confuse['Algorithm']['ApproximationMethod'].as_str()]
+alg_alignment_method: AlignmentMethod = AlignmentMethod[confuse['Algorithm']['AlignmentMethod'].as_str()]
 
-    return dict_result
-
-
-def validate():
-    global multithreading, debug, algorithms
-
-    if DetectionAlgorithm.MajorVoting in algorithms:
-        if len(algorithms) - 1 < 3:
-            algorithms.remove(DetectionAlgorithm.MajorVoting)
-            logger.warning("Cannot perform Algorithm.MajorVoting algorithm if there's less than 3 algorithms")
-
-    if DetectionAlgorithm.MorphologyIteration2 in algorithms and DetectionAlgorithm.MorphologyIteration1 not in algorithms:
-        logger.warning("Algorithm.MorphologyIteration2 cannot be performed without Algorithm.MorphologyIteration1\n"
-                       ", adding that to algorithms list")
-        algorithms.insert(0, DetectionAlgorithm.MorphologyIteration1)
-
-    if debug and multithreading:
-        logger.warning("Multithreading isn't supported during debug")
-        multithreading = False
+op_detect: bool = confuse['Operations']['Detect'].get()
+op_evaluate: bool = confuse['Operations']['Evaluate'].get()
+op_extract_references: bool = confuse['Operations']['ExtractReferences'].get()

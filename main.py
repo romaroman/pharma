@@ -10,13 +10,12 @@ logger = logging.getLogger('textdetector')
 
 
 def setup() -> NoReturn:
-    config.validate()
     Writer.prepare_output_folder()
 
-    utils.setup_logger('text_detector', config.logging_level, str(config.dst_folder / 'log.txt'))
+    utils.setup_logger('text_detector', config.out_log_level, str(config.dir_output / 'log.txt'))
     utils.suppress_warnings()
 
-    logger.info(f"Currently used configuration:\n{utils.pretty(config.to_dict())}")
+    logger.info(f"Currently used configuration:\n{config.confuse.dump()}")
 
 
 def main() -> int:

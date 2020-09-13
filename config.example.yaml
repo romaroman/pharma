@@ -1,0 +1,37 @@
+App: PharmapackRecognition
+
+Mode: Debug
+Database: Enrollment
+
+Dirs:
+  SourceDir: /fls/pharmapack
+  OutputDir: /fls/pharmapack/output
+
+ImageLoading:
+  Shuffle: False
+  Seed: False
+  SplitOnChunks: True
+  Percentage: 100
+
+Output:
+  LogLevel: INFO
+  Profile: False
+
+Write:
+  CleanBefore: True
+  Images: True
+  Visualization: True
+
+Runtime:
+  Multithreading: True
+
+Algorithm:
+  ScaleFactor: 1
+  Algorithms: All
+  ApproximationMethod: Hull
+  AlignmentMethod: Reference
+
+Operations:
+  Detect: True
+  Evaluate: True
+  ExtractReferences: True

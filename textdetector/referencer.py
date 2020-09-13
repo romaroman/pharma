@@ -4,9 +4,7 @@ from typing import NoReturn, Dict, List, Union, Tuple
 import cv2 as cv
 import numpy as np
 
-from textdetector.fileinfo import FileInfo
-from textdetector.annotation import Annotation, BoundingRectangle, BoundingRectangleRotated
-
+from . import FileInfo, Annotation, BoundingRectangle, BoundingRectangleRotated
 import utils
 
 

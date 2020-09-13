@@ -102,7 +102,7 @@ def show_image_as_window(image: np.ndarray, title: str = "") -> NoReturn:
 
 
 def setup_logger(name: str, level: int, filename: str):
-    format_str = '%(asctime)s | %(processName)-10s | %(name)s | %(levelname)-8s | %(message)s'
+    format_str = '%(asctime)s | %(name)s | %(levelname)-8s | %(message)s'
 
     log = logging.Logger(name)
     formatter = logging.Formatter(format_str)
@@ -146,14 +146,6 @@ def combine_images(images: List[np.ndarray]) -> Union[np.ndarray, None]:
             image_result = np.vstack([image_result, image_row])
 
     return image_result
-
-
-def init_path(path_str: str) -> Path:
-    path = Path(path_str)
-
-    if not path.exists():
-        os.makedirs(str(path.resolve()))
-    return path.absolute()
 
 
 def suppress_warnings() -> NoReturn:

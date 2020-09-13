@@ -4,6 +4,11 @@ from typing import List
 import utils
 
 
+class Mode(utils.CustomEnum):
+    Debug = auto(),
+    Release = auto()
+
+
 class DetectionAlgorithm(utils.CustomEnum):
     MorphologyIteration1 = "MI1",
     MorphologyIteration2 = "MI2",
@@ -11,6 +16,11 @@ class DetectionAlgorithm(utils.CustomEnum):
     LineSegmentation = "LS",
     MSER = "MSER",
     MajorVoting = "MV"
+
+    @staticmethod
+    def load_from_config(keyword: str) -> List['DetectionAlgorithm']:
+        if keyword.lower() == 'all':
+            return DetectionAlgorithm.to_list()
 
 
 class ResultMethod(utils.CustomEnum):

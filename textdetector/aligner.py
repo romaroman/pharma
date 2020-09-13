@@ -1,10 +1,9 @@
 from typing import Tuple, Union
 
-import numpy as np
 import cv2 as cv
+import numpy as np
 
-from textdetector.morph import mscale
-
+from morph import mscale
 import utils
 
 
