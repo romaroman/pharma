@@ -92,6 +92,7 @@ def extract_edges(
 
     if post_morph:
         image_edges = cv.morphologyEx(image_edges, cv.MORPH_OPEN, kernel=np.ones((3, 3)))
+         # image_edges = cv.erode(image_edges, kernel=np.ones((3, 3)))
 
     return image_edges
 
@@ -160,7 +161,7 @@ def filter_non_text_blobs(image_bw: np.ndarray) -> np.ndarray:
         min_row, min_col, max_row, max_col = prop.bbox
         h, w = max_row - min_row, max_col - min_col
         aspect = min(h, w) / max(h, w)
-        return prop.solidity > 0.25 and prop.area > mscale(10) ** 2 and aspect > 0.2
+        return prop.solidity > 0.25 and prop.area > mscale(15) ** 2 and aspect > 0.2
 
     _, image_labeled = cv.connectedComponents(image_bw)
     props = skimage.measure.regionprops(image_labeled)
