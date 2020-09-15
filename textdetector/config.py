@@ -17,7 +17,7 @@ mode: Mode = Mode[confuse['Mode'].as_str()]
 
 database: FileDatabase = FileDatabase[confuse['Database'].as_str()]
 dir_source: Path = confuse['Dirs']['SourceDir'].as_path() / str(database)
-dir_output: Path = confuse['Dirs']['OutputDir'].as_path()
+dir_output: Path = confuse['Dirs']['OutputDir'].as_path() / timestamp
 
 imgl_shuffle: bool = confuse['ImageLoading']['Shuffle'].get()
 imgl_seed: bool = confuse['ImageLoading']['Seed'].get()
@@ -34,9 +34,8 @@ wr_visualization: bool = confuse['Write']['Visualization'].get()
 run_multithreading: bool = confuse['Runtime']['Multithreading'].get()
 
 alg_scale_factor: float = confuse['Algorithm']['ScaleFactor'].as_number()
-alg_algorithms: List[DetectionAlgorithm] = \
-    DetectionAlgorithm.load_from_config(confuse['Algorithm']['Algorithms'].as_str())
-alg_approximation_method: ResultMethod = ResultMethod[confuse['Algorithm']['ApproximationMethod'].as_str()]
+alg_algorithms: List[DetectionAlgorithm] = [DetectionAlgorithm[alg] for alg in confuse['Algorithm']['Algorithms'].get()]
+alg_approximation_method: ApproximationMethod = ApproximationMethod[confuse['Algorithm']['ApproximationMethod'].as_str()]
 alg_alignment_method: AlignmentMethod = AlignmentMethod[confuse['Algorithm']['AlignmentMethod'].as_str()]
 
 op_detect: bool = confuse['Operations']['Detect'].get()

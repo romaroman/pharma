@@ -6,7 +6,7 @@ import cv2 as cv
 import numpy as np
 
 from textdetector import morph, config
-from textdetector.enums import DetectionAlgorithm, ResultMethod
+from textdetector.enums import DetectionAlgorithm, ApproximationMethod
 import utils
 
 
@@ -38,19 +38,18 @@ class Detector:
         self.image_filled = utils.fill_holes(self.image_cleared_borders)
         self.image_filtered = morph.filter_non_text_blobs(self.image_filled)
 
-        self.results['MI0'] = DetectionResult(self.image_filtered)
-
         for algorithm in algorithms:
             if algorithm is not DetectionAlgorithm.MajorVoting:
                 self.results[algorithm.vs()] = DetectionResult(self._run_algorithm(algorithm))
             else:
-                if DetectionAlgorithm.MajorVoting in algorithms:
-                    for algorithm, mask in self._perform_major_voting().items():
-                        self.results[algorithm] = DetectionResult(mask)
+                for algorithm, mask in self._perform_major_voting().items():
+                    self.results[algorithm] = DetectionResult(mask)
+
+        pass
 
     def _run_algorithm(self, algorithm: DetectionAlgorithm) -> np.ndarray:
         if algorithm is DetectionAlgorithm.MorphologyIteration1:
-            return morph.apply_line_morphology(self.image_filtered, morph.mscale(30))[1]
+            return self._perform_morphology_iteration_1()
         if algorithm is DetectionAlgorithm.MorphologyIteration2:
             return self._detect_words(
                 self.get_result_by_algorithm(DetectionAlgorithm.MorphologyIteration1).get_default_regions()
@@ -64,6 +63,30 @@ class Detector:
 
     def get_result_by_algorithm(self, algorithm: DetectionAlgorithm) -> 'DetectionResult':
         return self.results[algorithm.vs()]
+
+    def _perform_morphology_iteration_1(self) -> np.ndarray:
+        image_morphed = morph.apply_line_morphology(self.image_filtered, morph.mscale(25))[1]
+
+        # def does_contour_need_additional_morphology(contour: np.ndarray) -> bool:
+        #     _, shape, _ = cv.minAreaRect(contour)
+        #     w, h = shape
+        #     aspect_ratio = float(max(w, h)) / min(w, h)
+        #     area = cv.contourArea(contour)
+        #     stddev = np.mean(cv.meanStdDev(
+        #         self.image_not_scaled,
+        #         mask=cv.drawContours(np.zeros_like(image_morphed), [contour], -1, 255, 1)
+        #     )[1])
+        #     print(stddev)
+        #     if aspect_ratio < 1.5 and area > morph.mscale(25) ** 2 and stddev < 25:
+        #         print(aspect_ratio, area, stddev)
+        #         return True
+        #     return False
+        #
+        # contours, _ = cv.findContours(image_morphed, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        # contours_to_morph = morph.filter_contours(image_morphed, key=does_contour_need_additional_morphology)
+        # utils.display(image_morphed)
+
+        return image_morphed
 
     def _process_lines(self, lines: np.ndarray) -> np.ndarray:
         image_bw: np.ndarray = np.zeros_like(self.image_gray)
@@ -206,7 +229,7 @@ class DetectionResult:
 
     class Region:
 
-        def __init__(self, contour: np.ndarray, method: ResultMethod) -> NoReturn:
+        def __init__(self, contour: np.ndarray, method: ApproximationMethod) -> NoReturn:
             self.polygon = self.contour_to_polygon(contour, method).clip(min=0)
             self.polygon_area = cv.contourArea(self.polygon)
 
@@ -214,18 +237,18 @@ class DetectionResult:
             self.brect = cv.boundingRect(self.polygon)
 
         @classmethod
-        def contour_to_polygon(cls, contour: np.ndarray, method: ResultMethod) -> np.ndarray:
-            if method is ResultMethod.Brect:
+        def contour_to_polygon(cls, contour: np.ndarray, method: ApproximationMethod) -> np.ndarray:
+            if method is ApproximationMethod.Brect:
                 return utils.get_brect_contour(contour)
-            elif method is ResultMethod.Contour:
+            elif method is ApproximationMethod.Contour:
                 return contour
-            elif method is ResultMethod.Rrect:
+            elif method is ApproximationMethod.Rrect:
                 s = cv.boxPoints(cv.minAreaRect(contour)).astype(np.int0)
                 return s
-            elif method is ResultMethod.Hull:
+            elif method is ApproximationMethod.Hull:
                 return cv.convexHull(contour).astype(np.int0)
-            elif method is ResultMethod.Approximation:
-                return utils.approximate_contour(cls.contour_to_polygon(contour, ResultMethod.Hull), epsilon=0.02)
+            elif method is ApproximationMethod.Approximation:
+                return utils.approximate_contour(cls.contour_to_polygon(contour, ApproximationMethod.Hull), epsilon=0.02)
 
         def crop_image(self, image: np.ndarray) -> np.ndarray:
             return utils.crop_image_by_contour(image, self.polygon, False)
@@ -236,14 +259,14 @@ class DetectionResult:
     def __init__(self, image_input: np.ndarray) -> NoReturn:
         self.image_input = morph.mscale(image_input, down=False)
 
-        self.masks: Dict[ResultMethod, np.ndarray] = dict()
-        self.regions: Dict[ResultMethod, List['Region']] = dict()
+        self.masks: Dict[ApproximationMethod, np.ndarray] = dict()
+        self.regions: Dict[ApproximationMethod, List['Region']] = dict()
 
-        for method in ResultMethod:
+        for method in ApproximationMethod:
             self.regions[method] = self.find_regions(method)
             self.masks[method] = self.create_mask(method)
 
-    def find_regions(self, method: ResultMethod) -> List['Region']:
+    def find_regions(self, method: ApproximationMethod) -> List['Region']:
         contours, _ = cv.findContours(self.image_input, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         return sorted(
             [self.Region(contour, method) for contour in contours],
@@ -251,19 +274,19 @@ class DetectionResult:
             reverse=True
         )
 
-    def create_mask(self, method: ResultMethod) -> np.ndarray:
+    def create_mask(self, method: ApproximationMethod) -> np.ndarray:
         image_result = np.zeros_like(self.image_input)
         for polygon in [region.polygon for region in self.regions[method]]:
             cv.drawContours(image_result, [polygon], -1, 255, -1)
         return image_result
 
-    def create_visualization(self, image: np.ndarray, method: ResultMethod) -> np.ndarray:
+    def create_visualization(self, image: np.ndarray, method: ApproximationMethod) -> np.ndarray:
         return cv.drawContours(np.copy(image), [region.polygon for region in self.regions[method]], -1, (0, 255, 0), 5)
 
     def get_default_visualization(self, image: np.ndarray) -> np.ndarray:
         return self.create_visualization(image, config.alg_approximation_method)
 
-    def get_coordinates_from_regions(self, method: ResultMethod) -> List[np.ndarray]:
+    def get_coordinates_from_regions(self, method: ApproximationMethod) -> List[np.ndarray]:
         return [region.polygon_ravel for region in self.regions[method]]
 
     def get_default_mask(self) -> np.ndarray:

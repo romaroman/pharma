@@ -1,8 +1,8 @@
 from .annotation import Annotation, BoundingRectangleABC, BoundingRectangle, BoundingRectangleRotated, AnnotationLabel
 from .aligner import Aligner
-from .detector import Detector, DetectionResult, ResultMethod, DetectionAlgorithm
+from .detector import Detector, DetectionResult, ApproximationMethod, DetectionAlgorithm
 from .enums import DetectionAlgorithm, FileDatabase, AnnotationLabel, DetectionAlgorithm, FilePhone, EvalMetric,\
-    ResultMethod, Mode, AlignmentMethod
+    ApproximationMethod, Mode, AlignmentMethod
 from .evaluator import Evaluator
 from .fileinfo import FileInfo, FileInfoEnrollment, FileInfoRecognition, FileFilter
 from .referencer import Referencer

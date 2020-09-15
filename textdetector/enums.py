@@ -23,7 +23,7 @@ class DetectionAlgorithm(utils.CustomEnum):
             return DetectionAlgorithm.to_list()
 
 
-class ResultMethod(utils.CustomEnum):
+class ApproximationMethod(utils.CustomEnum):
     Contour = auto(),
     Brect = auto(),
     Rrect = auto(),
@@ -88,5 +88,6 @@ class EvalMetric(utils.CustomEnum):
 
 
 class AlignmentMethod(utils.CustomEnum):
+    NoAlignment = auto(),
     Reference = auto(),
     ToCorners = auto()

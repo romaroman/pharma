@@ -4,9 +4,10 @@ from typing import NoReturn, Dict, Union
 import cv2 as cv
 import numpy as np
 
+from textdetector import config
 from textdetector.detector import Detector
 from textdetector.annotation import Annotation
-from textdetector.enums import EvalMetric, AnnotationLabel
+from textdetector.enums import EvalMetric, AnnotationLabel, AlignmentMethod
 import utils
 
 
@@ -23,7 +24,8 @@ class Evaluator:
         image_ref = annotation.image_ref
         image_ver = detection.image_not_scaled
 
-        homo_mat = utils.find_homography_matrix(utils.to_gray(image_ver), utils.to_gray(image_ref))
+        if config.alg_alignment_method is not AlignmentMethod.Reference:
+            homo_mat = utils.find_homography_matrix(utils.to_gray(image_ver), utils.to_gray(image_ref))
 
         image_ref_mask_text = utils.to_gray(annotation.create_mask_by_labels(
             labels=AnnotationLabel.get_list_of_text_labels(), color=(255, 255, 255)
@@ -33,13 +35,15 @@ class Evaluator:
         ))
 
         for algorithm, result in detection.results.items():
-            image_mask_warped = cv.warpPerspective(
-                result.get_default_mask(), homo_mat, utils.swap_dimensions(image_ref.shape)
-            )
+            image_ver_mask = result.get_default_mask()
+            if config.alg_alignment_method is not AlignmentMethod.Reference:
+                image_ver_mask = cv.warpPerspective(
+                    image_ver_mask, homo_mat, utils.swap_dimensions(image_ref.shape)
+                )
 
             self.results_complete[algorithm] = dict()
-            self._calc_metrics(image_mask_warped, image_ref_mask_text, algorithm)
-            self._calc_metrics(image_mask_warped, image_ref_mask_text, algorithm, ~image_ref_mask_graphic)
+            self._calc_metrics(image_ver_mask, image_ref_mask_text, algorithm)
+            self._calc_metrics(image_ver_mask, image_ref_mask_text, algorithm, ~image_ref_mask_graphic)
 
             self.results_complete[algorithm]['ALL'][EvalMetric.RegionsAmount.vs()] = len(result.get_default_regions())
 

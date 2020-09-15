@@ -38,7 +38,7 @@ class Writer:
             filename: str,
             extension: str
     ) -> NoReturn:
-        dst_folder = config.dir_source / folder_suffix
+        dst_folder = config.dir_output / folder_suffix
         os.makedirs(str(dst_folder.resolve()), exist_ok=True)
         dst_path = str(dst_folder / Path(filename + f".{extension}"))
 
@@ -53,7 +53,7 @@ class Writer:
 
     @staticmethod
     def write_image_region(image: np.ndarray, folder_suffix: str, filename: str, order: str) -> NoReturn:
-        dst_folder = config.dir_source / folder_suffix / filename
+        dst_folder = config.dir_output / folder_suffix / filename
         os.makedirs(str(dst_folder.resolve()), exist_ok=True)
         dst_path = str(dst_folder / f"{order}.png")
 
@@ -100,8 +100,8 @@ class Writer:
     def update_session_with_pd(results: List[Dict[str, Dict[str, Union[int, float]]]]) -> NoReturn:
         df_file = f"session_pd_{config.timestamp}.csv"
 
-        if os.path.exists(str(config.dir_source / df_file)):
-            df = pd.read_csv(config.dir_source / df_file, index_col=False)
+        if os.path.exists(str(config.dir_output / df_file)):
+            df = pd.read_csv(config.dir_output / df_file, index_col=False)
         else:
             df = pd.DataFrame()
 
@@ -117,4 +117,4 @@ class Writer:
 
             df = df.append(pd.Series(dict_combined), ignore_index=True)
 
-        df.to_csv(config.dir_source / df_file, index=False)
+        df.to_csv(config.dir_output / df_file, index=False)
