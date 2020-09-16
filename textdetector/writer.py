@@ -65,11 +65,9 @@ class Writer:
             json.dump(data, file, indent=2, sort_keys=True)
 
     def save_all_results(self, detection: Detector, filename: str) -> NoReturn:
-
         for algorithm, result in detection.results.items():
             for method in result.masks.keys():
                 common_part = f"{algorithm}/{method}"
-                # self.write_entity(result.get_coordinates_from_regions(method), f"{common_part}/coords", filename, "csv")
                 self.write_entity(result.masks[method], f"{common_part}/masks", filename, "png")
 
                 for index, region in enumerate(result.regions[method], start=1):
@@ -84,11 +82,8 @@ class Writer:
             self.write_entity(detection.get_visualization(), "visualizations", filename, "png")
 
     def save_reference_results(self, referencer: Referencer, filename: str) -> NoReturn:
-        self.write_entity(referencer.get_coordinates(), f"REF/coords", filename, "csv")
-
-        for label, result in referencer.results.items():
-            image_region, _ = result
-            self.write_image_region(image_region, f"REF/parts", filename, label)
+        for label, image in referencer.results.items():
+            self.write_image_region(image, f"REF/parts", filename, label)
 
     @classmethod
     def prepare_output_folder(cls) -> NoReturn:

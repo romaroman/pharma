@@ -1,6 +1,6 @@
 import logging
 import itertools
-from typing import List, NoReturn, Dict, Union
+from typing import List, NoReturn, Dict, Union, Tuple
 
 import cv2 as cv
 import numpy as np
@@ -231,9 +231,6 @@ class DetectionResult:
 
         def __init__(self, contour: np.ndarray, method: ApproximationMethod) -> NoReturn:
             self.polygon = self.contour_to_polygon(contour, method).clip(min=0)
-            self.polygon_area = cv.contourArea(self.polygon)
-
-            self.polygon_ravel: np.ndarray = np.transpose(self.polygon).ravel()
             self.brect = cv.boundingRect(self.polygon)
 
         @classmethod
@@ -243,18 +240,23 @@ class DetectionResult:
             elif method is ApproximationMethod.Contour:
                 return contour
             elif method is ApproximationMethod.Rrect:
-                s = cv.boxPoints(cv.minAreaRect(contour)).astype(np.int0)
+                s = cv.boxPoints(cv.minAreaRect(contour)).astype(np.int32)
                 return s
             elif method is ApproximationMethod.Hull:
-                return cv.convexHull(contour).astype(np.int0)
+                return cv.convexHull(contour).astype(np.int32)
             elif method is ApproximationMethod.Approximation:
                 return utils.approximate_contour(cls.contour_to_polygon(contour, ApproximationMethod.Hull), epsilon=0.02)
 
         def crop_image(self, image: np.ndarray) -> np.ndarray:
             return utils.crop_image_by_contour(image, self.polygon, False)
 
-        def to_dict(self) -> Dict[str, int]:
-            return dict(zip(['x1', 'y1', 'x2', 'y2', 'x3', 'y3', 'x4', 'y4'], self.polygon_ravel))
+        def draw(
+                self,
+                image: np.ndarray,
+                color: Tuple[int, int, int] = (255, 255, 255),
+                filled: bool = True
+        ) -> np.ndarray:
+            return cv.drawContours(image, [self.polygon], -1, color, -1 if filled else 2)
 
     def __init__(self, image_input: np.ndarray) -> NoReturn:
         self.image_input = morph.mscale(image_input, down=False)
@@ -270,7 +272,7 @@ class DetectionResult:
         contours, _ = cv.findContours(self.image_input, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         return sorted(
             [self.Region(contour, method) for contour in contours],
-            key=lambda x: x.polygon_area,
+            key=lambda r: cv.contourArea(r.polygon),
             reverse=True
         )
 
@@ -285,9 +287,6 @@ class DetectionResult:
 
     def get_default_visualization(self, image: np.ndarray) -> np.ndarray:
         return self.create_visualization(image, config.alg_approximation_method)
-
-    def get_coordinates_from_regions(self, method: ApproximationMethod) -> List[np.ndarray]:
-        return [region.polygon_ravel for region in self.regions[method]]
 
     def get_default_mask(self) -> np.ndarray:
         return self.masks[config.alg_approximation_method]

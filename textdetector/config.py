@@ -41,3 +41,15 @@ alg_alignment_method: AlignmentMethod = AlignmentMethod[confuse['Algorithm']['Al
 op_detect: bool = confuse['Operations']['Detect'].get()
 op_evaluate: bool = confuse['Operations']['Evaluate'].get()
 op_extract_references: bool = confuse['Operations']['ExtractReferences'].get()
+
+
+def need_warp() -> bool:
+    return not alg_alignment_method is AlignmentMethod.Reference
+
+
+def is_debug() -> bool:
+    return mode is Mode.Debug
+
+
+def is_multithreading() -> bool:
+    return run_multithreading

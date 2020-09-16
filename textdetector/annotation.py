@@ -1,7 +1,7 @@
 import math
 import glob
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
 from xml.etree import ElementTree
 from typing import List, Tuple, NoReturn, Union, Pattern, Dict
@@ -25,6 +25,10 @@ class BoundingRectangleABC(ABC):
 
         self._set_color()
 
+    @abstractmethod
+    def to_polygon(self) -> np.ndarray:
+        raise NotImplementedError
+
     def get_ratio(self) -> float:
         try:
             return self.width / self.height
@@ -42,6 +46,9 @@ class BoundingRectangleABC(ABC):
 
 
 class BoundingRectangle(BoundingRectangleABC):
+
+    def to_polygon(self) -> np.ndarray:
+        return self.points.reshape(-1, 1, 2)
 
     def __init__(self, rectangle: ElementTree.Element) -> NoReturn:
         super().__init__(rectangle)
@@ -86,6 +93,9 @@ class BoundingRectangle(BoundingRectangleABC):
 
 
 class BoundingRectangleRotated(BoundingRectangleABC):
+
+    def to_polygon(self) -> np.ndarray:
+        return self.points
 
     def __init__(self, rectangle: ElementTree.Element) -> NoReturn:
         super().__init__(rectangle)
@@ -179,7 +189,8 @@ class Annotation:
 
         self.filename: str = self.root.find('filename').text
         self.size: Tuple[int, int, int] = self._get_size()
-        self.bounding_rectangles = self._get_bounding_rectangles()
+        self.bounding_rectangles: \
+            List[Union[BoundingRectangle, BoundingRectangleRotated]] = self._get_bounding_rectangles()
 
         self.image_ref: np.ndarray = cv.imread(str(path).replace('.xml', '.png'), cv.IMREAD_COLOR)
         self.image_mask: np.ndarray = self.create_mask()
@@ -269,6 +280,9 @@ class Annotation:
 
     def to_dict(self) -> Dict[str, Union[int, str]]:
         return {'filename': self.filename, **self.get_dict_of_labels_amount()}
+
+    def get_brects_by_labels(self, labels: List[AnnotationLabel]) -> List[BoundingRectangleABC]:
+        return [brect for brect in self.bounding_rectangles if brect.label in labels]
 
     @staticmethod
     def load_annotation_by_pattern(root_folder: Path, pattern: Pattern) -> 'Annotation':

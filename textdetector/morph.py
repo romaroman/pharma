@@ -247,7 +247,7 @@ def apply_rectangular_segmentation(image_bw: np.ndarray, axis: int = 0) -> np.nd
     horizontal_lower.extend(horizontal_lower_i)
 
     horizontal_rectangles = np.asarray(
-        [[(0, y1), (w, y2)] for y1, y2 in zip(horizontal_upper, horizontal_lower)], dtype=np.int0
+        [[(0, y1), (w, y2)] for y1, y2 in zip(horizontal_upper, horizontal_lower)], dtype=np.int32
     )
 
     return horizontal_rectangles
