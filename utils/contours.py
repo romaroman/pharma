@@ -1,6 +1,8 @@
 import cv2 as cv
 import numpy as np
 
+from .convert import to_tuple
+
 
 def approximate_contour(contour: np.ndarray, epsilon: float = 0.01) -> np.ndarray:
     epsilon_arc = epsilon * cv.arcLength(contour, True)
@@ -30,3 +32,13 @@ def crop_image_by_contour(
 def get_brect_contour(contour: np.ndarray) -> np.ndarray:
     x, y, w, h = cv.boundingRect(contour)
     return np.asarray([(x, y), (x + w, y), (x + w, y + h), (x, y + h)], dtype=np.int0)
+
+
+def contour_intersect(contour_ref: np.ndarray, contour_ver: np.ndarray, edges_only: bool = False) -> bool:
+    for pt in contour_ver:
+        return (edges_only and (cv.pointPolygonTest(contour_ref, to_tuple(pt[0]), True) == 0)) or \
+               (not(edges_only) and (cv.pointPolygonTest(contour_ref, to_tuple(pt[0]), True) >= 0))
+
+
+def perspective_transform_contour(contour: np.ndarray, homo: np.ndarray) -> np.ndarray:
+    return cv.perspectiveTransform(contour.astype(np.float32), homo).astype(np.int32)
