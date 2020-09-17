@@ -51,22 +51,18 @@ class Detector:
 
     def _run_algorithm(self, algorithm: DetectionAlgorithm) -> np.ndarray:
         if algorithm is DetectionAlgorithm.MorphologyIteration1:
-            return self._perform_morphology_iteration_1()
+            return self._run_morphology_iteration_1()
         if algorithm is DetectionAlgorithm.MorphologyIteration2:
-            return self._detect_words(
-                self.get_result_by_algorithm(DetectionAlgorithm.MorphologyIteration1).get_default_regions()
-            )
+            return self._run_morphology_iteration_2()
         if algorithm is DetectionAlgorithm.LineSegmentation:
-            image_lines_v = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=0))
-            image_lines_h = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=1))
-            return cv.bitwise_or(image_lines_h, image_lines_v)
+            return self._run_line_segmentation()
         if algorithm is DetectionAlgorithm.MSER:
-            return self._get_MSER_mask()
+            return self._run_MSER()
 
     def get_result_by_algorithm(self, algorithm: DetectionAlgorithm) -> 'DetectionResult':
         return self.results[algorithm.vs()]
 
-    def _perform_morphology_iteration_1(self) -> np.ndarray:
+    def _run_morphology_iteration_1(self) -> np.ndarray:
         image_morphed = morph.apply_line_morphology(self.image_filtered, morph.mscale(30))
 
         def does_contour_need_additional_morphology(contour: np.ndarray) -> bool:
@@ -123,10 +119,10 @@ class Detector:
 
         return image_bw
 
-    def _detect_words(self, regions: List['Region']) -> np.ndarray:
+    def _run_morphology_iteration_2(self) -> np.ndarray:
         image_word_linearly_morphed = np.zeros(self.image_not_scaled.shape[:2], dtype=np.uint8)
 
-        for region in regions:
+        for region in self.results['MI1'].get_default_regions():
             edges = region.crop_image(morph.mscale(self.image_edges, down=False))
             edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, np.ones((3, 3)))
             filled = utils.fill_holes(edges)
@@ -144,7 +140,7 @@ class Detector:
                         min_distance = 1000000
                         for point1 in points1:
                             for point2 in points2:
-                                distance = utils.calc_points_distance(point1, point2)
+                                distance = utils.calc_distance(point1, point2)
                                 if distance < min_distance:
                                     min_distance = distance
 
@@ -167,6 +163,7 @@ class Detector:
             image_word_linearly_morphed[y:y + h, x:x + w] = cv.bitwise_xor(
                 morphed, image_word_linearly_morphed[y:y + h, x:x + w]
             )
+
         return image_word_linearly_morphed
 
     def get_visualization(self) -> np.ndarray:
@@ -192,7 +189,7 @@ class Detector:
 
         return utils.combine_images(images)
 
-    def _get_MSER_mask(self) -> np.ndarray:
+    def _run_MSER(self) -> np.ndarray:
         r, g, b = cv.split(self.image_rgb)
 
         mr = utils.MSER(r)
@@ -223,6 +220,11 @@ class Detector:
             resulting_masks["+".join([alg1, alg2, alg3])] = cv.bitwise_or(cv.bitwise_or(alg12, alg13), alg23)
 
         return resulting_masks
+
+    def _run_line_segmentation(self) -> np.ndarray:
+        image_lines_v = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=0))
+        image_lines_h = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=1))
+        return cv.bitwise_or(image_lines_h, image_lines_v)
 
 
 class DetectionResult:
@@ -286,10 +288,10 @@ class DetectionResult:
         return cv.drawContours(np.copy(image), [region.polygon for region in self.regions[method]], -1, (0, 255, 0), 5)
 
     def get_default_visualization(self, image: np.ndarray) -> np.ndarray:
-        return self.create_visualization(image, config.alg_approximation_method)
+        return self.create_visualization(image, config.det_approximation_method)
 
     def get_default_mask(self) -> np.ndarray:
-        return self.masks[config.alg_approximation_method]
+        return self.masks[config.det_approximation_method]
 
     def get_default_regions(self) -> List['Region']:
-        return self.regions[config.alg_approximation_method]
+        return self.regions[config.det_approximation_method]

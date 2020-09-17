@@ -6,9 +6,9 @@ from multiprocessing import Pool, Value
 
 import cv2 as cv
 
+import writer
 import config
 
-from writer import Writer
 from aligner import Aligner
 from detector import Detector
 from fileinfo import FileInfo
@@ -37,13 +37,13 @@ class Runner:
         if not config.is_multithreading_used():
             for file in files:
                 result = self._process_single_file(file)
-                Writer.update_session_with_pd([result])
+                writer.update_session_with_pd([result])
         else:
             for files_chunk in utils.chunks(files, config.mlt_cpus * 10):
                 with Pool(processes=config.mlt_cpus) as pool:
                     results = pool.map(self._process_single_file, files_chunk)
                     pool.close()
-                    Writer.update_session_with_pd(results)
+                    writer.update_session_with_pd(results)
 
     def _process_single_file(self, file: FileInfo) -> Dict[str, Dict[str, Union[int, float]]]:
         result = {'session': {'status': 'success'}}
@@ -57,14 +57,14 @@ class Runner:
             detection.detect(config.det_algorithms)
 
             if config.det_write:
-                Writer.save_detection_results(detection, file.filename)
+                writer.save_detection_results(detection, file.filename)
 
             if config.exr_used:
                 referencer = Referencer(image_aligned, annotation)
                 referencer.extract_reference_regions()
 
                 if config.exr_write:
-                    Writer.save_reference_results(referencer, file.filename)
+                    writer.save_reference_results(referencer, file.filename)
 
             if config.ev_mask_used or config.ev_regions_used:
                 evaluator = Evaluator(annotation)
@@ -72,6 +72,8 @@ class Runner:
 
                 result['evaluation_mask'] = evaluator.get_mask_results()
                 result['evaluation_regions'] = evaluator.get_regions_results()
+
+                # writer.save_evaluation_results()
 
         except Exception as exception:
             result['session'].update({

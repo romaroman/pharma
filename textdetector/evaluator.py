@@ -61,7 +61,7 @@ class Evaluator:
 
                 self.results_regions[algorithm] = self._evaluate_by_regions(regions_polygons)
 
-        self._aggregate_results()
+        self._aggregate_mask_results()
 
     def _evaluate_by_mask(self, image_ver: np.ndarray) -> Dict[str, Dict[str, float]]:
         if config.need_warp():
@@ -76,27 +76,34 @@ class Evaluator:
         return result
 
     def _evaluate_by_regions(self, region_polygons: List[np.ndarray]) -> List[List[Dict[str, float]]]:
-        results = list()
+        img_empty = np.zeros(self.annotation.image_ref.shape[:2], dtype=np.uint8)
 
-        for brect in self.annotation.get_brects_by_labels(AnnotationLabel.get_list_of_text_labels()):
-            brect_results = list()
+        rows = []
+        brect_masks = [brect.draw(np.copy(img_empty), 255, filled=True) for brect in
+                      self.annotation.get_brects_by_labels(AnnotationLabel.get_list_of_text_labels())]
+        region_masks = [cv.drawContours(np.copy(img_empty), [region], -1, 255, -1) for region in region_polygons]
 
-            for polygon in region_polygons:
-                if utils.contour_intersect(brect.to_polygon(), polygon, edges_only=False):
-                    img_empty = np.zeros(self.annotation.image_ref.shape[:2], dtype=np.uint8)
 
-                    image_mask_ver = cv.drawContours(np.copy(img_empty), [polygon], -1, 255, -1)
-                    image_mask_ref = cv.drawContours(np.copy(img_empty), [brect.to_polygon()], -1, 255, -1)
+        for bi, brect_z in enumerate(zip(brect_masks, self.annotation.get_brects_by_labels(AnnotationLabel.get_list_of_text_labels())), start=1):
+            bmask, brect = brect_z
+            matched_region_number = 0
 
-                    brect_results.append(self.calc_all_metrics(image_mask_ver, image_mask_ref))
+            for pmask, polygon in zip(region_masks, region_polygons):
+                # if utils.contour_intersect(brect.to_polygon(), polygon, edges_only=False):
+                if cv.countNonZero(cv.bitwise_and(bmask, pmask)) > 0:
+                    # img_empty = np.zeros(self.annotation.image_ref.shape[:2], dtype=np.uint8)
+                    #
+                    # image_mask_ver = cv.drawContours(np.copy(img_empty), [polygon], -1, 255, -1)
+                    # image_mask_ref = cv.drawContours(np.copy(img_empty), [brect.to_polygon()], -1, 255, -1)
 
-            if not brect_results:
-                brect_results.append(self.generate_negative_result())
+                    matched_region_number += 1
+                    scores = self.calc_all_metrics(pmask, bmask, to_dict=False)
+                    rows.append([bi, matched_region_number] + scores)
 
-            results.append(brect_results)
+            if matched_region_number == 0:
+                rows.append([bi, matched_region_number] + self.generate_negative_result())
 
-        return results
-
+        return np.array(rows)
 
     def get_mask_results_aggregated(self) -> Dict[str, float]:
         dict_result = dict()
@@ -153,43 +160,44 @@ class Evaluator:
                cls.calc_false_positive(image_ver, image_ref), cls.calc_false_negative(image_ver, image_ref)
 
     @classmethod
-    def generate_negative_result(cls) -> Dict[str, int]:
-        calc_dict = dict()
-        for metric in EvalMetric.to_list():
-            calc_dict[metric.vs()] = np.round(np.random.uniform(-1.25, -0.75), 3)
-        return calc_dict
+    def generate_negative_result(cls) -> List[float]:
+        results = list()
+        for metric in EvalMetric:
+            results.append(np.round(np.random.uniform(-1.25, -0.75), 3))
+        return results
 
     @classmethod
     def calc_all_metrics(
             cls,
             image_ver: np.ndarray,
             image_ref: np.ndarray,
-    ) -> Dict[str, float]:
-        calc_dict = dict()
-
+            to_dict: bool = True
+    ) -> Union[Dict[str, float], List[float]]:
         tp, tn, fp, fn = cls.calc_confusion(image_ver, image_ref)
 
         if tp == 0:
-            return cls.generate_negative_result()
+            results = cls.generate_negative_result()
+        else:
+            iou = cls.calc_intersection_over_union(image_ver, image_ref)
+            acc = (tp + tn) / (tp + fp + tn + fn)
+            sen = tp / (tp + fn)
+            pr = tp / (tp + fp)
+            sp = tn / (tn + fp)
 
-        # cdict[EvalMetric.TruePositive.vs()] = tp / cv.countNonZero(image_ver)
-        # cdict[EvalMetric.TrueNegative.vs()] = tn / cv.countNonZero(~image_ver)
-        # cdict[EvalMetric.FalsePositive.vs()] = fp / cv.countNonZero(image_ver)
-        # cdict[EvalMetric.FalseNegative.vs()] = fn / cv.countNonZero(~image_ver)
+            results = [iou, acc, sen, pr, sp]
 
-        calc_dict[EvalMetric.IntersectionOverUnion.vs()] = cls.calc_intersection_over_union(image_ver, image_ref)
+        for i, result in enumerate(results):
+            results[i] = np.round(result, 3)
 
-        calc_dict[EvalMetric.Accuracy.vs()] = (tp + tn) / (tp + fp + tn + fn)
-        calc_dict[EvalMetric.Sensitivity.vs()] = tp / (tp + fn)
-        calc_dict[EvalMetric.Precision.vs()] = tp / (tp + fp)
-        calc_dict[EvalMetric.Specificity.vs()] = tn / (tn + fp)
+        if to_dict:
+            calc_dict = dict()
+            for metric in EvalMetric:
+                calc_dict[metric.vs()] = results[::-1].pop()
+            return calc_dict
+        else:
+            return results
 
-        for key, value in calc_dict.items():
-            calc_dict[key] = np.round(value, 3)
-
-        return calc_dict
-
-    def _aggregate_results(self) -> NoReturn:
+    def _aggregate_mask_results(self) -> NoReturn:
         self.results_mask_aggr = dict(zip([
             EvalMetric.IntersectionOverUnion.vs(),
             EvalMetric.Accuracy.vs(),

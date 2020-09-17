@@ -1,7 +1,7 @@
 import sys
 import logging
 
-from textdetector import config, Writer, Runner
+import textdetector
 import utils
 
 
@@ -9,14 +9,18 @@ logger = logging.getLogger('textdetector')
 
 
 def main() -> int:
-    Writer.prepare_output_folder()
+    textdetector.writer.prepare_output_folder()
 
-    utils.setup_logger('text_detector', config.out_log_level, str(config.dir_output / 'log.txt'))
+    utils.setup_logger(
+        'text_detector',
+        textdetector.config.out_log_level,
+        str(textdetector.config.dir_output / 'log.txt')
+    )
     utils.suppress_warnings()
 
-    logger.info(f"Currently used configuration:\n{config.confuse.dump()}")
+    logger.info(f"Currently used configuration:\n{textdetector.config.confuse.dump()}")
 
-    runner = Runner()
+    runner = textdetector.Runner()
     runner.process()
 
     return sys.exit(0)

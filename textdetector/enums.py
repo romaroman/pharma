@@ -73,19 +73,11 @@ class AnnotationLabel(utils.CustomEnum):
 
 
 class EvalMetric(utils.CustomEnum):
-    # TruePositive = "TP",
-    # TrueNegative = "TN",
-    # FalsePositive = "FP",
-    # FalseNegative = "FN",
-
     IntersectionOverUnion = "IOU",
-
     Accuracy = "ACC",
     Sensitivity = "SNS",
     Precision = "PRC",
     Specificity = "SPC",
-
-#     RegionsAmount = "RA"
 
 
 class AlignmentMethod(utils.CustomEnum):
