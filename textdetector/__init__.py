@@ -4,7 +4,7 @@ from .detector import Detector, DetectionResult, ApproximationMethod, DetectionA
 from .enums import DetectionAlgorithm, FileDatabase, AnnotationLabel, DetectionAlgorithm, FilePhone, EvalMetric,\
     ApproximationMethod, Mode, AlignmentMethod
 from .evaluator import Evaluator
-from .fileinfo import FileInfo, FileInfoEnrollment, FileInfoRecognition, FileFilter
+from .fileinfo import FileInfo, FileInfoEnrollment, FileInfoRecognition
 from .referencer import Referencer
 from .runner import Runner
 from .writer import Writer

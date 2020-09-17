@@ -1,6 +1,6 @@
 import re
-import pathlib
 
+from pathlib import Path
 from abc import ABC
 from typing import NoReturn, Union, Dict, List, Pattern
 
@@ -18,20 +18,21 @@ class FileInfo(ABC):
     }
 
     @staticmethod
-    def get_file_info(file_path: str, database: FileDatabase) -> Union["FileInfoEnrollment", "FileInfoRecognition"]:
+    def get_file_info(file_path: Path, database: FileDatabase) -> Union["FileInfoEnrollment", "FileInfoRecognition"]:
         if database is FileDatabase.Enrollment:
             return FileInfoEnrollment(file_path)
         elif database in FileDatabase.get_list_of_recognition_databases():
             return FileInfoRecognition(file_path)
 
-    def __init__(self, file_path: str) -> NoReturn:
-        self.filename = pathlib.Path(file_path).stem
+    def __init__(self, file_path: Path) -> NoReturn:
+        self.path: Path = file_path
+        self.filename: str = file_path.stem
 
-        self.phone = self._extract_numerical_info('phone')
-        self.package_class = self._extract_numerical_info('package_class')
-        self.distinct = self._extract_numerical_info('distinct')
-        self.sample = self._extract_numerical_info('sample')
-        self.size = self._extract_numerical_info('size')
+        self.phone: int = self._extract_numerical_info('phone')
+        self.package_class: int = self._extract_numerical_info('package_class')
+        self.distinct: int = self._extract_numerical_info('distinct')
+        self.sample: int = self._extract_numerical_info('sample')
+        self.size: int = self._extract_numerical_info('size')
 
     def get_annotation_pattern(self) -> Pattern:
         return re.compile(f"PFP_Ph._P{str(self.package_class).zfill(4)}_D0{self.distinct}_S00._C._az..._side.")
@@ -64,14 +65,14 @@ class FileInfoEnrollment(FileInfo):
         'side': r'side[0-9]',
     }, **FileInfo.regular_expressions)
 
-    def __init__(self, filename: str) -> NoReturn:
+    def __init__(self, file_path: Path) -> NoReturn:
         """
         :param filename: without extension, example: "PFP_Ph1_P0003_D01_S001_C2_az360_side1"
         """
-        super().__init__(filename)
+        super().__init__(file_path)
 
-        self.angle = self._extract_numerical_info('angle')
-        self.side = self._extract_numerical_info('side')
+        self.angle: int = self._extract_numerical_info('angle')
+        self.side: int = self._extract_numerical_info('side')
 
     def to_dict(self) -> Dict[str, int]:
         return dict(super(FileInfoEnrollment, self).to_dict(), **{'angle': self.angle, 'side': self.side})
@@ -86,25 +87,15 @@ class FileInfoRecognition(FileInfo):
         'RS': r'S[0-9]',
     }, **FileInfo.regular_expressions)
 
-    def __init__(self, filename: str) -> NoReturn:
+    def __init__(self, file_path: Path) -> NoReturn:
         """
         :param filename: without extension, example: "PharmaPack_R_I_S1_Ph1_P0016_D01_S001_C2_S1"
         """
-        super().__init__(filename)
-        self.RS = self._extract_numerical_info('RS')
+        super().__init__(file_path)
+        self.RS: int = self._extract_numerical_info('RS')
 
     def to_dict(self) -> Dict[str, int]:
         return dict(super(FileInfoRecognition, self).to_dict(), **{'RS': self.RS})
 
     def to_list(self) -> List[Union[str, int]]:
         return super(FileInfoRecognition, self).to_list() + [self.RS]
-
-
-class FileFilter:
-
-    package_classes = [
-        219, 523
-    ]
-
-    def __init__(self):
-        pass
