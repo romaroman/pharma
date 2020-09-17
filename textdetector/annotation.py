@@ -1,16 +1,16 @@
 import math
 import glob
 
-from abc import ABC, abstractmethod
 from pathlib import Path
 from xml.etree import ElementTree
+from abc import ABC, abstractmethod
 from typing import List, Tuple, NoReturn, Union, Pattern, Dict
 
 import cv2 as cv
 import numpy as np
 import pandas as pd
 
-from textdetector.enums import AnnotationLabel
+from enums import AnnotationLabel
 
 import utils
 

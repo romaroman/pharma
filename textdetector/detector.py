@@ -5,8 +5,10 @@ from typing import List, NoReturn, Dict, Union, Tuple
 import cv2 as cv
 import numpy as np
 
-from textdetector import morph, config
-from textdetector.enums import DetectionAlgorithm, ApproximationMethod
+import morph
+import config
+from enums import DetectionAlgorithm, ApproximationMethod
+
 import utils
 
 
@@ -16,7 +18,7 @@ logger = logging.getLogger('detector')
 class Detector:
 
     def __init__(self, image_input: np.ndarray) -> NoReturn:
-        self.image_not_scaled = morph.prepare_image(image_input, config.alg_scale_factor)
+        self.image_not_scaled = image_input
 
         self.image_rgb = morph.mscale(self.image_not_scaled)
         self.image_gray: np.ndarray = cv.cvtColor(self.image_rgb, cv.COLOR_BGR2GRAY)
@@ -65,28 +67,26 @@ class Detector:
         return self.results[algorithm.vs()]
 
     def _perform_morphology_iteration_1(self) -> np.ndarray:
-        image_morphed = morph.apply_line_morphology(self.image_filtered, morph.mscale(25))[1]
+        image_morphed = morph.apply_line_morphology(self.image_filtered, morph.mscale(30))
 
-        # def does_contour_need_additional_morphology(contour: np.ndarray) -> bool:
-        #     _, shape, _ = cv.minAreaRect(contour)
-        #     w, h = shape
-        #     aspect_ratio = float(max(w, h)) / min(w, h)
-        #     area = cv.contourArea(contour)
-        #     stddev = np.mean(cv.meanStdDev(
-        #         self.image_not_scaled,
-        #         mask=cv.drawContours(np.zeros_like(image_morphed), [contour], -1, 255, 1)
-        #     )[1])
-        #     print(stddev)
-        #     if aspect_ratio < 1.5 and area > morph.mscale(25) ** 2 and stddev < 25:
-        #         print(aspect_ratio, area, stddev)
-        #         return True
-        #     return False
-        #
-        # contours, _ = cv.findContours(image_morphed, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-        # contours_to_morph = morph.filter_contours(image_morphed, key=does_contour_need_additional_morphology)
-        # utils.display(image_morphed)
+        def does_contour_need_additional_morphology(contour: np.ndarray) -> bool:
+            _, shape, _ = cv.minAreaRect(contour)
+            w, h = shape
+            aspect_ratio = float(max(w, h)) / min(w, h)
 
-        return image_morphed
+            area = cv.contourArea(contour)
+            stddev = np.mean(cv.meanStdDev(
+                self.image_not_scaled,
+                mask=cv.drawContours(np.zeros_like(image_morphed), [contour], -1, 255, 1)
+            )[1])
+
+            return aspect_ratio < 1.5 and area > morph.mscale(25) ** 2 and stddev < 25
+
+        contours, _ = cv.findContours(image_morphed, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        image_to_morph = morph.filter_contours(image_morphed, key=does_contour_need_additional_morphology)
+        image_morphed_again = morph.apply_line_morphology(image_to_morph, morph.mscale(15))
+
+        return cv.bitwise_or(image_morphed, image_morphed_again)
 
     def _process_lines(self, lines: np.ndarray) -> np.ndarray:
         image_bw: np.ndarray = np.zeros_like(self.image_gray)
@@ -118,7 +118,7 @@ class Detector:
                 except ValueError:
                     morph_line_length = 10
 
-                angle, image_morphed = morph.apply_line_morphology(image_filtered, morph.mscale(morph_line_length), key='min')
+                image_morphed = morph.apply_line_morphology(image_filtered, morph.mscale(morph_line_length), key='min')
                 image_bw[x_min:x_max, y_min:y_max] = cv.bitwise_xor(image_morphed, image_bw[x_min:x_max, y_min:y_max])
 
         return image_bw
@@ -161,7 +161,7 @@ class Detector:
             else:
                 mean_distance = morph.mscale(25)
 
-            _, morphed = morph.apply_line_morphology(filled, mean_distance, key='min')
+            morphed = morph.apply_line_morphology(filled, mean_distance, key='min')
             x, y, w, h = region.brect
 
             image_word_linearly_morphed[y:y + h, x:x + w] = cv.bitwise_xor(
@@ -201,7 +201,7 @@ class Detector:
 
         image_mser = cv.bitwise_and(cv.bitwise_and(mr, mb), mg)
         image_mser = utils.fill_holes(image_mser)
-        image_mser = morph.apply_line_morphology(image_mser, morph.mscale(30))[1]
+        image_mser = morph.apply_line_morphology(image_mser, morph.mscale(30))
 
         return image_mser
 

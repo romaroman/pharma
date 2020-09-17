@@ -1,10 +1,11 @@
 import random
 import logging
 
-from typing import NoReturn, List, Union
+from typing import NoReturn, List
 
 import config
-from textdetector import FileInfo
+
+from fileinfo import FileInfo
 
 
 logger = logging.getLogger('loader')
@@ -13,7 +14,7 @@ logger = logging.getLogger('loader')
 class Loader:
 
     DEBUG_FILES = [
-
+        # '',
     ]
 
     def __init__(self) -> NoReturn:
@@ -21,28 +22,9 @@ class Loader:
         self._parse_config()
 
         if self.use_debug_files:
-            for file in self.DEBUG_FILES:
-                self.image_files.append(
-                    FileInfo.get_file_info(config.dir_source / f"cropped/{file}.png", config.database)
-                )
-            return
+            self._handle_debug_files()
         else:
-            self._load()
-            self._filter()
-            if self.fraction < 1:
-                self.image_files = self.image_files[:int(len(self.image_files) * abs(self.fraction))]
-                logger.info(
-                    f"Shrank files list by {self.fraction * 100:.0f}%\tFinal files amount is {len(self.image_files)}"
-                )
-
-            if self.sort_by and self.shuffle:
-                logger.info('Shuffle is dominant over SortBy flags, shuffling files list...')
-                if self.seed:
-                    random.seed(666)
-                random.shuffle(self.image_files)
-            else:
-                if self.sort_by:
-                    self._sort()
+            self._handle_regular_loading()
 
     def _parse_config(self) -> NoReturn:
         self.use_debug_files: bool = config.confuse['ImageLoading']['UseDebugFiles'].get()
@@ -64,6 +46,10 @@ class Loader:
                             for file in (config.dir_source / "cropped").glob('*.png')]
 
         logger.info(f'Loaded {len(self.image_files)} files from {config.dir_source / "cropped"}')
+
+    def _is_filtration_needed(self) -> bool:
+        return bool(self.filter_package_class) or bool(self.filter_phone) or bool(self.filter_size) \
+               or bool(self.filter_distinct) or bool(self.filter_sample)
 
     def _filter(self) -> NoReturn:
         apply_mode = lambda predicate: predicate if self.filter_mode == 'inclusive' else not predicate
@@ -100,3 +86,31 @@ class Loader:
 
     def get_files(self) -> List[FileInfo]:
         return self.image_files
+
+    def _handle_debug_files(self):
+        if not self.DEBUG_FILES:
+            logger.warning("Debug files list is empty...")
+        else:
+            for file in self.DEBUG_FILES:
+                self.image_files.append(
+                    FileInfo.get_file_info(config.dir_source / f"cropped/{file}.png", config.database)
+                )
+
+    def _handle_regular_loading(self):
+        self._load()
+
+        if self._is_filtration_needed():
+            self._filter()
+
+        if self.fraction < 1:
+            self.image_files = self.image_files[:int(len(self.image_files) * abs(self.fraction))]
+            logger.info(f"Shrank files list by {self.fraction * 100:.0f}%")
+
+        if self.sort_by and self.shuffle:
+            logger.info("Shuffle is dominant over SortBy flags, shuffling files list...")
+            if self.seed:
+                random.seed(666)
+            random.shuffle(self.image_files)
+        else:
+            if self.sort_by:
+                self._sort()

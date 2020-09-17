@@ -1,25 +1,24 @@
 import logging
 import traceback
 
-from typing import NoReturn, List, Dict, Union, Any
+from typing import NoReturn, Dict, Union
 from multiprocessing import Pool, Value
 
 import cv2 as cv
-import numpy as np
 
-from textdetector import config
-from textdetector.writer import Writer
-from textdetector.aligner import Aligner
-from textdetector.collector import Collector
-from textdetector.detector import Detector
-from textdetector.fileinfo import FileInfo
-from textdetector.loader import Loader
-from textdetector.evaluator import Evaluator
-from textdetector.referencer import Referencer
-from textdetector.annotation import Annotation
-from textdetector.enums import AlignmentMethod, Mode
+import config
+
+from writer import Writer
+from aligner import Aligner
+from detector import Detector
+from fileinfo import FileInfo
+from loader import Loader
+from evaluator import Evaluator
+from referencer import Referencer
+from annotation import Annotation
 
 import utils
+
 
 logger = logging.getLogger('runner')
 
@@ -47,47 +46,35 @@ class Runner:
                     Writer.update_session_with_pd(results)
 
     def _process_single_file(self, file: FileInfo) -> Dict[str, Dict[str, Union[int, float]]]:
-        writer = Writer()
-
-        session_dict = {'status': 'success'}
-
-        result = {}
-
-        annotation = Annotation.load_annotation_by_pattern(config.dir_source, file.get_annotation_pattern())
-
+        result = {'session': {'status': 'success'}}
         try:
-            image_input = cv.imread(file.path)
+            annotation = Annotation.load_annotation_by_pattern(config.dir_source, file.get_annotation_pattern())
 
-            if config.alg_alignment_method is AlignmentMethod.Reference:
-                image_aligned = Aligner.align_with_reference(image_input, annotation.image_ref)
-            elif config.alg_alignment_method is AlignmentMethod.ToCorners:
-                image_aligned = Aligner.align_to_corners(image_input)
-            else:
-                image_aligned = np.copy(image_input)
+            image_input = cv.imread(str(file.path.resolve()))
+            image_aligned = Aligner.align(image_input)
 
             detection = Detector(image_aligned)
-            detection.detect(config.alg_algorithms)
+            detection.detect(config.det_algorithms)
 
-            if config.op_extract_references:
-                referencer = Referencer(image_aligned, file_info, annotation)
+            if config.det_write:
+                Writer.save_detection_results(detection, file.filename)
+
+            if config.exr_used:
+                referencer = Referencer(image_aligned, annotation)
                 referencer.extract_reference_regions()
 
-                if config.wr_images:
-                    writer.save_reference_results(referencer, file.filename)
+                if config.exr_write:
+                    Writer.save_reference_results(referencer, file.filename)
 
-            if config.op_evaluate:
+            if config.ev_mask_used or config.ev_regions_used:
                 evaluator = Evaluator(annotation)
                 evaluator.evaluate(detection)
 
                 result['evaluation_mask'] = evaluator.get_mask_results()
                 result['evaluation_regions'] = evaluator.get_regions_results()
 
-            if config.wr_images:
-                writer.save_all_results(detection, file.filename)
-
-
         except Exception as exception:
-            session_dict.update({
+            result['session'].update({
                 'status': 'fail',
                 'exc': str(exception),
                 'trcbk': traceback.format_exc()
@@ -99,13 +86,10 @@ class Runner:
             with self.counter.get_lock():
                 self.counter.value += 1
 
-            session_dict.update({
+            result['session'].update({
                 'idx': self.counter.value,
             })
-            writer.add_dict_result('ses', session_dict)
 
-            logger.info(f"#{str(self.counter.value).zfill(6)} | {session_dict['status'].upper()} | {file.filename}")
-
-            result['session'] = session_dict
-
-            return writer.get_current_results()
+            logger.info(f"#{str(self.counter.value).zfill(6)} | "
+                        f"{result['session']['status'].upper()} | {file.filename}")
+            return result

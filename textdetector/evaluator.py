@@ -1,14 +1,15 @@
 import logging
-import random
 from typing import NoReturn, Dict, Union, List, Tuple
 
 import cv2 as cv
 import numpy as np
 
-from textdetector import config
-from textdetector.detector import Detector, DetectionResult
-from textdetector.annotation import Annotation
-from textdetector.enums import EvalMetric, AnnotationLabel, AlignmentMethod
+import config
+
+from detector import Detector
+from annotation import Annotation
+from enums import EvalMetric, AnnotationLabel
+
 import utils
 
 
@@ -41,24 +42,26 @@ class Evaluator:
             )
 
         for algorithm, result in detection.results.items():
-            image_ver_mask = result.get_default_mask()
-            regions_ver = result.get_default_regions()
+            if config.ev_mask_used:
+                image_ver_mask = result.get_default_mask()
+                self.results_mask[algorithm] = self._evaluate_by_mask(image_ver_mask)
 
-            if config.need_warp():
-                regions_polygons = [
-                    cv.perspectiveTransform(
-                        region.polygon.astype(np.float32),
-                        self.homo_mat
-                    ).astype(np.int32) for region in regions_ver
-                ]
-            else:
-                regions_polygons = [region.polygon.astype(np.int32) for region in regions_ver]
+            if config.ev_regions_used:
+                regions_ver = result.get_default_regions()
 
-            self.results_mask[algorithm] = self._evaluate_by_mask(image_ver_mask)
-            self.results_regions[algorithm] = self._evaluate_by_regions(regions_polygons)
+                if config.need_warp():
+                    regions_polygons = [
+                        cv.perspectiveTransform(
+                            region.polygon.astype(np.float32),
+                            self.homo_mat
+                        ).astype(np.int32) for region in regions_ver
+                    ]
+                else:
+                    regions_polygons = [region.polygon.astype(np.int32) for region in regions_ver]
+
+                self.results_regions[algorithm] = self._evaluate_by_regions(regions_polygons)
 
         self._aggregate_results()
-
 
     def _evaluate_by_mask(self, image_ver: np.ndarray) -> Dict[str, Dict[str, float]]:
         if config.need_warp():

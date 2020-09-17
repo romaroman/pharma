@@ -1,11 +1,11 @@
 import logging
-from typing import Dict, Any
-
 import confuse
+
 from pathlib import Path
 from multiprocessing import cpu_count
 
-from textdetector.enums import *
+from enums import *
+
 import utils
 
 

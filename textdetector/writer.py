@@ -8,27 +8,13 @@ import cv2 as cv
 import numpy as np
 import pandas as pd
 
-from textdetector import config
-from textdetector.detector import Detector
-from textdetector.referencer import Referencer
+import config
+
+from detector import Detector
+from referencer import Referencer
 
 
 class Writer:
-
-    def __init__(self):
-        self.results: Dict[str, Dict[str, Union[int, float]]] = dict()
-
-    def add_dict_result(
-        self, blob: str,
-        dict_result: Union[Dict[str, Union[int, float]], Dict[str, Dict[int, Dict[str, Union[int, float]]]]]
-    ) -> NoReturn:
-        self.results[blob] = dict_result
-
-    def clear_current_results(self) -> NoReturn:
-        self.results.clear()
-
-    def get_current_results(self) -> Dict[str, Dict[str, Union[int, float]]]:
-        return self.results
 
     @classmethod
     def write_entity(
@@ -64,26 +50,23 @@ class Writer:
         with open(path, 'w+') as file:
             json.dump(data, file, indent=2, sort_keys=True)
 
-    def save_all_results(self, detection: Detector, filename: str) -> NoReturn:
+    @classmethod
+    def save_detection_results(cls, detection: Detector, filename: str) -> NoReturn:
         for algorithm, result in detection.results.items():
             for method in result.masks.keys():
                 common_part = f"{algorithm}/{method}"
-                self.write_entity(result.masks[method], f"{common_part}/masks", filename, "png")
+                cls.write_entity(result.masks[method], f"{common_part}/masks", filename, "png")
 
                 for index, region in enumerate(result.regions[method], start=1):
-                    self.write_image_region(
+                    cls.write_image_region(
                         region.crop_image(detection.image_not_scaled),
                         f"{common_part}/parts", filename, str(index).zfill(4)
                     )
 
-        self.write_entity(self.results, "JSON", filename, "json")
-
-        if config.wr_visualization:
-            self.write_entity(detection.get_visualization(), "visualizations", filename, "png")
-
-    def save_reference_results(self, referencer: Referencer, filename: str) -> NoReturn:
+    @classmethod
+    def save_reference_results(cls, referencer: Referencer, filename: str) -> NoReturn:
         for label, image in referencer.results.items():
-            self.write_image_region(image, f"REF/parts", filename, label)
+            cls.write_image_region(image, f"REF/parts", filename, label)
 
     @classmethod
     def prepare_output_folder(cls) -> NoReturn:

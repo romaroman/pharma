@@ -1,10 +1,17 @@
+import logging
 from typing import Tuple, Union
 
 import cv2 as cv
 import numpy as np
 
-from morph import mscale
+import config
+import morph
+from enums import AlignmentMethod
+
 import utils
+
+
+logger = logging.getLogger('aligner')
 
 
 class Aligner:
@@ -25,11 +32,11 @@ class Aligner:
 
             image_bw = utils.thresh(image_gray, thresh_adjust=thresh_adjusts.pop())
 
-            image_closed = cv.morphologyEx(image_bw, cv.MORPH_CLOSE, mscale((15, 15)))
-            image_dilated = cv.dilate(image_closed, mscale((10, 10)))
+            image_closed = cv.morphologyEx(image_bw, cv.MORPH_CLOSE, morph.mscale((15, 15)))
+            image_dilated = cv.dilate(image_closed, morph.mscale((10, 10)))
 
             image_filled = utils.fill_holes(image_dilated)
-            image_filled = cv.erode(image_filled, np.ones(mscale((10, 10))))
+            image_filled = cv.erode(image_filled, np.ones(morph.mscale((10, 10))))
 
             contours, _ = cv.findContours(image_filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
@@ -75,3 +82,19 @@ class Aligner:
         image_result = image_cropped[y:y+h, x:x+w]
     
         return image_result
+
+    @classmethod
+    def align(cls, image_input: np.ndarray, image_ref: Union[None, np.ndarray] = None) -> np.ndarray:
+        if config.det_alignment_method is AlignmentMethod.Reference:
+            if image_ref is not None:
+                image_aligned = cls.align_with_reference(image_input, image_ref)
+            else:
+                logger.warning('Cannot align image without reference')
+                raise ValueError
+        elif config.det_alignment_method is AlignmentMethod.ToCorners:
+            image_aligned = cls.align_to_corners(image_input)
+        else:
+            image_aligned = np.copy(image_input)
+
+        morph.prepare_image(image_aligned, config.det_scale_factor)
+        return image_aligned

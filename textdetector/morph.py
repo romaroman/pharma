@@ -5,7 +5,8 @@ import cv2 as cv
 import numpy as np
 import skimage.measure
 
-from textdetector import config
+import config
+
 import utils
 
 
@@ -13,10 +14,10 @@ def mscale(
         obj: Union[int, float, Tuple[int, int], np.ndarray],
         down: bool = True
 ) -> Union[int, float, Tuple[int, int], np.ndarray]:
-    if config.alg_scale_factor == 1.0:
+    if config.det_scale_factor == 1.0:
         return obj
 
-    scale_f = float(config.alg_scale_factor if down else 1 / config.alg_scale_factor)
+    scale_f = float(config.det_scale_factor if down else 1 / config.det_scale_factor)
 
     if type(obj) is int:
         return int(obj * scale_f)
@@ -184,7 +185,7 @@ def apply_line_morphology(
         image_bw: np.ndarray,
         line_length: Union[int, None] = None,
         key: str = 'min'
-) -> Tuple[int, np.ndarray]:
+) -> np.ndarray:
     if not line_length:
         line_length = max(image_bw.shape) / 10
 
@@ -201,12 +202,10 @@ def apply_line_morphology(
     elif key == 'max':
         k = np.asarray(pixel_amounts).argmax()
 
-    final_angle = line_rotation_angles[k]
-
-    strel_line_rotated = utils.morph_line(int(line_length / 2), final_angle)
+    strel_line_rotated = utils.morph_line(int(line_length / 2), line_rotation_angles[k])
     image_linearly_morphed = cv.dilate(image_bw, strel_line_rotated)
 
-    return final_angle, image_linearly_morphed
+    return image_linearly_morphed
 
 
 def apply_line_morphology_simplified(

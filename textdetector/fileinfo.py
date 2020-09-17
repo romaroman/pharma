@@ -4,7 +4,7 @@ from pathlib import Path
 from abc import ABC
 from typing import NoReturn, Union, Dict, List, Pattern
 
-from . import FileDatabase
+from enums import FileDatabase
 
 
 class FileInfo(ABC):
