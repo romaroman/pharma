@@ -242,7 +242,7 @@ class DetectionResult:
             elif method is ApproximationMethod.Contour:
                 return contour
             elif method is ApproximationMethod.Rrect:
-                s = cv.boxPoints(cv.minAreaRect(contour)).astype(np.int32)
+                s = cv.boxPoints(cv.minAreaRect(contour)).astype(np.int32).reshape(-1, 1, 2)
                 return s
             elif method is ApproximationMethod.Hull:
                 return cv.convexHull(contour).astype(np.int32)

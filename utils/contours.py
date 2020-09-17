@@ -31,7 +31,7 @@ def crop_image_by_contour(
 
 def get_brect_contour(contour: np.ndarray) -> np.ndarray:
     x, y, w, h = cv.boundingRect(contour)
-    return np.asarray([(x, y), (x + w, y), (x + w, y + h), (x, y + h)], dtype=np.int0)
+    return np.asarray([(x, y), (x + w, y), (x + w, y + h), (x, y + h)], dtype=np.int32).reshape(-1, 1, 2)
 
 
 def contour_intersect(contour_ref: np.ndarray, contour_ver: np.ndarray, edges_only: bool = False) -> bool:
