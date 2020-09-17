@@ -22,8 +22,6 @@ database: FileDatabase = FileDatabase[confuse['Database'].as_str()]
 dir_source: Path = confuse['Dirs']['SourceDir'].as_path() / str(database)
 dir_output: Path = confuse['Dirs']['OutputDir'].as_path() / timestamp
 
-image_loading: Dict[str, Any] = confuse['ImageLoading'].get()
-
 out_clear_output_dir: bool = confuse['Output']['ClearOutputDir'].get()
 out_log_level: int = getattr(logging, confuse['Output']['LogLevel'].as_str())
 out_profile: bool = confuse['Output']['Profile'].get()
