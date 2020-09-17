@@ -87,7 +87,7 @@ class Writer:
 
     @classmethod
     def prepare_output_folder(cls) -> NoReturn:
-        if config.wr_clean_before:
+        if config.out_clear_output_dir:
             shutil.rmtree(config.dir_output, ignore_errors=True)
             os.makedirs(str(config.dir_output.resolve()), exist_ok=True)
 

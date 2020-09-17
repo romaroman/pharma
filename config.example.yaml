@@ -8,30 +8,59 @@ Dirs:
   OutputDir: /fls/pharmapack/output
 
 ImageLoading:
-  Shuffle: False
+  Shuffle: True
   Seed: False
-  SplitOnChunks: True
   Percentage: 100
 
+  Filter:
+    PackageClass: All
+    Phone: All
+    Distinct: All
+    Sample: All
+    Size: All
+  SortBy:
+    - PackageClass
+    - Phone
+
 Output:
+  ClearOutputDir: True
   LogLevel: INFO
   Profile: False
 
-Write:
-  CleanBefore: True
-  Images: True
-  Visualization: True
+Multithreading:
+  Used: True
+  CPUs: Auto
+  SplitOnChunks: True
 
-Runtime:
-  Multithreading: True
-
-Algorithm:
+Detection:
   ScaleFactor: 1
-  Algorithms: All
+  Algorithms:
+    - MSER
+    - MorphologyIteration1
   ApproximationMethod: Hull
-  AlignmentMethod: Reference
+  AlignmentMethod: NoAlignment
+  Write:
+    - Images
+    - Visualizations
+    - JSON
+    - CSV
 
-Operations:
-  Detect: True
-  Evaluate: True
-  ExtractReferences: True
+Evaluation:
+  Mask:
+    Used: True
+    Aggregate: True
+    Write: True
+  Regions:
+    Used: True
+    Aggregate: True
+    Write: True
+  Metrics:
+    - Accuracy
+    - IntersectionOverUnion
+    - Sensitivity
+    - Precision
+    - Specificity
+
+ExtractReference:
+  Used: True
+  Write: True

@@ -1,6 +1,5 @@
 import sys
 import logging
-from typing import NoReturn
 
 from textdetector import config, Writer, Runner
 import utils
