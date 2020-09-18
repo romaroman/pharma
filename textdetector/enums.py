@@ -74,10 +74,10 @@ class AnnotationLabel(utils.CustomEnum):
 
 class EvalMetric(utils.CustomEnum):
     IntersectionOverUnion = "IOU",
-    Accuracy = "ACC",
-    Sensitivity = "SNS",
-    Precision = "PRC",
-    Specificity = "SPC",
+    Accuracy = "ACC",     # (tp + tn) / (tp + fp + tn + fn)
+    Sensitivity = "SNS",  # tp / (tp + fn)
+    Precision = "PRC",    # tp / (tp + fp)
+    Specificity = "SPC",  # tn / (tn + fp)
 
 
 class AlignmentMethod(utils.CustomEnum):

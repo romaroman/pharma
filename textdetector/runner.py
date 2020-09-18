@@ -1,7 +1,7 @@
 import logging
 import traceback
 
-from typing import NoReturn, Dict, Union
+from typing import NoReturn, Dict, Union, Any
 from multiprocessing import Pool, Value
 
 import cv2 as cv
@@ -45,7 +45,7 @@ class Runner:
                     pool.close()
                     writer.update_session_with_pd(results)
 
-    def _process_single_file(self, file: FileInfo) -> Dict[str, Dict[str, Union[int, float]]]:
+    def _process_single_file(self, file: FileInfo) -> Dict[str, Any]:
         result = {'session': {'status': 'success'}}
         try:
             annotation = Annotation.load_annotation_by_pattern(config.dir_source, file.get_annotation_pattern())
@@ -72,8 +72,6 @@ class Runner:
 
                 result['evaluation_mask'] = evaluator.get_mask_results()
                 result['evaluation_regions'] = evaluator.get_regions_results()
-
-                # writer.save_evaluation_results()
 
         except Exception as exception:
             result['session'].update({

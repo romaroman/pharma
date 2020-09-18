@@ -27,8 +27,8 @@ class Evaluator:
 
         self.homo_mat: Union[None, np.ndarray] = None
 
-        self.results_mask: Dict[str, Dict[str, Dict[str, float]]] = dict()
-        self.results_regions: Dict[str, List[List[Dict[str, float]]]] = dict()
+        self.results_mask: Dict[str, List[float]] = dict()
+        self.results_regions: Dict[str, np.ndarray] = dict()
 
     def evaluate(self, detection: Detector) -> NoReturn:
         if config.need_warp():
@@ -87,17 +87,10 @@ class Evaluator:
 
         return np.array(rows)
 
-    def get_mask_results(self) -> Dict[str, float]:
-        dict_result = dict()
+    def get_mask_results(self) -> Dict[str, List[float]]:
+        return self.results_mask
 
-        for alg, dict_alg in self.results_mask.items():
-            for mode, dict_mode in dict_alg.items():
-                for metric, score in dict_mode.items():
-                    dict_result['_'.join([alg.upper(), mode.upper(), metric.upper()])] = score
-
-        return dict_result
-
-    def get_regions_results(self) -> Dict[str, List[List[Dict[str, float]]]]:
+    def get_regions_results(self) -> Dict[str, np.ndarray]:
         return self.results_regions
 
     @classmethod
