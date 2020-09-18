@@ -8,16 +8,19 @@ Dirs:
   OutputDir: /fls/pharmapack/output
 
 ImageLoading:
+  UseDebugFiles: False
   Shuffle: True
-  Seed: False
-  Percentage: 100
+  Seed: True
+  Fraction: 0.1
 
   Filter:
-    PackageClass: All
-    Phone: All
-    Distinct: All
-    Sample: All
-    Size: All
+    Mode: Inclusive
+    PackageClass: []
+    Phone: []
+    Distinct: []
+    Sample: []
+    Size: []
+
   SortBy:
     - PackageClass
     - Phone
@@ -28,7 +31,7 @@ Output:
   Profile: False
 
 Multithreading:
-  Used: True
+  Used: False
   CPUs: Auto
   SplitOnChunks: True
 
@@ -37,7 +40,7 @@ Detection:
   Algorithms:
     - MSER
     - MorphologyIteration1
-  ApproximationMethod: Hull
+  ApproximationMethod: Rrect
   AlignmentMethod: NoAlignment
   Write:
     - Images
@@ -62,5 +65,5 @@ Evaluation:
     - Specificity
 
 ExtractReference:
-  Used: True
+  Used: False
   Write: True
