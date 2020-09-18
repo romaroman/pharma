@@ -27,7 +27,7 @@ class Evaluator:
 
         self.homo_mat: Union[None, np.ndarray] = None
 
-        self.results_mask: Dict[str, List[float]] = dict()
+        self.results_mask: Dict[str, np.ndarray] = dict()
         self.results_regions: Dict[str, np.ndarray] = dict()
 
     def evaluate(self, detection: Detector) -> NoReturn:
@@ -45,13 +45,13 @@ class Evaluator:
                 regions_ver = result.get_default_regions()
                 self.results_regions[algorithm] = self._evaluate_by_regions(regions_ver)
 
-    def _evaluate_by_mask(self, image_ver: np.ndarray) -> List[float]:
+    def _evaluate_by_mask(self, image_ver: np.ndarray) -> np.ndarray:
         if config.need_warp():
             image_ver = cv.warpPerspective(
                 image_ver, self.homo_mat, utils.swap_dimensions(self.annotation.image_ref.shape)
             )
 
-        return self.calc_all_metrics(image_ver, self.image_mask_ref_text, to_dict=False)
+        return np.array(self.calc_all_metrics(image_ver, self.image_mask_ref_text, to_dict=False))
 
     def _evaluate_by_regions(self, regions: List[DetectionResult.Region]) -> np.ndarray:
         img_empty = np.zeros(self.annotation.image_ref.shape[:2], dtype=np.uint8)
@@ -87,7 +87,7 @@ class Evaluator:
 
         return np.array(rows)
 
-    def get_mask_results(self) -> Dict[str, List[float]]:
+    def get_mask_results(self) -> Dict[str, np.ndarray]:
         return self.results_mask
 
     def get_regions_results(self) -> Dict[str, np.ndarray]:

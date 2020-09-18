@@ -1,18 +1,18 @@
 import logging
 import traceback
 
-from typing import NoReturn, Dict, Union, Any
+from typing import NoReturn, Dict, Any
 from multiprocessing import Pool, Value
 
 import cv2 as cv
 
-import writer
 import config
+import writer
 
+from loader import Loader
 from aligner import Aligner
 from detector import Detector
 from fileinfo import FileInfo
-from loader import Loader
 from evaluator import Evaluator
 from referencer import Referencer
 from annotation import Annotation
@@ -21,14 +21,13 @@ import utils
 
 
 logger = logging.getLogger('runner')
+counter: Value = Value('i', 0)
 
 
 class Runner:
 
-    def __init__(self) -> NoReturn:
-        self.counter: Value = Value('i', 0)
-
-    def process(self) -> NoReturn:
+    @classmethod
+    def process(cls) -> NoReturn:
         files = Loader().get_files()
 
         logger.info(f"\nPreparing to process {len(files)} images"
@@ -36,17 +35,18 @@ class Runner:
 
         if not config.is_multithreading_used():
             for file in files:
-                result = self._process_single_file(file)
-                writer.update_session_with_pd([result])
+                writer.update_session_with_pd([cls._process_single_file(file)])
         else:
             for files_chunk in utils.chunks(files, config.mlt_cpus * 10):
                 with Pool(processes=config.mlt_cpus) as pool:
-                    results = pool.map(self._process_single_file, files_chunk)
+                    results = pool.map(cls._process_single_file, files_chunk)
                     pool.close()
                     writer.update_session_with_pd(results)
 
-    def _process_single_file(self, file: FileInfo) -> Dict[str, Any]:
-        result = {'session': {'status': 'success'}}
+    @classmethod
+    def _process_single_file(cls, file: FileInfo) -> Dict[str, Any]:
+        result = {'ses': {'status': 'success'}, 'fi': file.to_dict()}
+
         try:
             annotation = Annotation.load_annotation_by_pattern(config.dir_source, file.get_annotation_pattern())
 
@@ -70,11 +70,11 @@ class Runner:
                 evaluator = Evaluator(annotation)
                 evaluator.evaluate(detection)
 
-                result['evaluation_mask'] = evaluator.get_mask_results()
-                result['evaluation_regions'] = evaluator.get_regions_results()
+                result['evm'] = evaluator.get_mask_results()
+                result['evr'] = evaluator.get_regions_results()
 
         except Exception as exception:
-            result['session'].update({
+            result['ses'].update({
                 'status': 'fail',
                 'exc': str(exception),
                 'trcbk': traceback.format_exc()
@@ -83,13 +83,13 @@ class Runner:
             if config.is_debug():
                 traceback.print_exc()
         finally:
-            with self.counter.get_lock():
-                self.counter.value += 1
+            with counter.get_lock():
+                counter.value += 1
 
-            result['session'].update({
-                'idx': self.counter.value,
+            result['ses'].update({
+                'idx': counter.value,
             })
 
-            logger.info(f"#{str(self.counter.value).zfill(6)} | "
-                        f"{result['session']['status'].upper()} | {file.filename}")
+            logger.info(f"#{str(counter.value).zfill(6)} | "
+                        f"{result['ses']['status'].upper()} | {file.filename}")
             return result

@@ -1,7 +1,11 @@
-from multiprocessing import Manager
 from typing import NoReturn, Dict
 
-from textdetector import FileInfo
+
+
+class Container:
+
+    def __init__(self) -> NoReturn:
+        pass
 
 
 class Collector:

@@ -11,6 +11,7 @@ import pandas as pd
 import config
 
 from detector import Detector
+from fileinfo import FileInfo
 from referencer import Referencer
 
 
@@ -33,6 +34,7 @@ def write_entity(
     elif extension == "json":
         write_json(entity, dst_path)
 
+
 def write_image_region(image: np.ndarray, folder_suffix: str, filename: str, order: str) -> NoReturn:
     dst_folder = config.dir_output / folder_suffix / filename
     os.makedirs(str(dst_folder.resolve()), exist_ok=True)
@@ -40,9 +42,11 @@ def write_image_region(image: np.ndarray, folder_suffix: str, filename: str, ord
 
     cv.imwrite(dst_path, image)
 
+
 def write_json(data: Any, path: str) -> NoReturn:
     with open(path, 'w+') as file:
         json.dump(data, file, indent=2, sort_keys=True)
+
 
 def save_detection_results(detection: Detector, filename: str) -> NoReturn:
     for algorithm, result in detection.results.items():
@@ -60,12 +64,14 @@ def save_reference_results(referencer: Referencer, filename: str) -> NoReturn:
     for label, image in referencer.results.items():
         write_image_region(image, f"REF/parts", filename, label)
 
+
 def prepare_output_folder() -> NoReturn:
     if config.out_clear_output_dir:
         shutil.rmtree(config.dir_output, ignore_errors=True)
         os.makedirs(str(config.dir_output.resolve()), exist_ok=True)
 
-def update_session_with_pd(results: List[Dict[str, Dict[str, Union[int, float]]]]) -> NoReturn:
+
+def update_session_with_pd(results: List[Dict[str, Any]]) -> NoReturn:
     df_file = f"session_pd_{config.timestamp}.csv"
 
     if os.path.exists(str(config.dir_output / df_file)):
