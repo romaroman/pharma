@@ -89,7 +89,7 @@ class EvalMetric(utils.CustomEnum):
 
     PositiveLikelihoodRatio = "PLR",
     NegativeLikelihoodRatio = "NLR",
-    DiagnosticOddsRatio = "DOR",
+    # DiagnosticOddsRatio = "DOR",
     F1Score = "F1S"
 
 

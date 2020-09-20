@@ -168,10 +168,10 @@ class Evaluator:
 
             plr = clip(tpr, fpr)
             nlr = clip(fnr, tnr)
-            dor = clip(plr, nlr)
+            # dor = clip(plr, nlr)
             f1s = 2 * clip(prc * tpr, prc + tpr)
 
-            results = [iou, tpr, fpr, tnr, fnr, prv, acc, fdr, prc, fro, npv, plr, nlr, dor, f1s]
+            results = [iou, tpr, fpr, tnr, fnr, prv, acc, fdr, prc, fro, npv, plr, nlr, f1s]  # dor
 
         for i, result in enumerate(results):
             results[i] = np.round(result, 3)

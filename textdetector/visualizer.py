@@ -23,12 +23,12 @@ def scatter_eval_by_pkg_class(file_path: Path) -> NoReturn:
     metrics = [metric for metric in EvalMetric.to_list()]
     algorithms = ['MI1', 'MI2', 'MSER', 'MSER+MI1+MI2']
 
-    dst_folder = Path('/data/3tb/pharmapack/scatter')
+    dst_folder = Path('/fls/pharmapack-output/scatter')
 
     # fig, axes = plt.subplots(l
     # en(algorithms), len(metrics), figsize=((len(algorithms)) * 6, len(metrics) * 6),
     #                          sharex=True)
-    processed = [float(p.name) for p in Path("/data/3tb/pharmapack/scatter/").glob("*")]
+    processed = [float(p.name) for p in Path("/fls/pharmapack-output/scatter").glob("*")]
     for pclass in df['evr_package_class'].unique().tolist():
         if pclass in processed:
             continue
@@ -62,5 +62,5 @@ def scatter_eval_by_pkg_class(file_path: Path) -> NoReturn:
 
 
 if __name__ == '__main__':
-    csv_path = Path('/home/rchaban/session_pd_2020-09-18_21-02.csv')
+    csv_path = Path('/home/fux/session_pd_2020-09-20_20-00.csv')
     scatter_eval_by_pkg_class(csv_path)
