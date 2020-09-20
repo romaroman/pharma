@@ -74,10 +74,23 @@ class AnnotationLabel(utils.CustomEnum):
 
 class EvalMetric(utils.CustomEnum):
     IntersectionOverUnion = "IOU",
+
+    TruePositiveRate = "TPR",  # tp / (tp + fn) or 1 - FalseNegativeRate
+    FalsePositiveRate = "FPR", #
+    TrueNegativeRate = "TNR", # tn / (tn + fp) or 1 - FalsePositiveRate
+    FalseNegativeRate = "FNR",
+
+    Prevalence = "PRV",
     Accuracy = "ACC",     # (tp + tn) / (tp + fp + tn + fn)
-    Sensitivity = "SNS",  # tp / (tp + fn)
-    Precision = "PRC",    # tp / (tp + fp)
-    Specificity = "SPC",  # tn / (tn + fp)
+    FalseDiscoveryRate = "FDR"
+    Precision = "PRC",    # tp / (tp + fp) or 1 - FalseDiscoveryRate
+    FalseOmissionRate = "FOR",
+    NegativePredictiveValue = "NPV"
+
+    PositiveLikelihoodRatio = "PLR",
+    NegativeLikelihoodRatio = "NLR",
+    DiagnosticOddsRatio = "DOR",
+    F1Score = "F1S"
 
 
 class AlignmentMethod(utils.CustomEnum):

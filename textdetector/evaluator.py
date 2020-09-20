@@ -78,8 +78,13 @@ class Evaluator:
 
             for pmask, polygon in zip(region_masks, regions_polygons):
                 if cv.countNonZero(cv.bitwise_and(bmask, pmask)) > 0:
+                    mask_combined = cv.bitwise_or(bmask, pmask)
+                    contour = cv.findContours(mask_combined, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0][0]
+                    pmask_cropped = utils.crop_image_by_contour(pmask, contour, True)
+                    bmask_cropped = utils.crop_image_by_contour(bmask, contour, True)
+
                     matched_region_number += 1
-                    scores = self.calc_all_metrics(pmask, bmask, to_dict=False)
+                    scores = self.calc_all_metrics(pmask_cropped, bmask_cropped, to_dict=False)
                     rows.append([bi, matched_region_number] + scores)
 
             if matched_region_number == 0:
@@ -117,10 +122,10 @@ class Evaluator:
         area_overlap = cv.countNonZero(image_overlap)
         area_union = cv.countNonZero(image_union)
 
-        return abs(1 - area_overlap / area_union)
+        return area_overlap / area_union
 
     @classmethod
-    def calc_confusion(cls, image_ver: np.ndarray, image_ref: np.ndarray) -> Tuple[float, float, float, float]:
+    def calc_confusion(cls, image_ver: np.ndarray, image_ref: np.ndarray) -> Tuple[int, int, int, int]:
         return cls.calc_true_positive(image_ver, image_ref), cls.calc_true_negative(image_ver, image_ref), \
                cls.calc_false_positive(image_ver, image_ref), cls.calc_false_negative(image_ver, image_ref)
 
@@ -138,18 +143,35 @@ class Evaluator:
             image_ref: np.ndarray,
             to_dict: bool = True
     ) -> Union[Dict[str, float], List[float]]:
+
+        def clip(arg1: Union[int, float], arg2: Union[int, float]) -> float:
+            return arg1 / arg2 if arg2 !=0 else 1.0
+
         tp, tn, fp, fn = cls.calc_confusion(image_ver, image_ref)
 
         if tp == 0:
             results = cls.generate_negative_result()
         else:
             iou = cls.calc_intersection_over_union(image_ver, image_ref)
-            acc = (tp + tn) / (tp + fp + tn + fn)
-            sen = tp / (tp + fn)
-            pr = tp / (tp + fp)
-            sp = tn / (tn + fp)
 
-            results = [iou, acc, sen, pr, sp]
+            tpr = clip(tp, tp + fn)
+            fpr = clip(fp, fp + tn)
+            tnr = clip(tn, tn + fp)
+            fnr = clip(fn, tp + fn)
+
+            prv = clip(tp + fn, tp + fp + tn + fn)
+            acc = clip(tp + tn, tp + fp + tn + fn)
+            fdr = clip(fp, tp + fp)
+            prc = clip(tp, tp + fp)
+            fro = clip(fn, fn + tn)
+            npv = clip(tn, tn + fn)
+
+            plr = clip(tpr, fpr)
+            nlr = clip(fnr, tnr)
+            dor = clip(plr, nlr)
+            f1s = 2 * clip(prc * tpr, prc + tpr)
+
+            results = [iou, tpr, fpr, tnr, fnr, prv, acc, fdr, prc, fro, npv, plr, nlr, dor, f1s]
 
         for i, result in enumerate(results):
             results[i] = np.round(result, 3)

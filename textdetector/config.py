@@ -45,7 +45,8 @@ ev_regions_used: bool = confuse['Evaluation']['Regions']['Used'].get()
 ev_regions_aggregate: bool = confuse['Evaluation']['Regions']['Aggregate'].get()
 ev_regions_write: bool = confuse['Evaluation']['Regions']['Write'].get()
 
-ev_metrics: List[EvalMetric] = [EvalMetric[metric] for metric in confuse['Evaluation']['Metrics'].get()]
+ev_metrics: List[EvalMetric] = EvalMetric.to_list() if confuse['Evaluation']['Metrics'].get()[0] == 'a' \
+    else [EvalMetric[metric] for metric in confuse['Evaluation']['Metrics'].get()]
 
 exr_used: bool = confuse['ExtractReference']['Used'].get()
 exr_write: bool = confuse['ExtractReference']['Write'].get()
