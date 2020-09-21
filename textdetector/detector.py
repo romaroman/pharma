@@ -232,6 +232,7 @@ class DetectionResult:
     class Region:
 
         def __init__(self, contour: np.ndarray, method: ApproximationMethod) -> NoReturn:
+            self.contour = np.copy(contour)
             self.polygon = self.contour_to_polygon(contour, method).clip(min=0)
             self.brect = cv.boundingRect(self.polygon)
 
@@ -272,6 +273,7 @@ class DetectionResult:
 
     def find_regions(self, method: ApproximationMethod) -> List['Region']:
         contours, _ = cv.findContours(self.image_input, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        contours = list(filter(lambda c: cv.contourArea(c) > morph.mscale(5) ** 2, contours))
         return sorted(
             [self.Region(contour, method) for contour in contours],
             key=lambda r: cv.contourArea(r.polygon),

@@ -92,6 +92,10 @@ class EvalMetric(utils.CustomEnum):
     # DiagnosticOddsRatio = "DOR",
     F1Score = "F1S"
 
+    @classmethod
+    def get_most_valuable(cls):
+        return [cls.IntersectionOverUnion, cls.Accuracy, cls.Precision, cls.F1Score]
+
 
 class AlignmentMethod(utils.CustomEnum):
     NoAlignment = auto(),

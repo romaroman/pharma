@@ -5,7 +5,7 @@ import numpy as np
 
 try:
     sift = cv.SIFT.create()
-    mser = cv.MSER.create(_max_variation=0.1, _max_area=7500)
+    mser = cv.MSER.create()
 except:
     sift = cv.x2features.SIFT_create()
     mser = cv.x2features.MSER_create()
