@@ -1,4 +1,3 @@
-import functools
 import os
 import argparse
 from pathlib import Path
@@ -18,14 +17,15 @@ parser.add_argument('dst_folder', type=str)
 
 args = parser.parse_args()
 
+
 def convert_df_cell_to_np_array(string: str) -> np.ndarray:
-    return np.array(eval(' '.join([p for p in string.split(' ') if p != '']).replace('[ ', '[').replace(' ', ',')))
+    return np.array(eval(' '.join([p for p in string.split(' ') if p != '']).replace('[ ', '[').replace(' ', ',')), dtype='object')
 
 
 def process_single_class(df_pclass_and_pclass: Tuple[pd.DataFrame, int]):
     df_pclass, pclass = df_pclass_and_pclass
 
-    fig, axes = plt.subplots(len(algorithms), len(metrics), figsize=((len(metrics)) * 6, len(algorithms) * 6), sharex=True)
+    fig, axes = plt.subplots(len(algorithms), len(metrics), figsize=((len(metrics)) * 15, len(algorithms) * 15), sharex=True)
 
     dst_path = dst_folder / f"{str(int(pclass)).zfill(4)}.png"
 
@@ -49,7 +49,7 @@ def process_single_class(df_pclass_and_pclass: Tuple[pd.DataFrame, int]):
             reg_means = []
             reg_medians = []
 
-            for i, array in enumerate(scores_region[:10], start=0):
+            for i, array in enumerate(scores_region, start=0):
                 try:
                     values = array[:, mi + 2].clip(min=0)
                     xmax = len(values)
@@ -82,9 +82,7 @@ def process_single_class(df_pclass_and_pclass: Tuple[pd.DataFrame, int]):
     plt.clf()
 
 
-
 if __name__ == '__main__':
-
         df = pd.read_csv(args.csv_path, index_col=False)
         df = df.rename(columns={'fi_package_class': 'evr_package_class', 'fi_phone': 'evr_phone'})
         df = df.drop(columns=df.columns[df.isna().all()].tolist())
@@ -95,7 +93,7 @@ if __name__ == '__main__':
         algorithms = ['MI1', 'MI2', 'MSER', 'MSER+MI1+MI2']
 
         dst_folder = Path(args.dst_folder)
-        processed = [float(p.name) for p in dst_folder.glob("*")]
+        processed = [float(p.stem) for p in dst_folder.glob("*")]
 
         dfs_ps = []
         for pclass in df['evr_package_class'].unique().tolist():
@@ -103,7 +101,6 @@ if __name__ == '__main__':
                 continue
 
             dfs_ps.append((df[df['evr_package_class'] == pclass], pclass))
-
 
         with mlt.Pool(processes=mlt.cpu_count()) as pool:
             results = pool.map(process_single_class, dfs_ps)
