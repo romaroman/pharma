@@ -3,8 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="a858449c-7b8e-495e-b577-90272559044b" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/enums.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/enums.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/textdetector/visualizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/textdetector/visualizer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/textdetector/visualizer.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,8 +33,31 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
-  <component name="RunManager" selected="Python.visualizer">
+  <component name="RunManager" selected="Python.scatter">
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <module name="pharmapack-recognition" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="/opt/anaconda3/envs/pharma/bin/python" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="evaluator" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="pharmapack-recognition" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -80,6 +102,28 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="scatter" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="pharmapack-recognition" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/visualization/scatter.py" />
+      <option name="PARAMETERS" value="$USER_HOME$/session_pd_2020-09-20_20-00.csv /fls/pharmapack-output/scatter" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="visualizer" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="pharmapack-recognition" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -102,8 +146,15 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.evaluator" />
+      <item itemvalue="Python.main" />
+      <item itemvalue="Python.scatter" />
+      <item itemvalue="Python.visualizer" />
+    </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.scatter" />
         <item itemvalue="Python.visualizer" />
         <item itemvalue="Python.main" />
         <item itemvalue="Python.evaluator" />
@@ -117,7 +168,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1600621354965</updated>
-      <workItem from="1600621357015" duration="4967000" />
+      <workItem from="1600621357015" duration="9357000" />
     </task>
     <task id="LOCAL-00001" summary="Eval region-based metrics only by ROI defined by brect of combined mask&#10;Add more binary metrics">
       <created>1600624346673</created>
@@ -126,46 +177,70 @@
       <option name="project" value="LOCAL" />
       <updated>1600624346673</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Remove DOR metric&#10;Add script for plots combining">
+      <created>1600626363194</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1600626363194</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Eval region-based metrics only by ROI defined by brect of combined mask&#10;Add more binary metrics" />
-    <option name="LAST_COMMIT_MESSAGE" value="Eval region-based metrics only by ROI defined by brect of combined mask&#10;Add more binary metrics" />
+    <MESSAGE value="Remove DOR metric&#10;Add script for plots combining" />
+    <option name="LAST_COMMIT_MESSAGE" value="Remove DOR metric&#10;Add script for plots combining" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="28" y="0" key="CommitChangelistDialog2" timestamp="1600624346518">
+    <state x="161" y="41" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1600672699599">
       <screen x="28" y="0" width="1338" height="768" />
     </state>
-    <state x="28" y="0" key="CommitChangelistDialog2/28.0.1338.768@28.0.1338.768" timestamp="1600624346518" />
+    <state x="161" y="41" key="#com.intellij.execution.impl.EditConfigurationsDialog/28.0.1338.768@28.0.1338.768" timestamp="1600672699599" />
+    <state x="28" y="0" key="#scatter" timestamp="1600672659061">
+      <screen x="28" y="0" width="1338" height="768" />
+    </state>
+    <state x="28" y="0" key="#scatter/28.0.1338.768@28.0.1338.768" timestamp="1600672659061" />
+    <state x="28" y="0" key="#visualizer" timestamp="1600672636543">
+      <screen x="28" y="0" width="1338" height="768" />
+    </state>
+    <state x="28" y="0" key="#visualizer/28.0.1338.768@28.0.1338.768" timestamp="1600672636543" />
+    <state x="28" y="0" key="CommitChangelistDialog2" timestamp="1600626363072">
+      <screen x="28" y="0" width="1338" height="768" />
+    </state>
+    <state x="28" y="0" key="CommitChangelistDialog2/28.0.1338.768@28.0.1338.768" timestamp="1600626363072" />
     <state width="807" height="437" key="DebuggerActiveHint" timestamp="1600624027572">
       <screen x="28" y="0" width="1338" height="768" />
     </state>
     <state width="807" height="437" key="DebuggerActiveHint/28.0.1338.768@28.0.1338.768" timestamp="1600624027572" />
-    <state width="1338" height="710" key="GridCell.Tab.0.bottom" timestamp="1600625387243">
+    <state x="484" y="141" key="FileChooserDialogImpl" timestamp="1600672697243">
       <screen x="28" y="0" width="1338" height="768" />
     </state>
-    <state width="1338" height="710" key="GridCell.Tab.0.bottom/28.0.1338.768@28.0.1338.768" timestamp="1600625387243" />
-    <state width="1338" height="710" key="GridCell.Tab.0.center" timestamp="1600625387242">
+    <state x="484" y="141" key="FileChooserDialogImpl/28.0.1338.768@28.0.1338.768" timestamp="1600672697243" />
+    <state width="1338" height="710" key="GridCell.Tab.0.bottom" timestamp="1600676637079">
       <screen x="28" y="0" width="1338" height="768" />
     </state>
-    <state width="1338" height="710" key="GridCell.Tab.0.center/28.0.1338.768@28.0.1338.768" timestamp="1600625387242" />
-    <state width="1338" height="710" key="GridCell.Tab.0.left" timestamp="1600625387242">
+    <state width="1338" height="710" key="GridCell.Tab.0.bottom/28.0.1338.768@28.0.1338.768" timestamp="1600676637079" />
+    <state width="1338" height="710" key="GridCell.Tab.0.center" timestamp="1600676637079">
       <screen x="28" y="0" width="1338" height="768" />
     </state>
-    <state width="1338" height="710" key="GridCell.Tab.0.left/28.0.1338.768@28.0.1338.768" timestamp="1600625387242" />
-    <state width="1338" height="710" key="GridCell.Tab.0.right" timestamp="1600625387242">
+    <state width="1338" height="710" key="GridCell.Tab.0.center/28.0.1338.768@28.0.1338.768" timestamp="1600676637079" />
+    <state width="1338" height="710" key="GridCell.Tab.0.left" timestamp="1600676637078">
       <screen x="28" y="0" width="1338" height="768" />
     </state>
-    <state width="1338" height="710" key="GridCell.Tab.0.right/28.0.1338.768@28.0.1338.768" timestamp="1600625387242" />
+    <state width="1338" height="710" key="GridCell.Tab.0.left/28.0.1338.768@28.0.1338.768" timestamp="1600676637078" />
+    <state width="1338" height="710" key="GridCell.Tab.0.right" timestamp="1600676637079">
+      <screen x="28" y="0" width="1338" height="768" />
+    </state>
+    <state width="1338" height="710" key="GridCell.Tab.0.right/28.0.1338.768@28.0.1338.768" timestamp="1600676637079" />
     <state width="498" height="445" key="SwitcherDM" timestamp="1600623766477">
       <screen x="28" y="0" width="1338" height="768" />
     </state>
     <state width="498" height="445" key="SwitcherDM/28.0.1338.768@28.0.1338.768" timestamp="1600623766477" />
-    <state x="297" y="120" key="Vcs.Push.Dialog.v2" timestamp="1600624347978">
+    <state x="297" y="120" key="Vcs.Push.Dialog.v2" timestamp="1600626364841">
       <screen x="28" y="0" width="1338" height="768" />
     </state>
-    <state x="297" y="120" key="Vcs.Push.Dialog.v2/28.0.1338.768@28.0.1338.768" timestamp="1600624347978" />
+    <state x="297" y="120" key="Vcs.Push.Dialog.v2/28.0.1338.768@28.0.1338.768" timestamp="1600626364841" />
     <state x="516" y="300" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1600623235987">
       <screen x="28" y="0" width="1338" height="768" />
     </state>
@@ -183,11 +258,6 @@
           <line>86</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/textdetector/visualizer.py</url>
-          <line>55</line>
-          <option name="timeStamp" value="5" />
-        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
@@ -197,13 +267,14 @@
     <SUITE FILE_PATH="coverage/pharmapack_recognition$run.coverage" NAME="run Coverage Results" MODIFIED="1598997908841" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$runner.coverage" NAME="runner Coverage Results" MODIFIED="1599052110874" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$scratch.coverage" NAME="scratch Coverage Results" MODIFIED="1588095021020" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/scratches" />
-    <SUITE FILE_PATH="coverage/pharmapack_recognition$visualizer.coverage" NAME="visualizer Coverage Results" MODIFIED="1600625387198" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/textdetector" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$visualizer.coverage" NAME="visualizer Coverage Results" MODIFIED="1600672702576" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/textdetector" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$args.coverage" NAME="args Coverage Results" MODIFIED="1597225340611" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$align.coverage" NAME="align Coverage Results" MODIFIED="1593609683712" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/text_detection" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$discarded.coverage" NAME="discarded Coverage Results" MODIFIED="1599051935808" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$resnet50.coverage" NAME="resnet50 Coverage Results" MODIFIED="1599071211438" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$logger.coverage" NAME="logger Coverage Results" MODIFIED="1597312113408" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$morph.coverage" NAME="morph Coverage Results" MODIFIED="1592740725428" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/text_detection" />
+    <SUITE FILE_PATH="coverage/pharmapack_recognition$scatter.coverage" NAME="scatter Coverage Results" MODIFIED="1600676637034" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$get_text_region.coverage" NAME="get_text_region Coverage Results" MODIFIED="1589383348662" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python/src/matlab-integration" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$evaluator.coverage" NAME="evaluator Coverage Results" MODIFIED="1600621392327" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/textdetector" />
     <SUITE FILE_PATH="coverage/pharmapack_recognition$detector.coverage" NAME="detector Coverage Results" MODIFIED="1598195253747" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
