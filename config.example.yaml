@@ -9,9 +9,9 @@ Dirs:
 
 ImageLoading:
   UseDebugFiles: False
-  Shuffle: True
+  Shuffle: False
   Seed: True
-  Fraction: 0.1
+  Fraction: 1
 
   Filter:
     Mode: Inclusive
@@ -19,11 +19,16 @@ ImageLoading:
     Phone: []
     Distinct: []
     Sample: []
+    Angle: [360]
     Size: []
 
   SortBy:
     - PackageClass
     - Phone
+
+  GroupBy:
+    - PackageClass
+    - Distinct
 
 Output:
   ClearOutputDir: True
@@ -33,14 +38,15 @@ Output:
 Multithreading:
   Used: False
   CPUs: Auto
-  SplitOnChunks: True
 
 Detection:
   ScaleFactor: 1
   Algorithms:
     - MSER
     - MorphologyIteration1
-  ApproximationMethod: Rrect
+    - MorphologyIteration2
+    - MajorVoting
+  ApproximationMethod: Hull
   AlignmentMethod: NoAlignment
   Write:
     - Images
@@ -57,12 +63,7 @@ Evaluation:
     Used: True
     Aggregate: True
     Write: True
-  Metrics:
-    - Accuracy
-    - IntersectionOverUnion
-    - Sensitivity
-    - Precision
-    - Specificity
+  Metrics: [a]
 
 ExtractReference:
   Used: False
