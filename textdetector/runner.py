@@ -28,18 +28,18 @@ class Runner:
 
     @classmethod
     def process(cls) -> NoReturn:
-        files = Loader().get_files()
+        loader = Loader()
 
-        logger.info(f"\nPreparing to process {len(files)} images"
+        logger.info(f"Preparing to process {len(loader.image_files)} images"
                     f"{f' via {config.mlt_cpus} threads' if not config.is_debug() else ''}...\n")
 
         if not config.is_multithreading_used():
-            for file in files:
-                writer.update_session_with_pd([cls._process_single_file(file)])
+            for chunk in loader.get_chunks():
+                writer.update_session_with_pd([cls._process_single_file(file) for file in chunk])
         else:
-            for files_chunk in utils.chunks(files, config.mlt_cpus * 10):
+            for chunk in loader.get_chunks():
                 with Pool(processes=config.mlt_cpus) as pool:
-                    results = pool.map(cls._process_single_file, files_chunk)
+                    results = pool.map(cls._process_single_file, chunk)
                     pool.close()
                     writer.update_session_with_pd(results)
 

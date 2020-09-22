@@ -98,12 +98,12 @@ class Evaluator:
 
                     image_vis = regions[pi].draw(image_vis, (0, 255, 0), filled=False)
                     image_vis = cv.putText(
-                        img=image_vis, text=str(scores_es[len(scores_es)/2:]),
+                        img=image_vis, text=str(scores_es.items()[len(scores_es.items())/2:]),
                         org=utils.get_contour_center(regions[pi].contour), fontFace=cv.FONT_HERSHEY_PLAIN,
                         fontScale=1, color=(255, 0, 0), thickness=1
                     )
                     image_vis = cv.putText(
-                        img=image_vis, text=str(scores_es[:len(scores_es)/2]),
+                        img=image_vis, text=str(scores_es.items()[:len(scores_es.items())/2]),
                         org=utils.get_contour_center(regions[pi].contour), fontFace=cv.FONT_HERSHEY_PLAIN,
                         fontScale=1, color=(255, 0, 0), thickness=1
                     )

@@ -50,6 +50,19 @@ class FileInfo(ABC):
     def to_list(self) -> List[Union[str, int]]:
         return [self.filename, self.phone, self.package_class, self.distinct, self.sample, self.size]
 
+    def get_attribute_by_key(self, key: str):
+        return {
+            'filename': self.filename,
+            'packageclass': self.package_class,
+            'phone': self.phone,
+            'distinct': self.distinct,
+            'sample': self.sample,
+            'size': self.size
+        }.get(key, None)
+
+    def get_attribute_by_keys(self, keys: List[str]):
+        return [self.get_attribute_by_key(key) for key in keys]
+
     def _extract_numerical_info(self, keyword: str) -> int:
         substring = self._extract_str_info(keyword)
         return int(re.sub(r'[^0-9]', '', substring))

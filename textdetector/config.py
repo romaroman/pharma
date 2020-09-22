@@ -29,7 +29,6 @@ out_profile: bool = confuse['Output']['Profile'].get()
 mlt_used: bool = confuse['Multithreading']['Used'].get()
 mlt_cpus: bool = cpu_count() - 2 if confuse['Multithreading']['CPUs'].as_str().lower() == 'auto'\
     else confuse['Multithreading']['CPUs'].as_number()
-mlt_split_on_chunks: bool = confuse['Multithreading']['SplitOnChunks'].get()
 
 det_scale_factor: float = confuse['Detection']['ScaleFactor'].as_number()
 det_algorithms: List[DetectionAlgorithm] = [DetectionAlgorithm[alg] for alg in confuse['Detection']['Algorithms'].get()]
