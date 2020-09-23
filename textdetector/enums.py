@@ -24,6 +24,7 @@ class DetectionAlgorithm(utils.CustomEnum):
 
 
 class ApproximationMethod(utils.CustomEnum):
+    Contour = auto(),
     Brect = auto(),
     Rrect = auto(),
     Hull = auto(),
@@ -92,8 +93,12 @@ class EvalMetric(utils.CustomEnum):
     F1Score = "F1S"
 
     @classmethod
-    def get_most_valuable(cls):
-        return [cls.IntersectionOverUnion, cls.Accuracy, cls.Precision, cls.F1Score]
+    def get_essential(cls):
+        return [
+            cls.IntersectionOverUnion,
+            cls.TruePositiveRate, cls.FalsePositiveRate, cls.TrueNegativeRate, cls.FalseNegativeRate,
+            cls.Accuracy, cls.Precision, cls.F1Score
+        ]
 
 
 class AlignmentMethod(utils.CustomEnum):

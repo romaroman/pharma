@@ -1,4 +1,5 @@
 import logging
+from abc import ABC, abstractmethod
 from typing import NoReturn, Dict, Union, List, Tuple
 
 import cv2 as cv
@@ -8,7 +9,7 @@ import config
 
 from detector import Detector, DetectionResult
 from annotation import Annotation
-from enums import EvalMetric, AnnotationLabel
+from enums import EvalMetric, AnnotationLabel, ApproximationMethod
 
 import utils
 
@@ -16,19 +17,35 @@ import utils
 logger = logging.getLogger('evaluator')
 
 
-class Evaluator:
+class Evaluator(ABC):
+
+    def __init__(self) -> NoReturn:
+        self.homo_mat: Union[None, np.ndarray] = None
+
+        self.results_mask: Dict[str, np.ndarray] = dict()
+        self.results_regions: Dict[str, np.ndarray] = dict()
+
+    @abstractmethod
+    def evaluate(self, detection: Detector) -> NoReturn:
+        raise NotImplemented
+
+    def get_mask_results(self) -> Dict[str, np.ndarray]:
+        return self.results_mask
+
+    def get_regions_results(self) -> Dict[str, np.ndarray]:
+        return self.results_regions
+
+
+class EvaluatorByAnnotation(Evaluator):
 
     def __init__(self, annotation: Annotation) -> NoReturn:
+        super().__init__()
+
         self.annotation: Annotation = annotation
 
         self.image_mask_ref_text: np.ndarray = utils.to_gray(self.annotation.create_mask_by_labels(
             labels=AnnotationLabel.get_list_of_text_labels(), color=(255, 255, 255)
         ))
-
-        self.homo_mat: Union[None, np.ndarray] = None
-
-        self.results_mask: Dict[str, np.ndarray] = dict()
-        self.results_regions: Dict[str, np.ndarray] = dict()
 
     def evaluate(self, detection: Detector) -> NoReturn:
         if config.need_warp():
@@ -37,11 +54,11 @@ class Evaluator:
             )
 
         for algorithm, result in detection.results.items():
-            if config.ev_mask_used:
+            if config.ev_ano_mask:
                 image_ver_mask = result.get_default_mask()
                 self.results_mask[algorithm] = self._evaluate_by_mask(image_ver_mask)
 
-            if config.ev_regions_used:
+            if config.ev_ano_regions:
                 regions_ver = result.get_default_regions()
                 self.results_regions[algorithm] = self._evaluate_by_regions(regions_ver, detection.image_not_scaled)
 
@@ -59,34 +76,35 @@ class Evaluator:
         img_empty = np.zeros(self.annotation.image_ref.shape[:2], dtype=np.uint8)
 
         if config.need_warp():
-            regions_polygons = [
+            regions_ver = [
                 cv.perspectiveTransform(
                     region.polygon.astype(np.float32),
                     self.homo_mat
                 ).astype(np.int32) for region in regions
             ]
         else:
-            regions_polygons = [region.polygon.astype(np.int32) for region in regions]
+            regions_ver = [region.polygon.astype(np.int32) for region in regions]
 
-        rows = []
-        brect_masks = [brect.draw(np.copy(img_empty), 255, filled=True) for brect in
-                      self.annotation.get_brects_by_labels(AnnotationLabel.get_list_of_text_labels())]
-        region_masks = [cv.drawContours(np.copy(img_empty), [region], -1, 255, -1) for region in regions_polygons]
+        regions_ref = self.annotation.get_bounding_rectangles_by_labels(AnnotationLabel.get_list_of_text_labels())
+
+        masks_ref = [region.draw(np.copy(img_empty), (255, 255, 255), filled=True) for region in regions_ref]
+        masks_ver = [cv.drawContours(np.copy(img_empty), [region], -1, 255, -1) for region in regions_ver]
 
         image_vis = np.copy(image_draw)
+        rows = []
         bi = 1
 
-        for bmask, brect in zip(brect_masks, self.annotation.get_brects_by_labels(AnnotationLabel.get_list_of_text_labels())):
+        for mask_ref, region_ref in zip(masks_ref, regions_ref):
             matched_polygons_amount = 0
             pi = 0
 
-            for pmask, polygon in zip(region_masks, regions_polygons):
-                if cv.countNonZero(cv.bitwise_and(bmask, pmask)) > 0:
-                    mask_combined = cv.bitwise_or(bmask, pmask)
+            for mask_ver, region_ver in zip(masks_ver, regions_ver):
+                if cv.countNonZero(cv.bitwise_and(mask_ref, mask_ver)) > 0:
+                    mask_combined = cv.bitwise_or(mask_ref, mask_ver)
                     contour = cv.findContours(mask_combined, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0][0]
 
-                    pmask_cropped = utils.crop_image_by_contour(pmask, contour, True)
-                    bmask_cropped = utils.crop_image_by_contour(bmask, contour, True)
+                    pmask_cropped = utils.crop_image_by_contour(mask_ver, contour, True)
+                    bmask_cropped = utils.crop_image_by_contour(mask_ref, contour, True)
 
                     sc = ScoreCalculator()
                     sc.calc_scores(pmask_cropped, bmask_cropped)
@@ -96,30 +114,105 @@ class Evaluator:
                     rows.append([bi, matched_polygons_amount] + scores)
                     scores_es = sc.get_essential_scores()
 
-                    image_vis = regions[pi].draw(image_vis, (0, 255, 0), filled=False)
-                    image_vis = cv.putText(
-                        img=image_vis, text=str(scores_es.items()[len(scores_es.items())/2:]),
-                        org=utils.get_contour_center(regions[pi].contour), fontFace=cv.FONT_HERSHEY_PLAIN,
-                        fontScale=1, color=(255, 0, 0), thickness=1
-                    )
-                    image_vis = cv.putText(
-                        img=image_vis, text=str(scores_es.items()[:len(scores_es.items())/2]),
-                        org=utils.get_contour_center(regions[pi].contour), fontFace=cv.FONT_HERSHEY_PLAIN,
-                        fontScale=1, color=(255, 0, 0), thickness=1
-                    )
+                    # image_vis = regions[pi].draw(image_vis, (0, 255, 0), filled=False)
+                    # image_vis = cv.putText(
+                    #     img=image_vis, text=str(scores_es.items()[len(scores_es.items())/2:]),
+                    #     org=utils.get_contour_center(regions[pi].contour), fontFace=cv.FONT_HERSHEY_PLAIN,
+                    #     fontScale=1, color=(255, 0, 0), thickness=1
+                    # )
+                    # image_vis = cv.putText(
+                    #     img=image_vis, text=str(scores_es.items()[:len(scores_es.items())/2]),
+                    #     org=utils.get_contour_center(regions[pi].contour), fontFace=cv.FONT_HERSHEY_PLAIN,
+                    #     fontScale=1, color=(255, 0, 0), thickness=1
+                    # )
 
                 pi += 1
             if matched_polygons_amount == 0:
                 rows.append([bi, matched_polygons_amount] + ScoreCalculator.generate_negative_results())
             bi += 1
-        utils.display(image_vis)
+
         return np.array(rows)
 
-    def get_mask_results(self) -> Dict[str, np.ndarray]:
-        return self.results_mask
 
-    def get_regions_results(self) -> Dict[str, np.ndarray]:
-        return self.results_regions
+class EvaluatorByVerification(Evaluator):
+
+    def __init__(self, image_reference: np.ndarray, results: Dict[str, DetectionResult]):
+        super().__init__()
+
+        self.image_reference: np.ndarray = image_reference
+        self.results: Dict[str, DetectionResult] = results
+
+    def evaluate(self, detection: Detector) -> NoReturn:
+        self.homo_mat = utils.find_homography_matrix(
+            utils.to_gray(detection.image_not_scaled), utils.to_gray(self.image_reference)
+        )
+        for alg_ver, result_ver in detection.results.items():
+            result_ref = self.results[alg_ver]
+
+            if config.ev_ver_mask:
+                image_ver = result_ver.get_default_mask()
+                image_ref = result_ref.get_mask(ApproximationMethod.Contour)
+                self.results_mask[alg_ver] = self._evaluate_by_mask(image_ver, image_ref)
+
+            if config.ev_ver_regions:
+                regions_ver = result_ver.get_default_regions()
+                regions_ref = result_ref.get_regions(ApproximationMethod.Contour)
+                self.results_regions[alg_ver] = self._evaluate_by_regions(regions_ver, regions_ref)
+
+    def _evaluate_by_mask(self, image_ver: np.ndarray, image_ref: np.ndarray):
+        image_ver = cv.warpPerspective(
+            image_ver, self.homo_mat, utils.swap_dimensions(self.image_reference.shape)
+        )
+
+        sc = ScoreCalculator()
+        sc.calc_scores(image_ver, image_ref)
+        return np.array(sc.scores_list)
+
+    def _evaluate_by_regions(
+            self,
+            regions_ver: List[DetectionResult.Region],
+            regions_ref: List[DetectionResult.Region]
+    ) -> NoReturn:
+
+        img_empty = np.zeros(self.image_reference.shape[:2], dtype=np.uint8)
+
+        if config.need_warp():
+            polygons_ver = [
+                cv.perspectiveTransform(
+                    region.polygon.astype(np.float32),
+                    self.homo_mat
+                ).astype(np.int32) for region in regions_ver
+            ]
+        else:
+            polygons_ver = [region.polygon.astype(np.int32) for region in regions_ver]
+
+        masks_ref = [region.draw(np.copy(img_empty), (255, 255, 255), filled=True) for region in regions_ref]
+        masks_ver = [cv.drawContours(np.copy(img_empty), [polygon], -1, 255, -1) for polygon in polygons_ver]
+
+        rows = []
+        index_ref = 1
+        for mask_ref, region_ref in zip(masks_ref, regions_ref):
+            matched_regions_amount = 0
+
+            for mask_ver, region_ver in zip(masks_ver, polygons_ver):
+                if cv.countNonZero(cv.bitwise_and(mask_ref, mask_ver)) > 0:
+                    mask_combined = cv.bitwise_or(mask_ref, mask_ver)
+                    contour = cv.findContours(mask_combined, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0][0]
+
+                    mask_ver_cropped = utils.crop_image_by_contour(mask_ver, contour, True)
+                    mask_ref_cropped = utils.crop_image_by_contour(mask_ref, contour, True)
+
+                    sc = ScoreCalculator()
+                    sc.calc_scores(mask_ver_cropped, mask_ref_cropped)
+
+                    matched_regions_amount += 1
+                    rows.append([index_ref, matched_regions_amount] + sc.scores_list)
+
+            if matched_regions_amount == 0:
+                rows.append([index_ref, matched_regions_amount] + ScoreCalculator.generate_negative_results())
+            index_ref += 1
+
+        return np.array(rows)
 
 
 class ScoreCalculator:
@@ -208,5 +301,5 @@ class ScoreCalculator:
             self.scores_dict[metric.vs()] = self.scores_list[i]
 
     def get_essential_scores(self) -> Dict[str, float]:
-        names = [m.vs() for m in EvalMetric.get_most_valuable()]
-        return dict(filter(lambda k: k[0] in names, self.scores_dict.items()))
+        names = [m.vs() for m in EvalMetric.get_essential()]
+        return dict(filter(lambda v: v in names, self.scores_dict.values()))

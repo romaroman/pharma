@@ -19,9 +19,7 @@ def main() -> int:
     utils.suppress_warnings()
 
     logger.info(f"Currently used configuration:\n{textdetector.config.confuse.dump()}")
-
-    runner = textdetector.Runner()
-    runner.process()
+    textdetector.Runner.process()
 
     return sys.exit(0)
 

@@ -1,7 +1,7 @@
 import random
 import logging
 
-from typing import NoReturn, List, Union, Dict, Tuple
+from typing import NoReturn, List, Union, Dict, Tuple, Any
 
 import config
 import utils
@@ -94,8 +94,14 @@ class Loader:
         else:
             return self.image_chunks
 
-    def get_chunks(self):
-        return self.image_chunks.values() if self.group_by else utils.chunks(self.image_files, config.mlt_cpus * 10)
+    def get_chunks(
+            self
+    ) -> Tuple[Any, int]:
+        if self.group_by:
+            return self.image_chunks.values(), len(self.image_chunks.values())
+        else:
+            chunks_amount = 100
+            return utils.chunks(self.image_files, chunks_amount), chunks_amount
 
     def _handle_debug_files(self) -> NoReturn:
         if not self.DEBUG_FILES:

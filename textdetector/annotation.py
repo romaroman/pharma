@@ -281,15 +281,20 @@ class Annotation:
     def to_dict(self) -> Dict[str, Union[int, str]]:
         return {'filename': self.filename, **self.get_dict_of_labels_amount()}
 
-    def get_brects_by_labels(self, labels: List[AnnotationLabel]) -> List[BoundingRectangleABC]:
-        return [brect for brect in self.bounding_rectangles if brect.label in labels]
+    def get_bounding_rectangles_by_labels(
+            self,
+            labels: List[AnnotationLabel]
+    ) -> List[Union[BoundingRectangle, BoundingRectangleRotated]]:
+        return [
+            bounding_rectangle for bounding_rectangle in self.bounding_rectangles if bounding_rectangle.label in labels
+        ]
 
     @staticmethod
     def load_annotation_by_pattern(root_folder: Path, pattern: Pattern) -> 'Annotation':
         src_folder = root_folder / "annotations"
 
-        for annotation_file in glob.glob(str(src_folder / "*.xml")):
-            if pattern.search(annotation_file):
+        for annotation_file in src_folder.glob("*.xml"):
+            if pattern.search(str(annotation_file)):
                 return Annotation(annotation_file)
         else:
             raise FileNotFoundError

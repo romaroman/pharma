@@ -1,7 +1,7 @@
 import logging
 import traceback
 
-from typing import NoReturn, Dict, Any
+from typing import NoReturn, Dict, Any, Union
 from multiprocessing import Pool, Value
 
 import cv2 as cv
@@ -12,12 +12,11 @@ import writer
 from loader import Loader
 from aligner import Aligner
 from detector import Detector
-from fileinfo import FileInfo
-from evaluator import Evaluator
+from fileinfo import FileInfoEnrollment, FileInfoRecognition
+from evaluator import EvaluatorByAnnotation, EvaluatorByVerification
 from referencer import Referencer
 from annotation import Annotation
-
-import utils
+from collector import Collector
 
 
 logger = logging.getLogger('runner')
@@ -29,23 +28,28 @@ class Runner:
     @classmethod
     def process(cls) -> NoReturn:
         loader = Loader()
+        chunks, chunks_amount = loader.get_chunks()
 
-        logger.info(f"Preparing to process {len(loader.image_files)} images"
-                    f"{f' split on {len(loader.image_chunks)} chunks' if loader.group_by else ''}"
-                    f"{f' via {config.mlt_cpus} threads' if not config.is_debug() else ''}...\n")
+        collector = Collector()
+
+        logger.info(f"Preparing to process {len(loader.image_files)} images "
+                    f"split on {chunks_amount} chunks "
+                    f"{f'via {config.mlt_cpus} threads' if not config.is_debug() else ''}...\n")
 
         if not config.is_multithreading_used():
-            for chunk in loader.get_chunks():
-                writer.update_session_with_pd([cls._process_single_file(file) for file in chunk])
+            for chunk in chunks:
+                results = [cls._process_single_file(file) for file in chunk]
+                collector.add_results(results)
         else:
-            for chunk in loader.get_chunks():
+            for chunk in chunks:
                 with Pool(processes=config.mlt_cpus) as pool:
                     results = pool.map(cls._process_single_file, chunk)
                     pool.close()
-                    writer.update_session_with_pd(results)
+                    collector.add_results(results)
+        collector.dump()
 
     @classmethod
-    def _process_single_file(cls, file: FileInfo) -> Dict[str, Any]:
+    def _process_single_file(cls, file: Union[FileInfoEnrollment, FileInfoRecognition]) -> Dict[str, Any]:
         result = {'ses': {'status': 'success'}, 'fi': file.to_dict()}
 
         try:
@@ -56,7 +60,6 @@ class Runner:
 
             detection = Detector(image_aligned)
             detection.detect(config.det_algorithms)
-            detection.save_results(config.dir_source / 'verasref' / file.filename)
 
             if config.det_write:
                 writer.save_detection_results(detection, file.filename)
@@ -68,12 +71,22 @@ class Runner:
                 if config.exr_write:
                     writer.save_reference_results(referencer, file.filename)
 
-            if config.ev_mask_used or config.ev_regions_used:
-                evaluator = Evaluator(annotation)
+            if config.ev_ano_mask or config.ev_ano_regions:
+                evaluator = EvaluatorByAnnotation(annotation)
                 evaluator.evaluate(detection)
 
-                result['evm'] = evaluator.get_mask_results()
-                result['evr'] = evaluator.get_regions_results()
+                result['evanomsk'] = evaluator.get_mask_results()
+                result['evanoreg'] = evaluator.get_regions_results()
+
+            if config.ev_ver_mask or config.ev_ver_regions:
+                image_ref, results = Detector.load_results_by_pattern(
+                    config.dir_source / 'verasref', file.get_verification_pattern()
+                )
+                evaluator = EvaluatorByVerification(image_ref, results)
+                evaluator.evaluate(detection)
+
+                result['evvermsk'] = evaluator.get_mask_results()
+                result['evverreg'] = evaluator.get_regions_results()
 
         except Exception as exception:
             result['ses'].update({

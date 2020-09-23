@@ -27,8 +27,9 @@ out_log_level: int = getattr(logging, confuse['Output']['LogLevel'].as_str())
 out_profile: bool = confuse['Output']['Profile'].get()
 
 mlt_used: bool = confuse['Multithreading']['Used'].get()
-mlt_cpus: bool = cpu_count() - 2 if confuse['Multithreading']['CPUs'].as_str().lower() == 'auto'\
-    else confuse['Multithreading']['CPUs'].as_number()
+mlt_cpus: int = confuse['Multithreading']['CPUs'].get()
+if type(mlt_cpus) is str:
+    mlt_cpus = cpu_count() - 2
 
 det_scale_factor: float = confuse['Detection']['ScaleFactor'].as_number()
 det_algorithms: List[DetectionAlgorithm] = [DetectionAlgorithm[alg] for alg in confuse['Detection']['Algorithms'].get()]
@@ -41,13 +42,11 @@ det_approximation_methods_used: List[ApproximationMethod] = \
 det_alignment_method: AlignmentMethod = AlignmentMethod[confuse['Detection']['AlignmentMethod'].as_str()]
 det_write: List['str'] = confuse['Detection']['Write'].get()
 
-ev_mask_used: bool = confuse['Evaluation']['Mask']['Used'].get()
-ev_mask_aggregate: bool = confuse['Evaluation']['Mask']['Aggregate'].get()
-ev_mask_write: bool = confuse['Evaluation']['Mask']['Write'].get()
+ev_ano_mask: bool = confuse['Evaluation']['Annotation']['Mask'].get()
+ev_ano_regions: bool = confuse['Evaluation']['Annotation']['Regions'].get()
 
-ev_regions_used: bool = confuse['Evaluation']['Regions']['Used'].get()
-ev_regions_aggregate: bool = confuse['Evaluation']['Regions']['Aggregate'].get()
-ev_regions_write: bool = confuse['Evaluation']['Regions']['Write'].get()
+ev_ver_mask: bool = confuse['Evaluation']['Verification']['Mask'].get()
+ev_ver_regions: bool = confuse['Evaluation']['Verification']['Regions'].get()
 
 ev_metrics: List[EvalMetric] = EvalMetric.to_list() if confuse['Evaluation']['Metrics'].get()[0] == 'a' \
     else [EvalMetric[metric] for metric in confuse['Evaluation']['Metrics'].get()]
@@ -57,7 +56,7 @@ exr_write: bool = confuse['ExtractReference']['Write'].get()
 
 
 def need_warp() -> bool:
-    return not det_alignment_method is AlignmentMethod.Reference
+    return det_alignment_method is not AlignmentMethod.Reference
 
 
 def is_debug() -> bool:

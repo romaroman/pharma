@@ -3,6 +3,7 @@ import logging
 import itertools
 
 from pathlib import Path
+from re import Pattern
 from typing import List, NoReturn, Dict, Union, Tuple
 
 import cv2 as cv
@@ -249,6 +250,18 @@ class Detector:
 
         return image_ref, dict_result
 
+    @classmethod
+    def load_results_by_pattern(
+            cls,
+            root_folder: Path,
+            pattern: Pattern
+    ) -> Tuple[np.ndarray, Dict[str, 'DetectionResult']]:
+        for file in root_folder.glob("*"):
+            if pattern.search(str(file)):
+                return cls.load_results(file)
+        else:
+            raise FileNotFoundError
+
 
 class DetectionResult:
 
@@ -261,6 +274,8 @@ class DetectionResult:
 
         @classmethod
         def contour_to_polygon(cls, contour: np.ndarray, method: ApproximationMethod) -> np.ndarray:
+            if method is ApproximationMethod.Contour:
+                return contour
             if method is ApproximationMethod.Brect:
                 return utils.get_brect_contour(contour)
             elif method is ApproximationMethod.Rrect:
@@ -317,3 +332,9 @@ class DetectionResult:
 
     def get_default_regions(self) -> List['Region']:
         return self.regions[config.det_approximation_method_default]
+
+    def get_mask(self, method: ApproximationMethod) -> np.ndarray:
+        return self.masks[method]
+
+    def get_regions(self, method: ApproximationMethod) -> List['Region']:
+        return self.regions[method]
