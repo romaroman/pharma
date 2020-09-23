@@ -28,4 +28,10 @@ class Collector:
 
     def dump(self) -> NoReturn:
         df_file = f"session_pd_{config.timestamp}.csv"
-        self.storage.to_csv(config.dir_output / df_file, index=False)
+        dst_path = config.dir_output / df_file
+        if dst_path.exists():
+            pd.concat([pd.read_csv(df_file, index_col=None), self.storage]).to_csv(df_file, index=False)
+        else:
+            self.storage.to_csv(config.dir_output / df_file, index=False)
+
+        self.storage = self.storage[0:0]

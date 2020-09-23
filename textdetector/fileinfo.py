@@ -38,6 +38,9 @@ class FileInfo(ABC):
     def get_annotation_pattern(self) -> Pattern:
         return re.compile(f"PFP_Ph._P{str(self.package_class).zfill(4)}_D0{self.distinct}_S00._C._az..._side.")
 
+    def get_verification_pattern(self) -> Pattern:
+        return re.compile(f"PFP_Ph1_P{str(self.package_class).zfill(4)}_D0{self.distinct}_S00{self.sample}_C._az360_side.")
+
     def to_dict(self) -> Dict[str, Union[str, int]]:
         return dict(zip(self.keywords, self.to_list()))
 
@@ -75,12 +78,6 @@ class FileInfoEnrollment(FileInfo):
 
         self.angle: int = self._extract_numerical_info('angle')
         self.side: int = self._extract_numerical_info('side')
-
-    def get_verification_pattern(self) -> Pattern:
-        return re.compile(
-            f"PFP_Ph1_P{str(self.package_class).zfill(4)}_"
-            f"D0{self.distinct}_S00{self.sample}_C{self.size}_az360_side{self.side}"
-        )
 
     def to_dict(self) -> Dict[str, int]:
         return dict(super(FileInfoEnrollment, self).to_dict(), **dict(zip(self.keywords_cls, [self.angle, self.side])))

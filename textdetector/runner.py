@@ -75,8 +75,8 @@ class Runner:
                 evaluator = EvaluatorByAnnotation(annotation)
                 evaluator.evaluate(detection)
 
-                result['evanomsk'] = evaluator.get_mask_results()
-                result['evanoreg'] = evaluator.get_regions_results()
+                result['ev_ano_msk'] = evaluator.get_mask_results()
+                result['ev_ano_reg'] = evaluator.get_regions_results()
 
             if config.ev_ver_mask or config.ev_ver_regions:
                 image_ref, results = Detector.load_results_by_pattern(
@@ -85,8 +85,8 @@ class Runner:
                 evaluator = EvaluatorByVerification(image_ref, results)
                 evaluator.evaluate(detection)
 
-                result['evvermsk'] = evaluator.get_mask_results()
-                result['evverreg'] = evaluator.get_regions_results()
+                result['ev_ver_msk'] = evaluator.get_mask_results()
+                result['ev_ver_reg'] = evaluator.get_regions_results()
 
         except Exception as exception:
             result['ses'].update({
