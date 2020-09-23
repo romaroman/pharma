@@ -15,20 +15,15 @@ ImageLoading:
 
   Filter:
     Mode: Inclusive
-    PackageClass: []
+    Packageclass: [1]
     Phone: []
     Distinct: []
     Sample: []
-    Angle: [360]
+    Angle: [100]
     Size: []
 
-  SortBy:
-    - PackageClass
-    - Phone
-
-  GroupBy:
-    - PackageClass
-    - Distinct
+  SortBy: [PackageClass, Phone]
+  GroupBy: [] #[PackageClass, Distinct]
 
 Output:
   ClearOutputDir: True
@@ -36,36 +31,26 @@ Output:
   Profile: False
 
 Multithreading:
-  Used: False
-  CPUs: Auto
+  Used: True
+  CPUs: 6
 
 Detection:
   ScaleFactor: 1
-  Algorithms:
-    - MSER
-    - MorphologyIteration1
-    - MorphologyIteration2
-    - MajorVoting
+  Algorithms: [MSER, MorphologyIteration1, MorphologyIteration2, MajorVoting]
 
   ApproximationMethodDefault: Hull
-  ApproximationMethodsUsed: [Brect, Rrect, Hull]
+  ApproximationMethodsUsed: [Contour, Brect, Rrect, Hull]
   AlignmentMethod: NoAlignment
 
-  Write:
-    - Images
-    - Visualizations
-    - JSON
-    - CSV
+  Write: [Images, Visualizations, JSON, CSV]
 
 Evaluation:
-  Mask:
-    Used: True
-    Aggregate: True
-    Write: True
-  Regions:
-    Used: True
-    Aggregate: True
-    Write: True
+  Annotation:
+    Mask: True
+    Regions: True
+  Verification:
+    Mask: True
+    Regions: True
   Metrics: [a]
 
 ExtractReference:
