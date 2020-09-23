@@ -32,7 +32,12 @@ mlt_cpus: bool = cpu_count() - 2 if confuse['Multithreading']['CPUs'].as_str().l
 
 det_scale_factor: float = confuse['Detection']['ScaleFactor'].as_number()
 det_algorithms: List[DetectionAlgorithm] = [DetectionAlgorithm[alg] for alg in confuse['Detection']['Algorithms'].get()]
-det_approximation_method: ApproximationMethod = ApproximationMethod[confuse['Detection']['ApproximationMethod'].as_str()]
+
+det_approximation_method_default: ApproximationMethod = \
+    ApproximationMethod[confuse['Detection']['ApproximationMethodDefault'].as_str()]
+det_approximation_methods_used: List[ApproximationMethod] = \
+    [ApproximationMethod[ap] for ap in confuse['Detection']['ApproximationMethodsUsed'].get()]
+
 det_alignment_method: AlignmentMethod = AlignmentMethod[confuse['Detection']['AlignmentMethod'].as_str()]
 det_write: List['str'] = confuse['Detection']['Write'].get()
 

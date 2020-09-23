@@ -8,12 +8,10 @@ import utils
 
 from fileinfo import FileInfoEnrollment, FileInfoRecognition, FileInfo
 
-
 logger = logging.getLogger('loader')
 
 
 class Loader:
-
     DEBUG_FILES = [
         # '',
     ]
@@ -34,17 +32,17 @@ class Loader:
         self.seed: bool = config.confuse['ImageLoading']['Seed'].get()
         self.fraction: int = config.confuse['ImageLoading']['Fraction'].as_number()
 
+        self.filter_by: Dict[str, List[int]] = dict()
         self.filter_mode: str = config.confuse['ImageLoading']['Filter']['Mode'].as_str().lower()
-        self.filter_package_class: List[int] = config.confuse['ImageLoading']['Filter']['PackageClass'].get()
-        self.filter_phone: List[int] = config.confuse['ImageLoading']['Filter']['Phone'].get()
-        self.filter_distinct: List[int] = config.confuse['ImageLoading']['Filter']['Distinct'].get()
-        self.filter_sample: List[int] = config.confuse['ImageLoading']['Filter']['Sample'].get()
-        self.filter_angle: List[int] = config.confuse['ImageLoading']['Filter']['Angle'].get()
-        self.filter_size: List[int] = config.confuse['ImageLoading']['Filter']['Size'].get()
 
-        tolower = lambda l: [str(e).lower() for e in l]
-        self.sort_by: List[str] = tolower(config.confuse['ImageLoading']['SortBy'].get())
-        self.group_by: List[str] = tolower(config.confuse['ImageLoading']['GroupBy'].get())
+        for key in config.confuse['ImageLoading']['Filter']:
+            if key.lower() in FileInfoEnrollment.keywords:
+                values = config.confuse['ImageLoading']['Filter'][key].get()
+                if values:
+                    self.filter_by.update({key.lower(): values})
+
+        self.sort_by: List[str] = [i.lower() for i in config.confuse['ImageLoading']['SortBy'].get()]
+        self.group_by: List[str] = [i.lower() for i in config.confuse['ImageLoading']['GroupBy'].get()]
 
     def _load(self) -> NoReturn:
         self.image_files = [FileInfo.get_file_info(file, config.database)
@@ -53,29 +51,26 @@ class Loader:
         logger.info(f'Loaded {len(self.image_files)} files from {config.dir_source / "cropped"}')
 
     def _is_filtration_needed(self) -> bool:
-        return bool(self.filter_package_class) or bool(self.filter_phone) or bool(self.filter_size) \
-               or bool(self.filter_distinct) or bool(self.filter_angle) or bool(self.filter_sample)
+        return len(self.filter_by.items()) > 0
 
     def _filter(self) -> NoReturn:
-        apply_mode = lambda predicate: predicate if self.filter_mode == 'inclusive' else not predicate
-
         image_files_filter = self.image_files.copy()
         amount_before = len(image_files_filter)
         self.image_files.clear()
 
         while image_files_filter:
             file = image_files_filter.pop()
-            if self.filter_package_class and apply_mode(file.package_class in self.filter_package_class):
-                self.image_files.append(file)
-            elif self.filter_phone and apply_mode(file.phone in self.filter_phone):
-                self.image_files.append(file)
-            elif self.filter_distinct and apply_mode(file.distinct in self.filter_distinct):
-                self.image_files.append(file)
-            elif self.filter_sample and apply_mode(file.sample in self.filter_sample):
-                self.image_files.append(file)
-            elif self.filter_angle and apply_mode(file.angle in self.filter_angle):
-                self.image_files.append(file)
-            elif self.filter_size and apply_mode(file.size in self.filter_size):
+
+            valid = False
+            for keyword, values in self.filter_by.items():
+                if file.get_attribute_by_key(keyword) in values:
+                    valid = self.filter_mode == 'inclusive'
+                    if not valid:
+                        break
+                else:
+                    break
+
+            if valid:
                 self.image_files.append(file)
 
         logger.info(f"Filtered {amount_before - len(self.image_files)} files")

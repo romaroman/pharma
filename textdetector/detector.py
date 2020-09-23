@@ -1,5 +1,8 @@
+import os
 import logging
 import itertools
+
+from pathlib import Path
 from typing import List, NoReturn, Dict, Union, Tuple
 
 import cv2 as cv
@@ -226,6 +229,26 @@ class Detector:
         image_lines_h = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=1))
         return cv.bitwise_or(image_lines_h, image_lines_v)
 
+    def save_results(self, path_parent_folder: Path) -> NoReturn:
+        os.makedirs(str(path_parent_folder.resolve()), exist_ok=True)
+
+        cv.imwrite(str(path_parent_folder / 'image_ref.png'), self.image_not_scaled)
+
+        for algorithm, result in self.results.items():
+            os.makedirs(str((path_parent_folder / algorithm).resolve()), exist_ok=True)
+            cv.imwrite(str(path_parent_folder / algorithm / 'image_mask.png'), result.get_default_mask())
+
+    @classmethod
+    def load_results(cls, path_parent_folder: Path) -> Tuple[np.ndarray, Dict[str, 'DetectionResult']]:
+        dict_result = dict()
+        image_ref = cv.imread(str(path_parent_folder / 'image_ref.png'))
+
+        algorithm_folders = [d for d in path_parent_folder.iterdir() if d.is_dir()]
+        for algorithm_folder in algorithm_folders:
+            dict_result[algorithm_folder.stem] = DetectionResult(cv.imread(str(algorithm_folder / 'image_mask.png'), 0))
+
+        return image_ref, dict_result
+
 
 class DetectionResult:
 
@@ -240,15 +263,12 @@ class DetectionResult:
         def contour_to_polygon(cls, contour: np.ndarray, method: ApproximationMethod) -> np.ndarray:
             if method is ApproximationMethod.Brect:
                 return utils.get_brect_contour(contour)
-            elif method is ApproximationMethod.Contour:
-                return contour
             elif method is ApproximationMethod.Rrect:
-                s = cv.boxPoints(cv.minAreaRect(contour)).astype(np.int32).reshape(-1, 1, 2)
-                return s
+                return cv.boxPoints(cv.minAreaRect(contour)).astype(np.int32).reshape(-1, 1, 2)
             elif method is ApproximationMethod.Hull:
                 return cv.convexHull(contour).astype(np.int32)
             elif method is ApproximationMethod.Approximation:
-                return utils.approximate_contour(cls.contour_to_polygon(contour, ApproximationMethod.Hull), epsilon=0.02)
+                return utils.approximate_contour(cls.contour_to_polygon(contour, ApproximationMethod.Hull), 0.02)
 
         def crop_image(self, image: np.ndarray) -> np.ndarray:
             return utils.crop_image_by_contour(image, self.polygon, False)
@@ -267,7 +287,7 @@ class DetectionResult:
         self.masks: Dict[ApproximationMethod, np.ndarray] = dict()
         self.regions: Dict[ApproximationMethod, List['Region']] = dict()
 
-        for method in ApproximationMethod:
+        for method in config.det_approximation_methods_used:
             self.regions[method] = self.find_regions(method)
             self.masks[method] = self.create_mask(method)
 
@@ -290,10 +310,10 @@ class DetectionResult:
         return cv.drawContours(np.copy(image), [region.polygon for region in self.regions[method]], -1, (0, 255, 0), 5)
 
     def get_default_visualization(self, image: np.ndarray) -> np.ndarray:
-        return self.create_visualization(image, config.det_approximation_method)
+        return self.create_visualization(image, config.det_approximation_method_default)
 
     def get_default_mask(self) -> np.ndarray:
-        return self.masks[config.det_approximation_method]
+        return self.masks[config.det_approximation_method_default]
 
     def get_default_regions(self) -> List['Region']:
-        return self.regions[config.det_approximation_method]
+        return self.regions[config.det_approximation_method_default]

@@ -24,7 +24,6 @@ class DetectionAlgorithm(utils.CustomEnum):
 
 
 class ApproximationMethod(utils.CustomEnum):
-    Contour = auto(),
     Brect = auto(),
     Rrect = auto(),
     Hull = auto(),

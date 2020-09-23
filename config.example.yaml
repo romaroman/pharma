@@ -46,8 +46,11 @@ Detection:
     - MorphologyIteration1
     - MorphologyIteration2
     - MajorVoting
-  ApproximationMethod: Hull
+
+  ApproximationMethodDefault: Hull
+  ApproximationMethodsUsed: [Brect, Rrect, Hull]
   AlignmentMethod: NoAlignment
+
   Write:
     - Images
     - Visualizations

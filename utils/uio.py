@@ -62,6 +62,7 @@ class Formatter(object):
 
 
 pretty = Formatter()
+pretty_print = lambda obj: print(pretty(obj))
 
 
 def display(image: np.ndarray, figsize: Union[Tuple[int, int], None] = None) -> NoReturn:
@@ -161,3 +162,7 @@ def suppress_warnings() -> NoReturn:
 
 def get_str_timestamp() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+
+
+def create_parent_dirs(path: Path) -> NoReturn:
+    os.makedirs(str(path.parent.resolve()), exist_ok=True)

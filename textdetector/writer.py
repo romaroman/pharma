@@ -11,7 +11,6 @@ import pandas as pd
 import config
 
 from detector import Detector
-from fileinfo import FileInfo
 from referencer import Referencer
 
 
@@ -59,6 +58,7 @@ def save_detection_results(detection: Detector, filename: str) -> NoReturn:
                     region.crop_image(detection.image_not_scaled),
                     f"{common_part}/parts", filename, str(index).zfill(4)
                 )
+
 
 def save_reference_results(referencer: Referencer, filename: str) -> NoReturn:
     for label, image in referencer.results.items():

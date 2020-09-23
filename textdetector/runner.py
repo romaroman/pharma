@@ -31,6 +31,7 @@ class Runner:
         loader = Loader()
 
         logger.info(f"Preparing to process {len(loader.image_files)} images"
+                    f"{f' split on {len(loader.image_chunks)} chunks' if loader.group_by else ''}"
                     f"{f' via {config.mlt_cpus} threads' if not config.is_debug() else ''}...\n")
 
         if not config.is_multithreading_used():
@@ -55,6 +56,7 @@ class Runner:
 
             detection = Detector(image_aligned)
             detection.detect(config.det_algorithms)
+            detection.save_results(config.dir_source / 'verasref' / file.filename)
 
             if config.det_write:
                 writer.save_detection_results(detection, file.filename)

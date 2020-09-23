@@ -8,14 +8,15 @@ from enums import FileDatabase
 
 
 class FileInfo(ABC):
+    keywords = ['packageclass', 'phone', 'distinct', 'sample', 'size']
 
-    regular_expressions = {
-        'phone': r'Ph[1-3]',
-        'package_class': r'P[0-9][0-9][0-9][0-9]',
-        'distinct': r'D[0-9][0-9]',
-        'sample': r'S[0-9][0-9][0-9]',
-        'size': r'C[0-9]'
-    }
+    regular_expressions = dict(zip(keywords, [
+        r'P[0-9][0-9][0-9][0-9]',
+        r'Ph[1-3]',
+        r'D[0-9][0-9]',
+        r'S[0-9][0-9][0-9]',
+        r'C[0-9]'
+    ]))
 
     @staticmethod
     def get_file_info(file_path: Path, database: FileDatabase) -> Union["FileInfoEnrollment", "FileInfoRecognition"]:
@@ -28,8 +29,8 @@ class FileInfo(ABC):
         self.path: Path = file_path
         self.filename: str = file_path.stem
 
+        self.package_class: int = self._extract_numerical_info('packageclass')
         self.phone: int = self._extract_numerical_info('phone')
-        self.package_class: int = self._extract_numerical_info('package_class')
         self.distinct: int = self._extract_numerical_info('distinct')
         self.sample: int = self._extract_numerical_info('sample')
         self.size: int = self._extract_numerical_info('size')
@@ -37,30 +38,16 @@ class FileInfo(ABC):
     def get_annotation_pattern(self) -> Pattern:
         return re.compile(f"PFP_Ph._P{str(self.package_class).zfill(4)}_D0{self.distinct}_S00._C._az..._side.")
 
-    def to_dict(self) -> Dict[str, int]:
-        return {
-           'filename': self.filename,
-           'phone': self.phone,
-           'package_class': self.package_class,
-           'distinct': self.distinct,
-           'sample': self.sample,
-           'size': self.size
-        }
+    def to_dict(self) -> Dict[str, Union[str, int]]:
+        return dict(zip(self.keywords, self.to_list()))
 
     def to_list(self) -> List[Union[str, int]]:
-        return [self.filename, self.phone, self.package_class, self.distinct, self.sample, self.size]
+        return [self.package_class, self.phone, self.distinct, self.sample, self.size]
 
-    def get_attribute_by_key(self, key: str):
-        return {
-            'filename': self.filename,
-            'packageclass': self.package_class,
-            'phone': self.phone,
-            'distinct': self.distinct,
-            'sample': self.sample,
-            'size': self.size
-        }.get(key, None)
+    def get_attribute_by_key(self, key: str) -> Union[int, None]:
+        return self.to_dict().get(key, None)
 
-    def get_attribute_by_keys(self, keys: List[str]):
+    def get_attribute_by_keys(self, keys: List[str]) -> List[Union[str, int]]:
         return [self.get_attribute_by_key(key) for key in keys]
 
     def _extract_numerical_info(self, keyword: str) -> int:
@@ -72,11 +59,13 @@ class FileInfo(ABC):
 
 
 class FileInfoEnrollment(FileInfo):
+    keywords_cls = ['angle', 'side']
+    keywords = FileInfo.keywords + keywords_cls
 
-    regular_expressions = dict({
-        'angle': r'az[0-3][0-9]0',
-        'side': r'side[0-9]',
-    }, **FileInfo.regular_expressions)
+    regular_expressions = dict(
+        FileInfo.regular_expressions,
+        **dict(zip(keywords_cls, [r'az[0-3][0-9]0', r'side[0-9]']))
+    )
 
     def __init__(self, file_path: Path) -> NoReturn:
         """
@@ -88,17 +77,20 @@ class FileInfoEnrollment(FileInfo):
         self.side: int = self._extract_numerical_info('side')
 
     def to_dict(self) -> Dict[str, int]:
-        return dict(super(FileInfoEnrollment, self).to_dict(), **{'angle': self.angle, 'side': self.side})
+        return dict(super(FileInfoEnrollment, self).to_dict(), **dict(zip(self.keywords_cls, [self.angle, self.side])))
 
     def to_list(self) -> List[Union[str, int]]:
         return super(FileInfoEnrollment, self).to_list() + [self.angle, self.side]
 
 
 class FileInfoRecognition(FileInfo):
+    keywords_cls = ['RS']
+    keywords = FileInfo.keywords + keywords_cls
 
-    regular_expressions = dict({
-        'RS': r'S[0-9]',
-    }, **FileInfo.regular_expressions)
+    regular_expressions = dict(
+        FileInfo.regular_expressions,
+        **dict(zip(keywords_cls, [r'S[0-9]']))
+    )
 
     def __init__(self, file_path: Path) -> NoReturn:
         """
