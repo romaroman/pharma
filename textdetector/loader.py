@@ -70,6 +70,7 @@ class Loader:
                     if not valid:
                         break
                 else:
+                    valid = False
                     break
 
             if valid:
