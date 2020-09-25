@@ -19,7 +19,7 @@ confuse.set_file('config.yaml')
 mode: Mode = Mode[confuse['Mode'].as_str()]
 database: FileDatabase = FileDatabase[confuse['Database'].as_str()]
 
-dir_source: Path = confuse['Dirs']['SourceDir'].as_path() / str(database)
+dir_source: Path = confuse['Dirs']['SourceDir'].as_path()
 dir_output: Path = confuse['Dirs']['OutputDir'].as_path() / timestamp
 
 out_clear_output_dir: bool = confuse['Output']['ClearOutputDir'].get()
@@ -31,6 +31,12 @@ mlt_cpus: int = confuse['Multithreading']['CPUs'].get()
 if type(mlt_cpus) is str:
     mlt_cpus = cpu_count() - 2
 
+qe_raise: bool = confuse['QualityEstimation']['RaiseErrors'].get()
+qe_glares: bool = confuse['QualityEstimation']['GlaresUsed'].get()
+qe_blur: bool = confuse['QualityEstimation']['BlurUsed'].get()
+
+alignment_method: AlignmentMethod = AlignmentMethod[confuse['AlignmentMethod'].as_str()]
+
 det_scale_factor: float = confuse['Detection']['ScaleFactor'].as_number()
 det_algorithms: List[DetectionAlgorithm] = [DetectionAlgorithm[alg] for alg in confuse['Detection']['Algorithms'].get()]
 
@@ -39,7 +45,6 @@ det_approximation_method_default: ApproximationMethod = \
 det_approximation_methods_used: List[ApproximationMethod] = \
     [ApproximationMethod[ap] for ap in confuse['Detection']['ApproximationMethodsUsed'].get()]
 
-det_alignment_method: AlignmentMethod = AlignmentMethod[confuse['Detection']['AlignmentMethod'].as_str()]
 det_write: List['str'] = confuse['Detection']['Write'].get()
 
 ev_ano_mask: bool = confuse['Evaluation']['Annotation']['Mask'].get()
@@ -55,13 +60,9 @@ exr_used: bool = confuse['ExtractReference']['Used'].get()
 exr_write: bool = confuse['ExtractReference']['Write'].get()
 
 
-def need_warp() -> bool:
-    return det_alignment_method is not AlignmentMethod.Reference
+def is_alignment_needed() -> bool:
+    return alignment_method is not AlignmentMethod.Reference
 
 
 def is_debug() -> bool:
     return mode is Mode.Debug
-
-
-def is_multithreading_used() -> bool:
-    return mlt_used

@@ -5,7 +5,7 @@ Database: Enrollment
 
 Dirs:
   SourceDir: /fls/pharmapack
-  OutputDir: /fls/pharmapack/output
+  OutputDir: /fls/pharmapack/Output
 
 ImageLoading:
   UseDebugFiles: False
@@ -31,16 +31,22 @@ Output:
   Profile: False
 
 Multithreading:
-  Used: True
+  Used: False
   CPUs: 6
+
+QualityEstimation:
+  RaiseErrors: False
+  GlaresUsed: True
+  BlurUsed: True
+
+AlignmentMethod: NoAlignment
 
 Detection:
   ScaleFactor: 1
-  Algorithms: [MSER, MorphologyIteration1, MorphologyIteration2, MajorVoting]
+  Algorithms: [MSER, MorphologyIteration1, MorphologyIteration2, MajorVoting] # LineSegmentation
 
   ApproximationMethodDefault: Hull
   ApproximationMethodsUsed: [Contour, Brect, Rrect, Hull]
-  AlignmentMethod: NoAlignment
 
   Write: [Images, Visualizations, JSON, CSV]
 

@@ -19,8 +19,8 @@ logger = logging.getLogger('evaluator')
 
 class Evaluator(ABC):
 
-    def __init__(self) -> NoReturn:
-        self.homo_mat: Union[None, np.ndarray] = None
+    def __init__(self, homo_mat: Union[np.ndarray, None] = None) -> NoReturn:
+        self.homo_mat: Union[None, np.ndarray] = homo_mat
 
         self.results_mask: Dict[str, np.ndarray] = dict()
         self.results_regions: Dict[str, np.ndarray] = dict()
@@ -38,8 +38,8 @@ class Evaluator(ABC):
 
 class EvaluatorByAnnotation(Evaluator):
 
-    def __init__(self, annotation: Annotation) -> NoReturn:
-        super().__init__()
+    def __init__(self, annotation: Annotation, homo_mat: Union[np.ndarray, None] = None) -> NoReturn:
+        super().__init__(homo_mat)
 
         self.annotation: Annotation = annotation
 
@@ -48,7 +48,7 @@ class EvaluatorByAnnotation(Evaluator):
         ))
 
     def evaluate(self, detection: Detector) -> NoReturn:
-        if config.need_warp():
+        if config.is_alignment_needed() and self.homo_mat is None:
             self.homo_mat = utils.find_homography_matrix(
                 utils.to_gray(detection.image_not_scaled), utils.to_gray(self.annotation.image_ref)
             )
@@ -63,7 +63,7 @@ class EvaluatorByAnnotation(Evaluator):
                 self.results_regions[algorithm] = self._evaluate_by_regions(regions_ver, detection.image_not_scaled)
 
     def _evaluate_by_mask(self, image_ver: np.ndarray) -> np.ndarray:
-        if config.need_warp():
+        if config.is_alignment_needed():
             image_ver = cv.warpPerspective(
                 image_ver, self.homo_mat, utils.swap_dimensions(self.annotation.image_ref.shape)
             )
@@ -75,7 +75,7 @@ class EvaluatorByAnnotation(Evaluator):
     def _evaluate_by_regions(self, regions: List[DetectionResult.Region], image_draw: np.ndarray) -> np.ndarray:
         img_empty = np.zeros(self.annotation.image_ref.shape[:2], dtype=np.uint8)
 
-        if config.need_warp():
+        if config.is_alignment_needed():
             regions_ver = [
                 cv.perspectiveTransform(
                     region.polygon.astype(np.float32),
@@ -112,16 +112,16 @@ class EvaluatorByAnnotation(Evaluator):
 
                     matched_polygons_amount += 1
                     rows.append([bi, matched_polygons_amount] + scores)
-                    scores_es = sc.get_essential_scores()
-
+                    # scores_es = sc.get_essential_scores()
+                    #
                     # image_vis = regions[pi].draw(image_vis, (0, 255, 0), filled=False)
                     # image_vis = cv.putText(
-                    #     img=image_vis, text=str(scores_es.items()[len(scores_es.items())/2:]),
+                    #     img=image_vis, text=str([item for index, item in enumerate(scores_es.items()) if index < len(scores_es.items())/2]),
                     #     org=utils.get_contour_center(regions[pi].contour), fontFace=cv.FONT_HERSHEY_PLAIN,
                     #     fontScale=1, color=(255, 0, 0), thickness=1
                     # )
                     # image_vis = cv.putText(
-                    #     img=image_vis, text=str(scores_es.items()[:len(scores_es.items())/2]),
+                    #     img=image_vis, text=str([item for index, item in enumerate(scores_es.items()) if index > len(scores_es.items())/2]),
                     #     org=utils.get_contour_center(regions[pi].contour), fontFace=cv.FONT_HERSHEY_PLAIN,
                     #     fontScale=1, color=(255, 0, 0), thickness=1
                     # )
@@ -136,16 +136,23 @@ class EvaluatorByAnnotation(Evaluator):
 
 class EvaluatorByVerification(Evaluator):
 
-    def __init__(self, image_reference: np.ndarray, results: Dict[str, DetectionResult]):
-        super().__init__()
+    def __init__(
+            self,
+            image_reference: np.ndarray,
+            results: Dict[str, DetectionResult],
+            homo_mat: Union[np.ndarray, None] = None
+    ) -> NoReturn:
+        super().__init__(homo_mat)
 
         self.image_reference: np.ndarray = image_reference
         self.results: Dict[str, DetectionResult] = results
 
     def evaluate(self, detection: Detector) -> NoReturn:
-        self.homo_mat = utils.find_homography_matrix(
-            utils.to_gray(detection.image_not_scaled), utils.to_gray(self.image_reference)
-        )
+        if self.homo_mat is None:
+            self.homo_mat = utils.find_homography_matrix(
+                utils.to_gray(detection.image_not_scaled), utils.to_gray(self.image_reference)
+            )
+
         for alg_ver, result_ver in detection.results.items():
             result_ref = self.results[alg_ver]
 
@@ -176,7 +183,7 @@ class EvaluatorByVerification(Evaluator):
 
         img_empty = np.zeros(self.image_reference.shape[:2], dtype=np.uint8)
 
-        if config.need_warp():
+        if config.is_alignment_needed():
             polygons_ver = [
                 cv.perspectiveTransform(
                     region.polygon.astype(np.float32),
@@ -302,4 +309,4 @@ class ScoreCalculator:
 
     def get_essential_scores(self) -> Dict[str, float]:
         names = [m.vs() for m in EvalMetric.get_essential()]
-        return dict(filter(lambda v: v in names, self.scores_dict.values()))
+        return dict(filter(lambda i: i[0] in names, self.scores_dict.items()))

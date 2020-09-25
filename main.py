@@ -2,6 +2,7 @@ import sys
 import logging
 
 import textdetector
+import visualization
 import utils
 
 
@@ -20,6 +21,8 @@ def main() -> int:
 
     logger.info(f"Currently used configuration:\n{textdetector.config.confuse.dump()}")
     textdetector.Runner.process()
+
+    visualization.plot_all_classes(textdetector.config.dir_output / f"session_pd_{textdetector.config.timestamp}.csv")
 
     return sys.exit(0)
 

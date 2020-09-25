@@ -4,6 +4,8 @@ from pathlib import Path
 from abc import ABC
 from typing import NoReturn, Union, Dict, List, Pattern
 
+import config
+
 from enums import FileDatabase
 
 
@@ -19,10 +21,11 @@ class FileInfo(ABC):
     ]))
 
     @staticmethod
-    def get_file_info(file_path: Path, database: FileDatabase) -> Union["FileInfoEnrollment", "FileInfoRecognition"]:
-        if database is FileDatabase.Enrollment:
+    def get_file_info(file_path: Path) -> Union["FileInfoEnrollment", "FileInfoRecognition"]:
+
+        if config.database is FileDatabase.Enrollment:
             return FileInfoEnrollment(file_path)
-        elif database in FileDatabase.get_list_of_recognition_databases():
+        elif config.database in FileDatabase.get_list_of_recognition_databases():
             return FileInfoRecognition(file_path)
 
     def __init__(self, file_path: Path) -> NoReturn:

@@ -13,7 +13,7 @@ logger = logging.getLogger('loader')
 
 class Loader:
     DEBUG_FILES = [
-        # '',
+        'PharmaPack_R_I_S1_Ph1_P0056_D01_S001_C1_P1',
     ]
 
     def __init__(self) -> NoReturn:
@@ -45,10 +45,12 @@ class Loader:
         self.group_by: List[str] = [i.lower() for i in config.confuse['ImageLoading']['GroupBy'].get()]
 
     def _load(self) -> NoReturn:
-        self.image_files = [FileInfo.get_file_info(file, config.database)
-                            for file in (config.dir_source / "cropped").glob('*.png')]
+        self.image_files = [
+            FileInfo.get_file_info(file) for file in
+            (config.dir_source / str(config.database) / "cropped").glob('*.png')
+        ]
 
-        logger.info(f'Loaded {len(self.image_files)} files from {config.dir_source / "cropped"}')
+        logger.info(f'Loaded {len(self.image_files)} files from {config.dir_source / str(config.database) / "cropped"}')
 
     def _is_filtration_needed(self) -> bool:
         return len(self.filter_by.items()) > 0
@@ -109,7 +111,7 @@ class Loader:
         else:
             for file in self.DEBUG_FILES:
                 self.image_files.append(
-                    FileInfo.get_file_info(config.dir_source / f"cropped/{file}.png", config.database)
+                    FileInfo.get_file_info(config.dir_source / str(config.database) / f"cropped/{file}.png")
                 )
 
     def _handle_regular_loading(self) -> NoReturn:

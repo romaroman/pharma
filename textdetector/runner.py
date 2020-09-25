@@ -7,7 +7,9 @@ from multiprocessing import Pool, Value
 import cv2 as cv
 
 import config
+import utils
 import writer
+from enums import AlignmentMethod
 
 from loader import Loader
 from aligner import Aligner
@@ -17,6 +19,7 @@ from evaluator import EvaluatorByAnnotation, EvaluatorByVerification
 from referencer import Referencer
 from annotation import Annotation
 from collector import Collector
+from qualityestimator import QualityEstimator
 
 
 logger = logging.getLogger('runner')
@@ -36,7 +39,7 @@ class Runner:
                     f"split on {chunks_amount} chunks "
                     f"{f'via {config.mlt_cpus} threads' if not config.is_debug() else ''}...\n")
 
-        if not config.is_multithreading_used():
+        if not config.mlt_used:
             for chunk in chunks:
                 results = [cls._process_single_file(file) for file in chunk]
                 collector.add_results(results)
@@ -53,13 +56,21 @@ class Runner:
         result = {'ses': {'status': 'success'}, 'fi': file.to_dict()}
 
         try:
-            annotation = Annotation.load_annotation_by_pattern(config.dir_source, file.get_annotation_pattern())
-
+            annotation = Annotation.load_annotation_by_pattern(file.get_annotation_pattern())
             image_input = cv.imread(str(file.path.resolve()))
-            image_aligned = Aligner.align(image_input)
+
+            homo_mat = utils.find_homography_matrix(utils.to_gray(image_input), utils.to_gray(annotation.image_ref))
+            image_aligned = Aligner.align(image_input, annotation.image_ref, homo_mat)
+
+            if config.qe_blur or config.qe_glares:
+                qe = QualityEstimator()
+                qe.perform_estimation(image_aligned, annotation.image_ref, homo_mat)
+                result['qe'] = qe.to_dict()
 
             detection = Detector(image_aligned)
             detection.detect(config.det_algorithms)
+
+            # detection.save_results(config.dir_source / 'VerificationReferences')
 
             if config.det_write:
                 writer.save_detection_results(detection, file.filename)
@@ -72,7 +83,7 @@ class Runner:
                     writer.save_reference_results(referencer, file.filename)
 
             if config.ev_ano_mask or config.ev_ano_regions:
-                evaluator = EvaluatorByAnnotation(annotation)
+                evaluator = EvaluatorByAnnotation(annotation, homo_mat)
                 evaluator.evaluate(detection)
 
                 result['ev_ano_msk'] = evaluator.get_mask_results()
@@ -80,7 +91,7 @@ class Runner:
 
             if config.ev_ver_mask or config.ev_ver_regions:
                 image_ref, results = Detector.load_results_by_pattern(
-                    config.dir_source / 'verasref', file.get_verification_pattern()
+                    config.dir_source / 'VerificationReferences', file.get_verification_pattern()
                 )
                 evaluator = EvaluatorByVerification(image_ref, results)
                 evaluator.evaluate(detection)

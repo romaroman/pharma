@@ -17,8 +17,14 @@ logger = logging.getLogger('aligner')
 class Aligner:
 
     @classmethod
-    def align_with_reference(cls, image_to_warp: np.ndarray, image_ref: np.ndarray) -> np.ndarray:
-        homo_mat = utils.find_homography_matrix(utils.to_gray(image_to_warp), utils.to_gray(image_ref))
+    def align_with_reference(
+            cls,
+            image_to_warp: np.ndarray,
+            image_ref: np.ndarray,
+            homo_mat: Union[None, np.ndarray] = None
+    ) -> np.ndarray:
+        if homo_mat is None:
+            homo_mat = utils.find_homography_matrix(utils.to_gray(image_to_warp), utils.to_gray(image_ref))
         return cv.warpPerspective(image_to_warp, homo_mat, utils.swap_dimensions(image_ref.shape))
 
     @classmethod
@@ -84,14 +90,19 @@ class Aligner:
         return image_result
 
     @classmethod
-    def align(cls, image_input: np.ndarray, image_ref: Union[None, np.ndarray] = None) -> np.ndarray:
-        if config.det_alignment_method is AlignmentMethod.Reference:
+    def align(
+            cls,
+            image_input: np.ndarray,
+            image_ref: Union[None, np.ndarray] = None,
+            homo_mat: Union[None, np.ndarray] = None
+    ) -> np.ndarray:
+        if config.alignment_method is AlignmentMethod.Reference:
             if image_ref is not None:
-                image_aligned = cls.align_with_reference(image_input, image_ref)
+                image_aligned = cls.align_with_reference(image_input, image_ref, homo_mat)
             else:
                 logger.warning('Cannot align image without reference')
                 raise ValueError
-        elif config.det_alignment_method is AlignmentMethod.ToCorners:
+        elif config.alignment_method is AlignmentMethod.ToCorners:
             image_aligned = cls.align_to_corners(image_input)
         else:
             image_aligned = np.copy(image_input)

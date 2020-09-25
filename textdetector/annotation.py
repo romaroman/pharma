@@ -12,6 +12,7 @@ import pandas as pd
 
 from enums import AnnotationLabel
 
+import config
 import utils
 
 
@@ -290,10 +291,8 @@ class Annotation:
         ]
 
     @staticmethod
-    def load_annotation_by_pattern(root_folder: Path, pattern: Pattern) -> 'Annotation':
-        src_folder = root_folder / "annotations"
-
-        for annotation_file in src_folder.glob("*.xml"):
+    def load_annotation_by_pattern(pattern: Pattern) -> 'Annotation':
+        for annotation_file in (config.dir_source / 'Annotations').glob("*.xml"):
             if pattern.search(str(annotation_file)):
                 return Annotation(annotation_file)
         else:
