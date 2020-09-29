@@ -311,6 +311,7 @@ class DetectionResult:
                 rows_indexes = np.where(reduced_pixels_amount == most_frequent_length)
                 mean_index = np.mean(rows_indexes)
                 actual_index = (np.abs(reduced_pixels_amount - mean_index)).argmin()
+
                 return reduced_pixels_amount[actual_index]
 
             get_row_or_column(image_contour_mask_ones, 0)
@@ -320,7 +321,6 @@ class DetectionResult:
 
             image_rgb[image_mask_to_fill] = mean
             return image_rgb
-
 
     def __init__(self, image_input: np.ndarray) -> NoReturn:
         self.image_input = morph.mscale(image_input, down=False)
