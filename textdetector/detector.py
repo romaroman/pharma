@@ -178,7 +178,7 @@ class Detector:
 
         def add_text(image: np.ndarray, text: str) -> np.ndarray:
             return cv.putText(
-                img=np.copy(image), text=text, org=morph.mscale((30, 30)),
+                img=np.copy(image), text=text, org=(30, 30),
                 fontFace=cv.FONT_HERSHEY_COMPLEX, fontScale=2, color=(0, 255, 0), thickness=1
             )
 
@@ -295,6 +295,32 @@ class DetectionResult:
                 filled: bool = True
         ) -> np.ndarray:
             return cv.drawContours(image, [self.polygon], -1, color, -1 if filled else 2)
+
+        def as_nn_input(self, image_to_crop: np.ndarray) -> np.ndarray:
+            image_rgb = self.crop_image(image_to_crop)
+            image_gray = utils.to_gray(image_rgb)
+
+            image_mask_to_fill = np.all(image_rgb == [0, 0, 0], axis=-1)
+            image_contour_mask_ones = (~image_mask_to_fill).astype(np.uint8)
+            image_contour_mask = cv.bitwise_not(image_mask_to_fill.astype(np.uint8) * 255)
+            contour = cv.findContours(image_contour_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0][0]
+
+            def get_row_or_column(img, axis):
+                reduced_pixels_amount = cv.reduce(img.astype(np.float32), axis, cv.REDUCE_SUM).reshape(-1).astype(np.int32)
+                most_frequent_length = np.argmax(np.bincount(reduced_pixels_amount))
+                rows_indexes = np.where(reduced_pixels_amount == most_frequent_length)
+                mean_index = np.mean(rows_indexes)
+                actual_index = (np.abs(reduced_pixels_amount - mean_index)).argmin()
+                return reduced_pixels_amount[actual_index]
+
+            get_row_or_column(image_contour_mask_ones, 0)
+            image_edge_mask = cv.drawContours(np.zeros_like(image_gray), [contour], -1, 255, 2)
+
+            mean = cv.mean(image_rgb, image_edge_mask)[:3]
+
+            image_rgb[image_mask_to_fill] = mean
+            return image_rgb
+
 
     def __init__(self, image_input: np.ndarray) -> NoReturn:
         self.image_input = morph.mscale(image_input, down=False)

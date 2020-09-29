@@ -45,7 +45,7 @@ Detection:
   ScaleFactor: 1
   Algorithms: [MSER, MorphologyIteration1, MorphologyIteration2, MajorVoting] # LineSegmentation
 
-  ApproximationMethodDefault: Hull
+  ApproximationMethodDefault: Contour
   ApproximationMethodsUsed: [Contour, Brect, Rrect, Hull]
 
   Write: [Images, Visualizations, JSON, CSV]

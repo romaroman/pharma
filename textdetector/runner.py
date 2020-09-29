@@ -75,7 +75,7 @@ class Runner:
             detection.detect(config.det_algorithms)
 
             # detection.save_results(config.dir_source / 'VerificationReferences')
-
+            utils.display(detection.results['MSER'].get_default_regions()[0].as_nn_input(detection.image_not_scaled))
             if config.det_write:
                 writer.save_detection_results(detection, file.filename)
 

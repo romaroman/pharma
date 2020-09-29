@@ -23,7 +23,7 @@ def run_textdetection() -> int:
     logger.info(f"Currently used configuration:\n{textdetector.config.confuse.dump()}")
     textdetector.Runner.process()
 
-    visualization.plot_all_classes(textdetector.config.dir_output / f"session_pd_{textdetector.config.timestamp}.csv")
+    # visualization.plot_all_classes(textdetector.config.dir_output / f"session_pd_{textdetector.config.timestamp}.csv")
 
     return sys.exit(0)
 
@@ -36,5 +36,5 @@ def run_simclr() -> int:
 
 
 if __name__ == '__main__':
-    run_simclr()
-    # run_textdetection()
+    # run_simclr()
+    run_textdetection()

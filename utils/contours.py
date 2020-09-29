@@ -1,7 +1,7 @@
 import cv2 as cv
 import numpy as np
 
-from .convert import to_tuple
+from convert import to_tuple
 
 
 def approximate_contour(contour: np.ndarray, epsilon: float = 0.01) -> np.ndarray:
@@ -42,3 +42,17 @@ def contour_intersect(contour_ref: np.ndarray, contour_ver: np.ndarray, edges_on
 
 def perspective_transform_contour(contour: np.ndarray, homo: np.ndarray) -> np.ndarray:
     return cv.perspectiveTransform(contour.astype(np.float32), homo).astype(np.int32)
+
+
+def scale_contour(contour: np.ndarray, ratio: float) -> np.ndarray:
+    M = cv.moments(contour)
+    cx = int(M['m10'] / M['m00'])
+    cy = int(M['m01'] / M['m00'])
+
+    cnt_norm = contour - [cx, cy]
+
+    contour_scaled = cnt_norm * ratio
+    contour_scaled = contour_scaled + [cx, cy]
+    contour_scaled = contour_scaled.astype(np.int32)
+
+    return contour_scaled
