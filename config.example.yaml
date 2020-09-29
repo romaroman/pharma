@@ -62,3 +62,28 @@ Evaluation:
 ExtractReference:
   Used: False
   Write: True
+
+SimCLR:
+  BatchSize: 512
+  Epochs: 80
+
+  LogEveryNSteps: 50
+  EvalEveryNEpochs: 1
+
+  FineTuneFrom: None
+  WeightDecay: 10e-6
+  FP16Precision: False
+
+  Model:
+    OutDim: 128
+    BaseModel: "resnet18"
+
+  Dataset:
+    S: 1
+    InputShape: (32,32,3)
+    NumWorkers: 0
+    ValidSize: 0.05
+
+  Loss:
+    Temperature: 0.5
+    UseCosineSimilarity: True

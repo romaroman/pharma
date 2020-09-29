@@ -1,6 +1,7 @@
 import sys
 import logging
 
+import nnmodels
 import textdetector
 import visualization
 import utils
@@ -9,7 +10,7 @@ import utils
 logger = logging.getLogger('textdetector')
 
 
-def main() -> int:
+def run_textdetection() -> int:
     textdetector.writer.prepare_output_folder()
 
     utils.setup_logger(
@@ -27,5 +28,13 @@ def main() -> int:
     return sys.exit(0)
 
 
+def run_simclr() -> int:
+    dataset = nnmodels.simclr.Wrapper()
+    simclr = nnmodels.simclr.SimCLR(dataset)
+    simclr.train()
+    return sys.exit(0)
+
+
 if __name__ == '__main__':
-    main()
+    run_simclr()
+    # run_textdetection()
