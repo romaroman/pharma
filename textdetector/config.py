@@ -13,7 +13,7 @@ logger = logging.getLogger('config')
 
 
 timestamp = utils.get_str_timestamp()
-confuse = confuse.Configuration('_', __name__)
+confuse = confuse.Configuration('_', 'textdetector')
 confuse.set_file('config.yaml')
 
 mode: Mode = Mode[confuse['Mode'].as_str()]

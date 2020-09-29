@@ -43,12 +43,16 @@ class Runner:
             for chunk in chunks:
                 results = [cls._process_single_file(file) for file in chunk]
                 collector.add_results(results)
+                collector.dump()
+
         else:
             for chunk in chunks:
                 with Pool(processes=config.mlt_cpus) as pool:
                     results = pool.map(cls._process_single_file, chunk)
                     pool.close()
                     collector.add_results(results)
+                    collector.dump()
+
         collector.dump()
 
     @classmethod

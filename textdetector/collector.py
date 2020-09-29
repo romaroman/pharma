@@ -14,7 +14,7 @@ class Collector:
         dict_combined = dict()
 
         for key_general, dict_result in result.items():
-            dict_result_general = {}
+            dict_result_general = dict()
             for key_short, value in dict_result.items():
                 dict_result_general[f"{key_general}_{key_short}"] = value
 
@@ -29,6 +29,7 @@ class Collector:
     def dump(self) -> NoReturn:
         df_file = f"session_pd_{config.timestamp}.csv"
         dst_path = config.dir_output / df_file
+
         if dst_path.exists():
             pd.concat([pd.read_csv(df_file, index_col=None), self.storage]).to_csv(df_file, index=False)
         else:

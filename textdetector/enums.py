@@ -93,7 +93,7 @@ class EvalMetric(utils.CustomEnum):
     F1Score = "F1S"
 
     @classmethod
-    def get_essential(cls):
+    def get_essential_metrics(cls) -> List['EvalMetric']:
         return [
             cls.IntersectionOverUnion,
             cls.TruePositiveRate, cls.FalsePositiveRate, cls.TrueNegativeRate, cls.FalseNegativeRate,

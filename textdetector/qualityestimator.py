@@ -149,7 +149,7 @@ class QualityEstimator:
             'is_glared': self.is_glared,
         }
 
-        dict_result = {}
+        dict_result = dict()
         if config.qe_blur:
             dict_result.update(dict_blur)
         if config.qe_glares:
