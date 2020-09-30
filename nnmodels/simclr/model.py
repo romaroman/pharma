@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+import logging
 
 import numpy as np
 
@@ -13,37 +14,38 @@ from ntxent import NTXentLoss
 from resnet import ResNetSimCLR
 
 
+logger = logging.getLogger('SimCLR | model')
+torch.manual_seed(0)
+
 apex_support = False
 try:
     sys.path.append('./apex')
     from apex import amp
 
     apex_support = True
-except:
-    print("Please install apex for mixed precision training from: https://github.com/NVIDIA/apex")
+except ImportError:
+    logger.warning("Please install apex for mixed precision training from: https://github.com/NVIDIA/apex")
     apex_support = False
-
-
-torch.manual_seed(0)
 
 
 def _save_config_file(model_checkpoints_folder):
     if not os.path.exists(model_checkpoints_folder):
         os.makedirs(model_checkpoints_folder)
-        shutil.copy('../../config.yaml', os.path.join(model_checkpoints_folder, 'config.yaml'))
+        shutil.copy('config.yaml', os.path.join(model_checkpoints_folder, 'config.yaml'))
 
 
 class SimCLR(object):
 
     def __init__(self, dataset):
-        self.device = self._get_device()
+        self.device = self.get_device()
         self.writer = SummaryWriter()
         self.dataset = dataset
         self.nt_xent_criterion = NTXentLoss(self.device)
 
-    def _get_device(self):
+    @classmethod
+    def get_device(cls):
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        print("Running on:", device)
+        logger.info("Running on:", device.capitalize())
         return device
 
     def _step(self, model, xis, xjs, n_iter):
@@ -66,7 +68,7 @@ class SimCLR(object):
         train_loader, valid_loader = self.dataset.get_data_loaders()
 
         model = ResNetSimCLR().to(self.device)
-        model = self._load_pre_trained_weights(model)
+        model = self.load_pre_trained_weights(model)
 
         optimizer = torch.optim.Adam(model.parameters(), 3e-4, weight_decay=config.weight_decay)
 
@@ -124,20 +126,19 @@ class SimCLR(object):
                 scheduler.step()
             self.writer.add_scalar('cosine_lr_decay', scheduler.get_lr()[0], global_step=n_iter)
 
-    def _load_pre_trained_weights(self, model):
+    @classmethod
+    def load_pre_trained_weights(cls, model):
         try:
             checkpoints_folder = os.path.join('./runs', str(config.fine_tune_from), 'checkpoints')
             state_dict = torch.load(os.path.join(checkpoints_folder, 'model.pth'))
             model.load_state_dict(state_dict)
-            print("Loaded pre-trained model with success.")
+            logger.info("Loaded pre-trained model with success.")
         except FileNotFoundError:
-            print("Pre-trained weights not found. Training from scratch.")
+            logger.info("Pre-trained weights not found. Training from scratch.")
 
         return model
 
     def _validate(self, model, valid_loader):
-
-        # validation steps
         with torch.no_grad():
             model.eval()
 

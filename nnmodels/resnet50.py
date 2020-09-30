@@ -1,8 +1,9 @@
-import argparse
 import os
+import time
+import logging
 import random
 import shutil
-import time
+import argparse
 import warnings
 
 import torch
@@ -17,6 +18,9 @@ import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
+
+
+logger = logging.getLogger("ResNet 50")
 
 
 model_names = sorted(name for name in models.__dict__
@@ -118,7 +122,7 @@ def main_worker(gpu, ngpus_per_node, args):
     args.gpu = gpu
 
     if args.gpu is not None:
-        print("Use GPU: {} for training".format(args.gpu))
+        logger.info("Use GPU: {} for training".format(args.gpu))
 
     if args.distributed:
         if args.dist_url == "env://" and args.rank == -1:
@@ -131,14 +135,14 @@ def main_worker(gpu, ngpus_per_node, args):
                                 world_size=args.world_size, rank=args.rank)
     # create model
     if args.pretrained:
-        print("=> using pre-trained model '{}'".format(args.arch))
+        logger.info("=> using pre-trained model '{}'".format(args.arch))
         model = models.__dict__[args.arch](pretrained=True)
     else:
-        print("=> creating model '{}'".format(args.arch))
+        logger.info("=> creating model '{}'".format(args.arch))
         model = models.__dict__[args.arch]()
 
     if not torch.cuda.is_available():
-        print('using CPU, this will be slow')
+        logger.info('using CPU, this will be slow')
     elif args.distributed:
         # For multiprocessing distributed, DistributedDataParallel constructor
         # should always set the single device scope, otherwise,
@@ -178,7 +182,7 @@ def main_worker(gpu, ngpus_per_node, args):
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}'".format(args.resume))
+            logger.info("=> loading checkpoint '{}'".format(args.resume))
             if args.gpu is None:
                 checkpoint = torch.load(args.resume)
             else:
@@ -192,10 +196,10 @@ def main_worker(gpu, ngpus_per_node, args):
                 best_acc1 = best_acc1.to(args.gpu)
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
-            print("=> loaded checkpoint '{}' (epoch {})"
+            logger.info("=> loaded checkpoint '{}' (epoch {})"
                   .format(args.resume, checkpoint['epoch']))
         else:
-            print("=> no checkpoint found at '{}'".format(args.resume))
+            logger.info("=> no checkpoint found at '{}'".format(args.resume))
 
     cudnn.benchmark = True
 
@@ -349,7 +353,7 @@ def validate(val_loader, model, criterion, args):
                 progress.display(i)
 
         # TODO: this should also be done with the ProgressMeter
-        print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
+        logger.info(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
               .format(top1=top1, top5=top5))
 
     return top1.avg
@@ -366,7 +370,11 @@ class AverageMeter(object):
     def __init__(self, name, fmt=':f'):
         self.name = name
         self.fmt = fmt
-        self.reset()
+
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
 
     def reset(self):
         self.val = 0
@@ -394,7 +402,7 @@ class ProgressMeter(object):
     def display(self, batch):
         entries = [self.prefix + self.batch_fmtstr.format(batch)]
         entries += [str(meter) for meter in self.meters]
-        print('\t'.join(entries))
+        logger.info('\t'.join(entries))
 
     def _get_batch_fmtstr(self, num_batches):
         num_digits = len(str(num_batches // 1))

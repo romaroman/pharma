@@ -65,9 +65,9 @@ ExtractReference:
 
 SimCLR:
   BatchSize: 512
-  Epochs: 80
+  Epochs: 100
 
-  LogEveryNSteps: 50
+  LogEveryNSteps: 25
   EvalEveryNEpochs: 1
 
   FineTuneFrom: None
@@ -75,12 +75,12 @@ SimCLR:
   FP16Precision: False
 
   Model:
-    OutDim: 128
-    BaseModel: "resnet18"
+    OutDim: 512
+    BaseModel: "resnet50"
 
   Dataset:
     S: 1
-    InputShape: (32,32,3)
+    InputShape: (256, 256, 3)
     NumWorkers: 0
     ValidSize: 0.05
 

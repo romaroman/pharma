@@ -1,8 +1,13 @@
+import logging
+
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 
 import simclr.config as config
+
+
+logger = logging.getLogger('SimCLR | ResNet')
 
 
 class ResNetSimCLR(nn.Module):
@@ -24,7 +29,7 @@ class ResNetSimCLR(nn.Module):
     def _get_basemodel(self, model_name):
         try:
             model = self.resnet_dict[model_name]
-            print("Feature extractor:", model_name)
+            logger.info("Feature extractor:", model_name)
             return model
         except:
             raise ("Invalid model name. Check the config file and pass one of: resnet18 or resnet50")
