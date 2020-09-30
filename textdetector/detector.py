@@ -175,17 +175,11 @@ class Detector:
         return self.visualization
 
     def _create_visualization(self) -> NoReturn:
-
-        def add_text(image: np.ndarray, text: str) -> np.ndarray:
-            return cv.putText(
-                img=np.copy(image), text=text, org=(30, 30),
-                fontFace=cv.FONT_HERSHEY_COMPLEX, fontScale=2, color=(0, 255, 0), thickness=1
-            )
-
         images = [self.image_not_scaled]
+
         if self.results:
             for algorithm, result in self.results.items():
-                images.append(add_text(result.get_default_visualization(self.image_not_scaled), algorithm))
+                images.append(utils.add_text(result.get_default_visualization(self.image_not_scaled), algorithm))
 
         for i, image in enumerate(images):
             if len(image.shape) != 3:
@@ -298,14 +292,32 @@ class DetectionResult:
 
         def as_nn_input(self, image_to_crop: np.ndarray) -> np.ndarray:
             image_rgb = self.crop_image(image_to_crop)
-            image_gray = utils.to_gray(image_rgb)
+            dst_size = 256
+            biggest_side = max(image_rgb.shape)
 
-            image_mask_to_fill = np.all(image_rgb == [0, 0, 0], axis=-1)
+            is_h_bigger = biggest_side == image_rgb.shape[0]
+            image_rgb = utils.scale_image(image_rgb, 1 / (biggest_side / dst_size))
+
+            image_rgb = image_rgb[:dst_size, :dst_size, :]
+            h, w, c = image_rgb.shape
+
+            image_rgb_centered = np.zeros((dst_size, dst_size, c), dtype=np.uint8)
+            if is_h_bigger:
+                diff = (dst_size - w) // 2
+                image_rgb_centered[:h, diff:w + diff, :] = image_rgb
+            else:
+                diff = (dst_size - h) // 2
+                image_rgb_centered[diff:h + diff, :w, :] = image_rgb
+
+            image_gray = utils.to_gray(image_rgb_centered)
+
+            image_mask_to_fill = np.all(image_rgb_centered == [0, 0, 0], axis=-1)
             image_contour_mask_ones = (~image_mask_to_fill).astype(np.uint8)
             image_contour_mask = cv.bitwise_not(image_mask_to_fill.astype(np.uint8) * 255)
             contour = cv.findContours(image_contour_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0][0]
+            image_edge_mask = cv.drawContours(np.zeros_like(image_gray), [contour], -1, 255, 2)
 
-            def get_row_or_column(img, axis):
+            def get_row_or_col_index_with_most_of_nonblack_pixels(img, axis):
                 reduced_pixels_amount = cv.reduce(img.astype(np.float32), axis, cv.REDUCE_SUM).reshape(-1).astype(np.int32)
                 most_frequent_length = np.argmax(np.bincount(reduced_pixels_amount))
                 rows_indexes = np.where(reduced_pixels_amount == most_frequent_length)
@@ -314,13 +326,35 @@ class DetectionResult:
 
                 return reduced_pixels_amount[actual_index]
 
-            get_row_or_column(image_contour_mask_ones, 0)
-            image_edge_mask = cv.drawContours(np.zeros_like(image_gray), [contour], -1, 255, 2)
+            row_idx = get_row_or_col_index_with_most_of_nonblack_pixels(image_contour_mask_ones, 0)
+            col_idx = get_row_or_col_index_with_most_of_nonblack_pixels(image_contour_mask_ones, 1)
 
-            mean = cv.mean(image_rgb, image_edge_mask)[:3]
+            h, w = image_gray.shape
 
-            image_rgb[image_mask_to_fill] = mean
-            return image_rgb
+            row_mean = cv.mean(image_gray[h // 2 - 4:h // 2 + 4, row_idx])[0]
+            col_mean = cv.mean(image_gray[col_idx, w // 2 - 4:w // 2 + 4])[0]
+
+            mean_edge = int(cv.mean(image_gray, image_edge_mask)[0])
+            mean_center = int(cv.mean(image_gray[120:130, 120:130])[0])
+            mean_all = int(cv.mean(image_gray, image_contour_mask_ones)[0])
+
+            image_filled_colrow = np.copy(image_rgb_centered)
+            image_filled_colrow[image_mask_to_fill] = int(row_mean + col_mean) / 2
+            image_filled_colrow = utils.add_text(image_filled_colrow, "COL&ROW", scale=1)
+
+            image_filled_edge = np.copy(image_rgb_centered)
+            image_filled_edge[image_mask_to_fill] = mean_edge
+            image_filled_edge = utils.add_text(image_filled_edge, "EDGE", scale=1)
+
+            image_filled_center = np.copy(image_rgb_centered)
+            image_filled_center[image_mask_to_fill] = mean_center
+            image_filled_center = utils.add_text(image_filled_center, "CENTER", scale=1)
+
+            image_filled_all = np.copy(image_rgb_centered)
+            image_filled_all[image_mask_to_fill] = mean_all
+            image_filled_all = utils.add_text(image_filled_all, "ALL", scale=1)
+
+            return utils.combine_images([image_filled_colrow, image_filled_edge, image_filled_center, image_filled_all])
 
     def __init__(self, image_input: np.ndarray) -> NoReturn:
         self.image_input = morph.mscale(image_input, down=False)

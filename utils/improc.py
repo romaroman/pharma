@@ -5,10 +5,10 @@ import numpy as np
 
 try:
     sift = cv.SIFT.create()
-    mser = cv.MSER.create()
+    mser = cv.MSER.create(_max_area=int(10e3), _min_area=50, _max_variation=0.3, _min_diversity=0.1)
 except:
     sift = cv.x2features.SIFT_create()
-    mser = cv.x2features.MSER_create()
+    mser = cv.x2features.MSER_create(_max_area=10e3, _min_area=50, _max_variation=0.3, _min_diversity=0.1)
 
 
 def to_rgb(image_1c: np.ndarray) -> np.ndarray:
@@ -97,7 +97,7 @@ def apply_watershed(image_rgb: np.ndarray, image_bw: np.ndarray) -> np.ndarray:
 def MSER(image_gray: np.ndarray) -> np.ndarray:
     global mser
 
-    regions, _ = mser.detectRegions(image_gray)
+    regions, boxes = mser.detectRegions(image_gray)
     hulls = [cv.convexHull(r.reshape(-1, 1, 2)) for r in regions]
     mask = cv.drawContours(np.zeros_like(image_gray), hulls, -1, 255, -1)
 

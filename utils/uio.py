@@ -166,3 +166,10 @@ def get_str_timestamp() -> str:
 
 def create_parent_dirs(path: Path) -> NoReturn:
     os.makedirs(str(path.parent.resolve()), exist_ok=True)
+
+
+def add_text(image: np.ndarray, text: str, scale: int = 2) -> np.ndarray:
+    return cv.putText(
+        img=np.copy(image), text=text, org=(25, 25),
+        fontFace=cv.FONT_HERSHEY_COMPLEX, fontScale=scale, color=(0, 255, 0), thickness=2
+    )
