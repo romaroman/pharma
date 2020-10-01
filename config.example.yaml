@@ -87,3 +87,4 @@ SimCLR:
   Loss:
     Temperature: 0.5
     UseCosineSimilarity: True
+
