@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 import config
+import utils
 
 from detector import Detector
 from referencer import Referencer
@@ -56,7 +57,7 @@ def save_detection_results(detection: Detector, filename: str) -> NoReturn:
             for index, region in enumerate(result.regions[method], start=1):
                 write_image_region(
                     region.crop_image(detection.image_not_scaled),
-                    f"{common_part}/parts", filename, str(index).zfill(4)
+                    f"{common_part}/parts", filename, utils.zfill_n(index)
                 )
 
 
@@ -92,3 +93,18 @@ def update_session_with_pd(results: List[Dict[str, Any]]) -> NoReturn:
         df = df.append(pd.Series(dict_combined), ignore_index=True)
 
     df.to_csv(config.dir_output / df_file, index=False)
+
+
+def write_nn_inputs(detection: Detector, unique_identifier: str) -> NoReturn:
+    for algorithm, result in detection.results.items():
+
+        parent_folder = config.dir_output / 'NN' / algorithm / unique_identifier
+
+        if parent_folder.exists():
+            start = int([file for file in parent_folder.glob('*')][-1].stem)
+        else:
+            start = 1
+            utils.create_dirs(parent_folder)
+
+        for index, region in enumerate(result.get_default_regions(), start):
+            cv.imwrite(str(parent_folder / f"{utils.zfill_n(index)}.png"), region.as_nn_input(detection.image_not_scaled))

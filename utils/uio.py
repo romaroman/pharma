@@ -164,8 +164,8 @@ def get_str_timestamp() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
 
 
-def create_parent_dirs(path: Path) -> NoReturn:
-    os.makedirs(str(path.parent.resolve()), exist_ok=True)
+def create_dirs(path: Path) -> NoReturn:
+    os.makedirs(str(path.resolve()), exist_ok=True)
 
 
 def add_text(image: np.ndarray, text: str, scale: int = 2) -> np.ndarray:
@@ -173,3 +173,7 @@ def add_text(image: np.ndarray, text: str, scale: int = 2) -> np.ndarray:
         img=np.copy(image), text=text, org=(25, 25),
         fontFace=cv.FONT_HERSHEY_COMPLEX, fontScale=scale, color=(0, 255, 0), thickness=2
     )
+
+
+def zfill_n(number: Union[int, float], zeroes_amount: int = 4) -> str:
+    return str(number).zfill(zeroes_amount)

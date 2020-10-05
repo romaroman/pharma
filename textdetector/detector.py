@@ -294,24 +294,33 @@ class DetectionResult:
             image_rgb = self.crop_image(image_to_crop)
             dst_size = 256
             biggest_side = max(image_rgb.shape)
-
             is_h_bigger = biggest_side == image_rgb.shape[0]
-            image_rgb = utils.scale_image(image_rgb, 1 / (biggest_side / dst_size))
 
-            image_rgb = image_rgb[:dst_size, :dst_size, :]
-            h, w, c = image_rgb.shape
-
-            image_rgb_centered = np.zeros((dst_size, dst_size, c), dtype=np.uint8)
-            if is_h_bigger:
-                diff = (dst_size - w) // 2
-                image_rgb_centered[:h, diff:w + diff, :] = image_rgb
+            if biggest_side > dst_size:
+                image_rgb = utils.scale_image(image_rgb, 1 / (biggest_side / dst_size))
+                image_rgb = image_rgb[:dst_size, :dst_size, :]
             else:
-                diff = (dst_size - h) // 2
-                image_rgb_centered[diff:h + diff, :w, :] = image_rgb
+                pass
+            h, w, _ = image_rgb.shape
+
+            image_rgb_centered = np.zeros((dst_size, dst_size, 3), dtype=np.uint8)
+            if max(image_rgb.shape) == dst_size:
+                if is_h_bigger:
+                    diff = (dst_size - w) // 2
+                    image_rgb_centered[:h, diff:w + diff, :] = image_rgb
+                else:
+                    diff = (dst_size - h) // 2
+                    image_rgb_centered[diff:h + diff, :w, :] = image_rgb
+            else:
+                diffw = (dst_size - w) // 2
+                diffh = (dst_size - h) // 2
+
+                image_rgb_centered[diffh:h + diffh, diffw:w + diffw, :] = image_rgb
 
             image_gray = utils.to_gray(image_rgb_centered)
 
             image_mask_to_fill = np.all(image_rgb_centered == [0, 0, 0], axis=-1)
+            image_mask_to_fill = cv.dilate(image_mask_to_fill.astype(np.uint8) * 255, np.ones((3, 3))).astype(np.bool)
             image_contour_mask_ones = (~image_mask_to_fill).astype(np.uint8)
             image_contour_mask = cv.bitwise_not(image_mask_to_fill.astype(np.uint8) * 255)
             contour = cv.findContours(image_contour_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0][0]
@@ -338,23 +347,27 @@ class DetectionResult:
             mean_center = int(cv.mean(image_gray[120:130, 120:130])[0])
             mean_all = int(cv.mean(image_gray, image_contour_mask_ones)[0])
 
+            stddev = cv.meanStdDev(image_gray, mask=image_contour_mask_ones)[1][0][0]
+
             image_filled_colrow = np.copy(image_rgb_centered)
-            image_filled_colrow[image_mask_to_fill] = int(row_mean + col_mean) / 2
-            image_filled_colrow = utils.add_text(image_filled_colrow, "COL&ROW", scale=1)
+            image_filled_colrow[image_mask_to_fill] = mean_all
+            # image_filled_colrow = utils.add_text(image_filled_colrow, f"STDDEV: {stddev:.2f}", scale=1)
 
-            image_filled_edge = np.copy(image_rgb_centered)
-            image_filled_edge[image_mask_to_fill] = mean_edge
-            image_filled_edge = utils.add_text(image_filled_edge, "EDGE", scale=1)
+            # image_filled_edge = np.copy(image_rgb_centered)
+            # image_filled_edge[image_mask_to_fill] = mean_edge
+            # image_filled_edge = utils.add_text(image_filled_edge, "EDGE", scale=1)
+            #
+            # image_filled_center = np.copy(image_rgb_centered)
+            # image_filled_center[image_mask_to_fill] = mean_center
+            # image_filled_center = utils.add_text(image_filled_center, "CENTER", scale=1)
+            #
+            # image_filled_all = np.copy(image_rgb_centered)
+            # image_filled_all[image_mask_to_fill] = mean_all
+            # image_filled_all = utils.add_text(image_filled_all, "ALL", scale=1)
+            #
+            # return utils.combine_images([image_filled_colrow, image_filled_edge, image_filled_center, image_filled_all])
 
-            image_filled_center = np.copy(image_rgb_centered)
-            image_filled_center[image_mask_to_fill] = mean_center
-            image_filled_center = utils.add_text(image_filled_center, "CENTER", scale=1)
-
-            image_filled_all = np.copy(image_rgb_centered)
-            image_filled_all[image_mask_to_fill] = mean_all
-            image_filled_all = utils.add_text(image_filled_all, "ALL", scale=1)
-
-            return utils.combine_images([image_filled_colrow, image_filled_edge, image_filled_center, image_filled_all])
+            return image_filled_colrow
 
     def __init__(self, image_input: np.ndarray) -> NoReturn:
         self.image_input = morph.mscale(image_input, down=False)
@@ -368,9 +381,18 @@ class DetectionResult:
 
     def find_regions(self, method: ApproximationMethod) -> List['Region']:
         contours, _ = cv.findContours(self.image_input, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-        contours = list(filter(lambda c: cv.contourArea(c) > morph.mscale(5) ** 2, contours))
+
+        def is_contour_valid(contour: np.ndarray) -> bool:
+            try:
+                area = cv.contourArea(contour)
+                dims = cv.minAreaRect(contour)[1]
+                ratio = max(dims) / min(dims)
+                return area > morph.mscale(8) ** 2 and ratio < 15
+            except:
+                return False
+
         return sorted(
-            [self.Region(contour, method) for contour in contours],
+            [self.Region(contour, method) for contour in filter(is_contour_valid, contours)],
             key=lambda r: cv.contourArea(r.polygon),
             reverse=True
         )

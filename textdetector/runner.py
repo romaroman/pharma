@@ -9,7 +9,6 @@ import cv2 as cv
 import config
 import utils
 import writer
-from enums import AlignmentMethod
 
 from loader import Loader
 from aligner import Aligner
@@ -37,7 +36,7 @@ class Runner:
 
         logger.info(f"Preparing to process {len(loader.image_files)} images "
                     f"split on {chunks_amount} chunks "
-                    f"{f'via {config.mlt_cpus} threads' if not config.is_debug() else ''}...\n")
+                    f"{f'via {config.mlt_threads} threads' if not config.is_debug() else ''}...\n")
 
         if not config.mlt_used:
             for chunk in chunks:
@@ -47,7 +46,7 @@ class Runner:
 
         else:
             for chunk in chunks:
-                with Pool(processes=config.mlt_cpus) as pool:
+                with Pool(processes=config.mlt_threads) as pool:
                     results = pool.map(cls._process_single_file, chunk)
                     pool.close()
                     collector.add_results(results)
@@ -74,8 +73,13 @@ class Runner:
             detection = Detector(image_aligned)
             detection.detect(config.det_algorithms)
 
-            # detection.save_results(config.dir_source / 'VerificationReferences')
-            utils.display(detection.results['MSER'].get_default_regions()[0].as_nn_input(detection.image_not_scaled))
+            writer.write_nn_inputs(detection, file.get_unique_identifier())
+            return
+            # return
+
+            detection.save_results(config.dir_source / 'VerificationReferences' / file.filename)
+            # utils.display(detection.results['MI1'].get_default_regions()[0].as_nn_input(detection.image_not_scaled))
+            return
             if config.det_write:
                 writer.save_detection_results(detection, file.filename)
 
@@ -120,6 +124,5 @@ class Runner:
                 'idx': counter.value,
             })
 
-            logger.info(f"#{str(counter.value).zfill(6)} | "
-                        f"{result['ses']['status'].upper()} | {file.filename}")
+            logger.info(f"#{utils.zfill_n(counter.value, 6)} | {result['ses']['status'].upper()} | {file.filename}")
             return result

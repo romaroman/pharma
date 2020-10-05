@@ -27,9 +27,9 @@ out_log_level: int = getattr(logging, confuse['Output']['LogLevel'].as_str())
 out_profile: bool = confuse['Output']['Profile'].get()
 
 mlt_used: bool = confuse['Multithreading']['Used'].get()
-mlt_cpus: int = confuse['Multithreading']['CPUs'].get()
-if type(mlt_cpus) is str:
-    mlt_cpus = cpu_count() - 2
+mlt_threads: int = confuse['Multithreading']['Threads'].get()
+if type(mlt_threads) is str:
+    mlt_threads = cpu_count() - 2
 
 qe_raise: bool = confuse['QualityEstimation']['RaiseErrors'].get()
 qe_glares: bool = confuse['QualityEstimation']['GlaresUsed'].get()

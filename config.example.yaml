@@ -32,7 +32,7 @@ Output:
 
 Multithreading:
   Used: False
-  CPUs: 6
+  Threads: 6
 
 QualityEstimation:
   RaiseErrors: False
