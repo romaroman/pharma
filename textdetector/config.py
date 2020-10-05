@@ -20,7 +20,7 @@ mode: Mode = Mode[confuse['Mode'].as_str()]
 database: FileDatabase = FileDatabase[confuse['Database'].as_str()]
 
 dir_source: Path = confuse['Dirs']['SourceDir'].as_path()
-dir_output: Path = confuse['Dirs']['OutputDir'].as_path() / timestamp
+dir_output: Path = confuse['Dirs']['OutputDir'].as_path()
 
 out_clear_output_dir: bool = confuse['Output']['ClearOutputDir'].get()
 out_log_level: int = getattr(logging, confuse['Output']['LogLevel'].as_str())

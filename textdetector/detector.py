@@ -247,10 +247,9 @@ class Detector:
     @classmethod
     def load_results_by_pattern(
             cls,
-            root_folder: Path,
             pattern: Pattern
     ) -> Tuple[np.ndarray, Dict[str, 'DetectionResult']]:
-        for file in root_folder.glob("*"):
+        for file in (config.dir_source / 'VerificationReferences').glob("*"):
             if pattern.search(str(file)):
                 return cls.load_results(file)
         else:
@@ -322,9 +321,6 @@ class DetectionResult:
             image_mask_to_fill = np.all(image_rgb_centered == [0, 0, 0], axis=-1)
             image_mask_to_fill = cv.dilate(image_mask_to_fill.astype(np.uint8) * 255, np.ones((3, 3))).astype(np.bool)
             image_contour_mask_ones = (~image_mask_to_fill).astype(np.uint8)
-            image_contour_mask = cv.bitwise_not(image_mask_to_fill.astype(np.uint8) * 255)
-            contour = cv.findContours(image_contour_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0][0]
-            image_edge_mask = cv.drawContours(np.zeros_like(image_gray), [contour], -1, 255, 2)
 
             def get_row_or_col_index_with_most_of_nonblack_pixels(img, axis):
                 reduced_pixels_amount = cv.reduce(img.astype(np.float32), axis, cv.REDUCE_SUM).reshape(-1).astype(np.int32)
@@ -343,29 +339,8 @@ class DetectionResult:
             row_mean = cv.mean(image_gray[h // 2 - 4:h // 2 + 4, row_idx])[0]
             col_mean = cv.mean(image_gray[col_idx, w // 2 - 4:w // 2 + 4])[0]
 
-            mean_edge = int(cv.mean(image_gray, image_edge_mask)[0])
-            mean_center = int(cv.mean(image_gray[120:130, 120:130])[0])
-            mean_all = int(cv.mean(image_gray, image_contour_mask_ones)[0])
-
-            stddev = cv.meanStdDev(image_gray, mask=image_contour_mask_ones)[1][0][0]
-
             image_filled_colrow = np.copy(image_rgb_centered)
-            image_filled_colrow[image_mask_to_fill] = mean_all
-            # image_filled_colrow = utils.add_text(image_filled_colrow, f"STDDEV: {stddev:.2f}", scale=1)
-
-            # image_filled_edge = np.copy(image_rgb_centered)
-            # image_filled_edge[image_mask_to_fill] = mean_edge
-            # image_filled_edge = utils.add_text(image_filled_edge, "EDGE", scale=1)
-            #
-            # image_filled_center = np.copy(image_rgb_centered)
-            # image_filled_center[image_mask_to_fill] = mean_center
-            # image_filled_center = utils.add_text(image_filled_center, "CENTER", scale=1)
-            #
-            # image_filled_all = np.copy(image_rgb_centered)
-            # image_filled_all[image_mask_to_fill] = mean_all
-            # image_filled_all = utils.add_text(image_filled_all, "ALL", scale=1)
-            #
-            # return utils.combine_images([image_filled_colrow, image_filled_edge, image_filled_center, image_filled_all])
+            image_filled_colrow[image_mask_to_fill] = (row_mean + col_mean) // 2
 
             return image_filled_colrow
 

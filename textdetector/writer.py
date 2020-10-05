@@ -12,6 +12,7 @@ import config
 import utils
 
 from detector import Detector
+from fileinfo import FileInfo
 from referencer import Referencer
 
 
@@ -22,7 +23,7 @@ def write_entity(
         extension: str
 ) -> NoReturn:
     dst_folder = config.dir_output / folder_suffix
-    os.makedirs(str(dst_folder.resolve()), exist_ok=True)
+    utils.create_dirs(dst_folder)
     dst_path = str(dst_folder / Path(filename + f".{extension}"))
 
     if extension == "png":
@@ -37,10 +38,10 @@ def write_entity(
 
 def write_image_region(image: np.ndarray, folder_suffix: str, filename: str, order: str) -> NoReturn:
     dst_folder = config.dir_output / folder_suffix / filename
-    os.makedirs(str(dst_folder.resolve()), exist_ok=True)
-    dst_path = str(dst_folder / f"{order}.png")
+    utils.create_dirs(dst_folder)
+    dst_path = dst_folder / f"{order}.png"
 
-    cv.imwrite(dst_path, image)
+    cv.imwrite(str(dst_path), image)
 
 
 def write_json(data: Any, path: str) -> NoReturn:
@@ -48,20 +49,43 @@ def write_json(data: Any, path: str) -> NoReturn:
         json.dump(data, file, indent=2, sort_keys=True)
 
 
-def save_detection_results(detection: Detector, filename: str) -> NoReturn:
+def save_detection_results(detection: Detector, fileinfo: FileInfo) -> NoReturn:
+    if not config.det_write:
+        return
+
     for algorithm, result in detection.results.items():
         for method in result.masks.keys():
             common_part = f"{algorithm}/{method}"
-            write_entity(result.masks[method], f"{common_part}/masks", filename, "png")
+            if 'mask' in config.det_write:
+                write_entity(result.masks[method], f"{common_part}/masks", fileinfo.filename, "png")
 
-            for index, region in enumerate(result.regions[method], start=1):
-                write_image_region(
-                    region.crop_image(detection.image_not_scaled),
-                    f"{common_part}/parts", filename, utils.zfill_n(index)
+            if 'regions' in config.det_write:
+                for index, region in enumerate(result.regions[method], start=1):
+                    write_image_region(
+                        region.crop_image(detection.image_not_scaled),
+                        f"{common_part}/regions", fileinfo.filename, utils.zfill_n(index)
+                    )
+
+        if 'nn' in config.det_write:
+            parent_folder = config.dir_output / 'NN' / algorithm / fileinfo.get_unique_identifier()
+
+            if not parent_folder.exists():
+                utils.create_dirs(parent_folder)
+
+            for index, region in enumerate(result.get_default_regions(), start=1):
+                cv.imwrite(
+                    str(parent_folder / f"{fileinfo.filename}_{utils.zfill_n(index)}.png"),
+                    region.as_nn_input(detection.image_not_scaled)
                 )
+
+        if 'verref' in config.det_write:
+            detection.save_results(config.dir_source / 'VerificationReferences' / fileinfo.filename)
 
 
 def save_reference_results(referencer: Referencer, filename: str) -> NoReturn:
+    if not config.exr_write:
+        return
+
     for label, image in referencer.results.items():
         write_image_region(image, f"REF/parts", filename, label)
 
@@ -69,42 +93,4 @@ def save_reference_results(referencer: Referencer, filename: str) -> NoReturn:
 def prepare_output_folder() -> NoReturn:
     if config.out_clear_output_dir:
         shutil.rmtree(config.dir_output, ignore_errors=True)
-        os.makedirs(str(config.dir_output.resolve()), exist_ok=True)
-
-
-def update_session_with_pd(results: List[Dict[str, Any]]) -> NoReturn:
-    df_file = f"session_pd_{config.timestamp}.csv"
-
-    if os.path.exists(str(config.dir_output / df_file)):
-        df = pd.read_csv(config.dir_output / df_file, index_col=False)
-    else:
-        df = pd.DataFrame()
-
-    for result in results:
-        dict_combined = dict()
-
-        for key_general, dict_result in result.items():
-            dict_result_general = {}
-            for key_short, value in dict_result.items():
-                dict_result_general[f"{key_general}_{key_short}"] = value
-
-            dict_combined.update(dict_result_general)
-
-        df = df.append(pd.Series(dict_combined), ignore_index=True)
-
-    df.to_csv(config.dir_output / df_file, index=False)
-
-
-def write_nn_inputs(detection: Detector, unique_identifier: str) -> NoReturn:
-    for algorithm, result in detection.results.items():
-
-        parent_folder = config.dir_output / 'NN' / algorithm / unique_identifier
-
-        if parent_folder.exists():
-            start = int([file for file in parent_folder.glob('*')][-1].stem)
-        else:
-            start = 1
-            utils.create_dirs(parent_folder)
-
-        for index, region in enumerate(result.get_default_regions(), start):
-            cv.imwrite(str(parent_folder / f"{utils.zfill_n(index)}.png"), region.as_nn_input(detection.image_not_scaled))
+        utils.create_dirs(config.dir_output)

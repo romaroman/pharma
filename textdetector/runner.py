@@ -56,7 +56,7 @@ class Runner:
 
     @classmethod
     def _process_single_file(cls, file: Union[FileInfoEnrollment, FileInfoRecognition]) -> Dict[str, Any]:
-        result = {'ses': {'status': 'success'}, 'fi': file.to_dict()}
+        result = {'session': {'status': 'success'}, 'file_info': file.to_dict()}
 
         try:
             annotation = Annotation.load_annotation_by_pattern(file.get_annotation_pattern())
@@ -68,50 +68,38 @@ class Runner:
             if config.qe_blur or config.qe_glares:
                 qe = QualityEstimator()
                 qe.perform_estimation(image_aligned, annotation.image_ref, homo_mat)
-                result['qe'] = qe.to_dict()
+                result['quality_estimation'] = qe.to_dict()
 
             detection = Detector(image_aligned)
             detection.detect(config.det_algorithms)
 
-            writer.write_nn_inputs(detection, file.filename)
-            return
-            # return
-
-            detection.save_results(config.dir_source / 'VerificationReferences' / file.filename)
-            # utils.display(detection.results['MI1'].get_default_regions()[0].as_nn_input(detection.image_not_scaled))
-            return
-            if config.det_write:
-                writer.save_detection_results(detection, file.filename)
+            writer.save_detection_results(detection, file)
 
             if config.exr_used:
                 referencer = Referencer(image_aligned, annotation)
                 referencer.extract_reference_regions()
-
-                if config.exr_write:
-                    writer.save_reference_results(referencer, file.filename)
+                writer.save_reference_results(referencer, file.filename)
 
             if config.ev_ano_mask or config.ev_ano_regions:
                 evaluator = EvaluatorByAnnotation(annotation, homo_mat)
                 evaluator.evaluate(detection)
 
-                result['ev_ano_msk'] = evaluator.get_mask_results()
-                result['ev_ano_reg'] = evaluator.get_regions_results()
+                result['eval_annotation_mask'] = evaluator.get_mask_results()
+                result['eval_annotation_regions'] = evaluator.get_regions_results()
 
             if config.ev_ver_mask or config.ev_ver_regions:
-                image_ref, results = Detector.load_results_by_pattern(
-                    config.dir_source / 'VerificationReferences', file.get_verification_pattern()
-                )
+                image_ref, results = Detector.load_results_by_pattern(file.get_verification_pattern())
                 evaluator = EvaluatorByVerification(image_ref, results)
                 evaluator.evaluate(detection)
 
-                result['ev_ver_msk'] = evaluator.get_mask_results()
-                result['ev_ver_reg'] = evaluator.get_regions_results()
+                result['eval_verification_mask'] = evaluator.get_mask_results()
+                result['eval_verification_regions'] = evaluator.get_regions_results()
 
         except Exception as exception:
-            result['ses'].update({
+            result['session'].update({
                 'status': 'fail',
-                'exc': str(exception),
-                'trcbk': traceback.format_exc()
+                'exception': str(exception),
+                'traceback': traceback.format_exc()
             })
 
             if config.is_debug():
@@ -121,8 +109,8 @@ class Runner:
                 counter.value += 1
 
             result['ses'].update({
-                'idx': counter.value,
+                'index': counter.value,
             })
 
-            logger.info(f"#{utils.zfill_n(counter.value, 6)} | {result['ses']['status'].upper()} | {file.filename}")
+            logger.info(f"#{utils.zfill_n(counter.value, 6)} | {result['session']['status'].upper()} | {file.filename}")
             return result

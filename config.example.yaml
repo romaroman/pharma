@@ -48,7 +48,7 @@ Detection:
   ApproximationMethodDefault: Contour
   ApproximationMethodsUsed: [Contour, Brect, Rrect, Hull]
 
-  Write: [Images, Visualizations, JSON, CSV]
+  Write: [mask, regions, json, nn, verref]
 
 Evaluation:
   Annotation:
