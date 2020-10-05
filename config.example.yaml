@@ -63,27 +63,30 @@ ExtractReference:
   Used: False
   Write: True
 
-SimCLR:
-  BatchSize: 512
-  Epochs: 100
+NN:
+  Model: "triplet"
 
-  LogEveryNSteps: 25
-  EvalEveryNEpochs: 1
+  Common:
+    BatchSize: 512
+    Epochs: 100
 
-  FineTuneFrom: None
-  WeightDecay: 10e-6
-  FP16Precision: False
+    LogEveryNSteps: 25
+    EvalEveryNEpochs: 1
 
-  Model:
-    OutDim: 512
+    FineTuneFrom: None
+    WeightDecay: 10e-6
+    FP16Precision: False
+
+    Dataset:
+      S: 1
+      InputShape: (256, 256, 3)
+      NumWorkers: 0
+      ValidSize: 0.05
+
+  SimCLR:
     BaseModel: "resnet50"
+    OutDim: 512
 
-  Dataset:
-    S: 1
-    InputShape: (256, 256, 3)
-    NumWorkers: 0
-    ValidSize: 0.05
-
-  Loss:
-    Temperature: 0.5
-    UseCosineSimilarity: True
+    Loss:
+      Temperature: 0.5
+      UseCosineSimilarity: True

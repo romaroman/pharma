@@ -73,7 +73,7 @@ class Runner:
             detection = Detector(image_aligned)
             detection.detect(config.det_algorithms)
 
-            writer.write_nn_inputs(detection, file.get_unique_identifier())
+            writer.write_nn_inputs(detection, file.filename)
             return
             # return
 
