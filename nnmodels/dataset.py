@@ -97,10 +97,7 @@ class Dataset(object):
 
     def get_data_loaders(self):
         data_augment = self._get_simclr_pipeline_transform()
-        train_dataset_c = datasets.ImageFolder('/data/500gb/NN', transform=SimCLRDataTransformSingle(data_augment))
-
-        train_dataset = datasets.STL10('./data', split='train+unlabeled', download=True,
-                                       transform=SimCLRDataTransform(data_augment))
+        train_dataset = datasets.ImageFolder('/data/500gb/NN', transform=SimCLRDataTransformSingle(data_augment))
 
         train_loader, valid_loader = self.get_train_validation_data_loaders(train_dataset)
         return train_loader, valid_loader

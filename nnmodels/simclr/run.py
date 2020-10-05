@@ -1,13 +1,11 @@
-from simclr import SimCLR
-import yaml
-from data_aug.dataset_wrapper import DataSetWrapper
+from nnmodels.simclr import SimCLR
+from nnmodels.dataset import Dataset
 
 
 def main():
-    config = yaml.load(open("config.yaml", "r"), Loader=yaml.FullLoader)
-    dataset = DataSetWrapper(config['batch_size'], **config['dataset'])
+    dataset = Dataset()
 
-    simclr = SimCLR(dataset, config)
+    simclr = SimCLR(dataset)
     simclr.train()
 
 
