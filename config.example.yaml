@@ -64,7 +64,7 @@ ExtractReference:
   Write: True
 
 NN:
-  Model: "triplet"
+  UsedModel: "Triplet"
 
   Common:
     BatchSize: 512
