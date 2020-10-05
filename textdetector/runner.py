@@ -108,7 +108,7 @@ class Runner:
             with counter.get_lock():
                 counter.value += 1
 
-            result['ses'].update({
+            result['session'].update({
                 'index': counter.value,
             })
 
