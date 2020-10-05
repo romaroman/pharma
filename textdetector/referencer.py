@@ -35,7 +35,7 @@ class Referencer:
 
         for index, brect in enumerate(self.annotation.bounding_rectangles, start=1):
             try:
-                self.results[f"{str(index).zfill(4)}_{brect.label}"] = extract_reference_region(brect)
+                self.results[f"{utils.zfill_n(index)}_{brect.label}"] = extract_reference_region(brect)
             except IndexError:
                 pass
 

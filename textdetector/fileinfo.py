@@ -5,6 +5,7 @@ from abc import ABC
 from typing import NoReturn, Union, Dict, List, Pattern
 
 import config
+import utils
 
 from enums import FileDatabase
 
@@ -39,10 +40,13 @@ class FileInfo(ABC):
         self.size: int = self._extract_numerical_info('size')
 
     def get_annotation_pattern(self) -> Pattern:
-        return re.compile(f"PFP_Ph._P{str(self.package_class).zfill(4)}_D0{self.distinct}_S00._C._az..._side.")
+        return re.compile(f"PFP_Ph._P{utils.zfill_n(self.package_class)}_D0{self.distinct}_S00._C._az..._side.")
 
     def get_verification_pattern(self) -> Pattern:
-        return re.compile(f"PFP_Ph1_P{str(self.package_class).zfill(4)}_D0{self.distinct}_S00{self.sample}_C._az360_side.")
+        return re.compile(f"PFP_Ph1_P{utils.zfill_n(self.package_class)}_D0{self.distinct}_S00{self.sample}_C._az360_side.")
+
+    def get_unique_identifier(self) -> str:
+        return f"{utils.zfill_n(self.package_class, 4)}_{utils.zfill_n(self.distinct, 2)}"
 
     def to_dict(self) -> Dict[str, Union[str, int]]:
         return dict(zip(self.keywords, self.to_list()))

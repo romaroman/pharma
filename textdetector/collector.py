@@ -31,8 +31,8 @@ class Collector:
         dst_path = config.dir_output / df_file
 
         if dst_path.exists():
-            pd.concat([pd.read_csv(df_file, index_col=None), self.storage]).to_csv(df_file, index=False)
+            pd.concat([pd.read_csv(dst_path, index_col=None), self.storage]).to_csv(dst_path, index=False)
         else:
-            self.storage.to_csv(config.dir_output / df_file, index=False)
+            self.storage.to_csv(dst_path, index=False)
 
         self.storage = self.storage[0:0]
