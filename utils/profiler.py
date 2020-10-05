@@ -3,13 +3,13 @@ import logging
 from copy import deepcopy
 from typing import Dict, NoReturn
 
-import utils
+from utils.helpers import Singleton
 
 
 logger = logging.getLogger('profiler')
 
 
-class _Profiler(metaclass=utils.Singleton):
+class _Profiler(metaclass=Singleton):
 
     def __init__(self):
         self._timestamp = time.time()

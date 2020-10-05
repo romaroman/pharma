@@ -6,19 +6,18 @@ from multiprocessing import Pool, Value
 
 import cv2 as cv
 
-import config
-import utils
-import writer
+from textdetector import config, writer
+from textdetector.loader import Loader
+from textdetector.aligner import Aligner
+from textdetector.detector import Detector
+from textdetector.fileinfo import FileInfoEnrollment, FileInfoRecognition
+from textdetector.evaluator import EvaluatorByAnnotation, EvaluatorByVerification
+from textdetector.referencer import Referencer
+from textdetector.annotation import Annotation
+from textdetector.collector import Collector
+from textdetector.qualityestimator import QualityEstimator
 
-from loader import Loader
-from aligner import Aligner
-from detector import Detector
-from fileinfo import FileInfoEnrollment, FileInfoRecognition
-from evaluator import EvaluatorByAnnotation, EvaluatorByVerification
-from referencer import Referencer
-from annotation import Annotation
-from collector import Collector
-from qualityestimator import QualityEstimator
+import utils
 
 
 logger = logging.getLogger('runner')

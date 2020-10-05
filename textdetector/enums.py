@@ -1,15 +1,15 @@
 from enum import auto
 from typing import List
 
-import utils
+from utils import CustomEnum
 
 
-class Mode(utils.CustomEnum):
+class Mode(CustomEnum):
     Debug = auto(),
     Release = auto()
 
 
-class DetectionAlgorithm(utils.CustomEnum):
+class DetectionAlgorithm(CustomEnum):
     MorphologyIteration1 = "MI1",
     MorphologyIteration2 = "MI2",
 
@@ -23,7 +23,7 @@ class DetectionAlgorithm(utils.CustomEnum):
             return DetectionAlgorithm.to_list()
 
 
-class ApproximationMethod(utils.CustomEnum):
+class ApproximationMethod(CustomEnum):
     Contour = auto(),
     Brect = auto(),
     Rrect = auto(),
@@ -31,7 +31,7 @@ class ApproximationMethod(utils.CustomEnum):
     Approximation = auto(),
 
 
-class FileDatabase(utils.CustomEnum):
+class FileDatabase(CustomEnum):
     Enrollment = auto(),
 
     PharmaPack_R_I_S1 = auto(),
@@ -43,13 +43,13 @@ class FileDatabase(utils.CustomEnum):
         return [FileDatabase.PharmaPack_R_I_S1, FileDatabase.PharmaPack_R_I_S2, FileDatabase.PharmaPack_R_I_S3]
 
 
-class FilePhone(utils.CustomEnum):
+class FilePhone(CustomEnum):
     Phone1 = auto(),
     Phone2 = auto(),
     Phone3 = auto()
 
 
-class AnnotationLabel(utils.CustomEnum):
+class AnnotationLabel(CustomEnum):
 
     def get_color(self):
         return self.value[0]
@@ -72,7 +72,7 @@ class AnnotationLabel(utils.CustomEnum):
         return [AnnotationLabel.Watermark, AnnotationLabel.Image, AnnotationLabel.Barcode]
 
 
-class EvalMetric(utils.CustomEnum):
+class EvalMetric(CustomEnum):
     IntersectionOverUnion = "IOU",
 
     TruePositiveRate = "TPR",  # tp / (tp + fn) or 1 - FalseNegativeRate
@@ -101,7 +101,7 @@ class EvalMetric(utils.CustomEnum):
         ]
 
 
-class AlignmentMethod(utils.CustomEnum):
+class AlignmentMethod(CustomEnum):
     NoAlignment = auto(),
     Reference = auto(),
     ToCorners = auto()

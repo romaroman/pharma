@@ -9,9 +9,8 @@ from typing import List, NoReturn, Dict, Union, Tuple
 import cv2 as cv
 import numpy as np
 
-import morph
-import config
-from enums import DetectionAlgorithm, ApproximationMethod
+from textdetector import config, morph
+from textdetector.enums import DetectionAlgorithm, ApproximationMethod
 
 import utils
 

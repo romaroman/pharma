@@ -1,10 +1,12 @@
 import logging
 import confuse
 
+from typing import List
 from pathlib import Path
 from multiprocessing import cpu_count
 
-from enums import *
+from textdetector.enums import ApproximationMethod, EvalMetric, DetectionAlgorithm, AlignmentMethod, Mode, \
+    FileDatabase, AnnotationLabel, FilePhone
 
 import utils
 

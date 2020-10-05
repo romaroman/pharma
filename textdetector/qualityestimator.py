@@ -1,9 +1,10 @@
 from typing import NoReturn, Union, Dict, Any
 
-import numpy as np
 import cv2 as cv
+import numpy as np
 
-import config
+from textdetector import config
+
 import utils
 
 

@@ -1,4 +1,3 @@
-import os
 import json
 import shutil
 from pathlib import Path
@@ -6,14 +5,13 @@ from typing import Union, Dict, List, NoReturn, Any
 
 import cv2 as cv
 import numpy as np
-import pandas as pd
 
-import config
+from textdetector import config
+from textdetector.detector import Detector
+from textdetector.fileinfo import FileInfo
+from textdetector.referencer import Referencer
+
 import utils
-
-from detector import Detector
-from fileinfo import FileInfo
-from referencer import Referencer
 
 
 def write_entity(
@@ -30,7 +28,7 @@ def write_entity(
         cv.imwrite(dst_path, entity)
 
     elif extension == "csv":
-        np.savetxt(dst_path, entity, delimiter=",", fmt='%i')
+        np.savetxt(dst_path, entity, delimiter=',', fmt='%i')
 
     elif extension == "json":
         write_json(entity, dst_path)
@@ -67,7 +65,7 @@ def save_detection_results(detection: Detector, fileinfo: FileInfo) -> NoReturn:
                     )
 
         if 'nn' in config.det_write:
-            parent_folder = config.dir_output / 'NN' / algorithm / fileinfo.get_unique_identifier()
+            parent_folder = config.dir_output / "NN" / algorithm / fileinfo.get_unique_identifier()
 
             if not parent_folder.exists():
                 utils.create_dirs(parent_folder)
@@ -79,15 +77,15 @@ def save_detection_results(detection: Detector, fileinfo: FileInfo) -> NoReturn:
                 )
 
         if 'verref' in config.det_write:
-            detection.save_results(config.dir_source / 'VerificationReferences' / fileinfo.filename)
+            detection.save_results(config.dir_source / "VerificationReferences" / fileinfo.filename)
 
 
 def save_reference_results(referencer: Referencer, filename: str) -> NoReturn:
-    if not config.exr_write:
+    if not config.exr_write or not config.exr_used:
         return
 
     for label, image in referencer.results.items():
-        write_image_region(image, f"REF/parts", filename, label)
+        write_image_region(image, f"REF/regions", filename, label)
 
 
 def prepare_output_folder() -> NoReturn:

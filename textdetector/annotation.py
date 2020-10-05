@@ -1,5 +1,4 @@
 import math
-import glob
 
 from pathlib import Path
 from xml.etree import ElementTree
@@ -10,9 +9,9 @@ import cv2 as cv
 import numpy as np
 import pandas as pd
 
-from enums import AnnotationLabel
+from textdetector import config
+from textdetector.enums import AnnotationLabel
 
-import config
 import utils
 
 

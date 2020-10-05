@@ -3,10 +3,11 @@ import logging
 
 from typing import NoReturn, List, Union, Dict, Tuple, Any
 
-import config
+from textdetector import config
+from textdetector.fileinfo import FileInfoEnrollment, FileInfoRecognition, FileInfo
+
 import utils
 
-from fileinfo import FileInfoEnrollment, FileInfoRecognition, FileInfo
 
 logger = logging.getLogger('loader')
 

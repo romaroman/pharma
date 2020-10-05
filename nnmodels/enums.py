@@ -1,9 +1,9 @@
-from enums import auto
+from enum import auto
 
-import utils
+from utils import CustomEnum
 
 
-class Model(utils.CustomEnum):
+class Model(CustomEnum):
     Triplet = auto(),
     Resnet50 = auto(),
     Siamese = auto(),

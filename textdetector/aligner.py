@@ -4,9 +4,8 @@ from typing import Tuple, Union
 import cv2 as cv
 import numpy as np
 
-import config
-import morph
-from enums import AlignmentMethod
+from textdetector import config, morph
+from textdetector.enums import AlignmentMethod
 
 import utils
 

@@ -47,12 +47,12 @@ if __name__ == '__main__':
 
     mean, std = 0.1307, 0.3081
 
-    train_dataset = MNIST('../data/MNIST', train=True, download=True,
+    train_dataset = MNIST('data', train=True, download=True,
                           transform=transforms.Compose([
                               transforms.ToTensor(),
                               transforms.Normalize((mean,), (std,))
                           ]))
-    test_dataset = MNIST('../data/MNIST', train=False, download=True,
+    test_dataset = MNIST('data', train=False, download=True,
                          transform=transforms.Compose([
                              transforms.ToTensor(),
                              transforms.Normalize((mean,), (std,))
@@ -64,10 +64,10 @@ if __name__ == '__main__':
               '#9467bd', '#8c564b', '#e377c2', '#7f7f7f',
               '#bcbd22', '#17becf']
 
-    batch_size = 256
-    kwargs = {'num_workers': 1, 'pin_memory': True} if cuda else {}
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, **kwargs)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, **kwargs)
+    # batch_size = 256
+    # kwargs = {'num_workers': 1, 'pin_memory': True} if cuda else {}
+    # train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, **kwargs)
+    # test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, **kwargs)
 
     # embedding_net = EmbeddingNet()
     # model = ClassificationNet(embedding_net, n_classes=n_classes)
@@ -139,10 +139,10 @@ if __name__ == '__main__':
 
     fit(triplet_train_loader, triplet_test_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval)
 
-    train_embeddings_tl, train_labels_tl = extract_embeddings(train_loader, model)
-    plot_embeddings(train_embeddings_tl, train_labels_tl)
-    val_embeddings_tl, val_labels_tl = extract_embeddings(test_loader, model)
-    plot_embeddings(val_embeddings_tl, val_labels_tl)
+    # train_embeddings_tl, train_labels_tl = extract_embeddings(train_loader, model)
+    # plot_embeddings(train_embeddings_tl, train_labels_tl)
+    # val_embeddings_tl, val_labels_tl = extract_embeddings(test_loader, model)
+    # plot_embeddings(val_embeddings_tl, val_labels_tl)
 
     # train_batch_sampler = BalancedBatchSampler(train_dataset.train_labels, n_classes=10, n_samples=25)
     # test_batch_sampler = BalancedBatchSampler(test_dataset.test_labels, n_classes=10, n_samples=25)

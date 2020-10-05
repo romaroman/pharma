@@ -3,7 +3,7 @@ from typing import NoReturn, Dict, Union
 
 import numpy as np
 
-from annotation import Annotation, BoundingRectangle, BoundingRectangleRotated
+from textdetector.annotation import Annotation, BoundingRectangle, BoundingRectangleRotated
 
 import utils
 

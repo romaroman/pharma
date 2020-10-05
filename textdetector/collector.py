@@ -2,7 +2,7 @@ from typing import NoReturn, Dict, Any, List
 
 import pandas as pd
 
-import config
+from textdetector import config
 
 
 class Collector:

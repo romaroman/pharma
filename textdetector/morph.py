@@ -5,7 +5,7 @@ import cv2 as cv
 import numpy as np
 import skimage.measure
 
-import config
+from textdetector import config
 
 import utils
 

@@ -1,7 +1,7 @@
 import cv2 as cv
 import numpy as np
 
-from convert import to_tuple
+from utils.convert import to_tuple
 
 
 def approximate_contour(contour: np.ndarray, epsilon: float = 0.01) -> np.ndarray:

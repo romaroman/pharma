@@ -4,10 +4,10 @@ from pathlib import Path
 from abc import ABC
 from typing import NoReturn, Union, Dict, List, Pattern
 
-import config
-import utils
+from textdetector import config
+from textdetector.enums import FileDatabase
 
-from enums import FileDatabase
+import utils
 
 
 class FileInfo(ABC):

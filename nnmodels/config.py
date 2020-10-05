@@ -2,7 +2,7 @@ import confuse
 import logging
 from typing import Union, Tuple
 
-from .enums import Model
+from nnmodels.enums import Model
 
 import utils
 
