@@ -1,5 +1,6 @@
 import confuse
 import logging
+from pathlib import Path
 from typing import Union, Tuple
 
 from nnmodels.enums import Model
@@ -19,6 +20,7 @@ confuse_nn = confuse['NN']
 confuse_cc = confuse_nn['Common']
 
 used_model: Model = Model[confuse_nn['UsedModel'].as_str()]
+source_dir: Path = confuse_nn['SourceDir'].as_path()
 
 batch_size: int = confuse_cc['BatchSize'].as_number()
 epochs: int = confuse_cc['Epochs'].as_number()

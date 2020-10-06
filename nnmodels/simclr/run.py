@@ -1,5 +1,5 @@
 from nnmodels.simclr import SimCLR
-from nnmodels.dataset import Dataset
+from nnmodels.datasets import Dataset
 
 
 def main():

@@ -64,13 +64,14 @@ ExtractReference:
   Write: True
 
 NN:
-  UsedModel: "Triplet"
+  UsedModel: Triplet
+  SourceDir: /data/500gb/pharmapack/CNNInput
 
   Common:
-    BatchSize: 512
-    Epochs: 100
+    BatchSize: 128
+    Epochs: 10
 
-    LogEveryNSteps: 25
+    LogEveryNSteps: 1
     EvalEveryNEpochs: 1
 
     FineTuneFrom: None
@@ -84,7 +85,7 @@ NN:
       ValidSize: 0.05
 
   SimCLR:
-    BaseModel: "resnet50"
+    BaseModel: ResNet50
     OutDim: 512
 
     Loss:

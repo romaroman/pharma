@@ -1,18 +1,10 @@
 import torch
 import numpy as np
 
+from nnmodels import config
 
-def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, metrics=[],
-        start_epoch=0):
-    """
-    Loaders, model, loss function and metrics should work together for a given task,
-    i.e. The model should be able to process data output of loaders,
-    loss function should process target output of loaders and outputs from the model
 
-    Examples: Classification: batch loader, classification model, NLL loss, accuracy metric
-    Siamese network: Siamese loader, siamese model, contrastive loss
-    Online triplet learning: batch loader, embedding model, online triplet loss
-    """
+def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, metrics=[], start_epoch=0):
     for epoch in range(0, start_epoch):
         scheduler.step()
 
@@ -20,7 +12,7 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs
         scheduler.step()
 
         # Train stage
-        train_loss, metrics = train_epoch(train_loader, model, loss_fn, optimizer, cuda, log_interval, metrics)
+        train_loss, metrics = train_epoch(train_loader, model, loss_fn, optimizer, cuda, metrics)
 
         message = 'Epoch: {}/{}. Train set: Average loss: {:.4f}'.format(epoch + 1, n_epochs, train_loss)
         for metric in metrics:
@@ -37,7 +29,7 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs
         print(message)
 
 
-def train_epoch(train_loader, model, loss_fn, optimizer, cuda, log_interval, metrics):
+def train_epoch(train_loader, model, loss_fn, optimizer, cuda, metrics):
     for metric in metrics:
         metric.reset()
 
@@ -53,7 +45,6 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, log_interval, met
             data = tuple(d.cuda() for d in data)
             if target is not None:
                 target = target.cuda()
-
 
         optimizer.zero_grad()
         outputs = model(*data)
@@ -76,7 +67,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, log_interval, met
         for metric in metrics:
             metric(outputs, target, loss_outputs)
 
-        if batch_idx % log_interval == 0:
+        if batch_idx % config.log_every_n_steps == 0:
             message = 'Train: [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 batch_idx * len(data[0]), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), np.mean(losses))
@@ -96,6 +87,7 @@ def test_epoch(val_loader, model, loss_fn, cuda, metrics):
             metric.reset()
         model.eval()
         val_loss = 0
+
         for batch_idx, (data, target) in enumerate(val_loader):
             target = target if len(target) > 0 else None
             if not type(data) in (tuple, list):
