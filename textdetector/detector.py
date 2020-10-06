@@ -317,31 +317,16 @@ class DetectionResult:
 
             image_gray = utils.to_gray(image_rgb_centered)
 
-            image_mask_to_fill = np.all(image_rgb_centered == [0, 0, 0], axis=-1)
-            image_mask_to_fill = cv.dilate(image_mask_to_fill.astype(np.uint8) * 255, np.ones((3, 3))).astype(np.bool)
-            image_contour_mask_ones = (~image_mask_to_fill).astype(np.uint8)
+            image_to_fill_mask = np.all(image_rgb_centered == [0, 0, 0], axis=-1)
+            image_to_fill_mask = cv.dilate(image_to_fill_mask.astype(np.uint8) * 255, np.ones((3, 3))).astype(np.bool)
 
-            def get_row_or_col_index_with_most_of_nonblack_pixels(img, axis):
-                reduced_pixels_amount = cv.reduce(img.astype(np.float32), axis, cv.REDUCE_SUM).reshape(-1).astype(np.int32)
-                most_frequent_length = np.argmax(np.bincount(reduced_pixels_amount))
-                rows_indexes = np.where(reduced_pixels_amount == most_frequent_length)
-                mean_index = np.mean(rows_indexes)
-                actual_index = (np.abs(reduced_pixels_amount - mean_index)).argmin()
+            image_contour_mask = (~image_to_fill_mask).astype(np.uint8)
 
-                return reduced_pixels_amount[actual_index]
+            mean_all = int(cv.mean(image_gray, image_contour_mask)[0])
+            image_filled = np.copy(image_rgb_centered)
+            image_filled[image_to_fill_mask] = mean_all
 
-            row_idx = get_row_or_col_index_with_most_of_nonblack_pixels(image_contour_mask_ones, 0)
-            col_idx = get_row_or_col_index_with_most_of_nonblack_pixels(image_contour_mask_ones, 1)
-
-            h, w = image_gray.shape
-
-            row_mean = cv.mean(image_gray[h // 2 - 4:h // 2 + 4, row_idx])[0]
-            col_mean = cv.mean(image_gray[col_idx, w // 2 - 4:w // 2 + 4])[0]
-
-            image_filled_colrow = np.copy(image_rgb_centered)
-            image_filled_colrow[image_mask_to_fill] = (row_mean + col_mean) // 2
-
-            return image_filled_colrow
+            return image_filled
 
     def __init__(self, image_input: np.ndarray) -> NoReturn:
         self.image_input = morph.mscale(image_input, down=False)
@@ -361,7 +346,7 @@ class DetectionResult:
                 area = cv.contourArea(contour)
                 dims = cv.minAreaRect(contour)[1]
                 ratio = max(dims) / min(dims)
-                return area > morph.mscale(8) ** 2 and ratio < 15
+                return area > morph.mscale(16) ** 2 and ratio < 15
             except:
                 return False
 
