@@ -2,8 +2,8 @@ import os
 import logging
 import itertools
 
-from pathlib import Path
 from re import Pattern
+from pathlib import Path
 from typing import List, NoReturn, Dict, Union, Tuple
 
 import cv2 as cv

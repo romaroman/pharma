@@ -5,11 +5,11 @@ from typing import NoReturn, Dict, Union, List, Tuple
 import cv2 as cv
 import numpy as np
 
-import config
+from textdetector import config
 
-from detector import Detector, DetectionResult
-from annotation import Annotation
-from enums import EvalMetric, AnnotationLabel, ApproximationMethod
+from textdetector.detector import Detector, DetectionResult
+from textdetector.annotation import Annotation
+from textdetector.enums import EvalMetric, AnnotationLabel, ApproximationMethod
 
 import utils
 
@@ -60,7 +60,7 @@ class EvaluatorByAnnotation(Evaluator):
 
             if config.ev_ano_regions:
                 regions_ver = result.get_default_regions()
-                self.results_regions[algorithm] = self._evaluate_by_regions(regions_ver, detection.image_not_scaled)
+                self.results_regions[algorithm] = self._evaluate_by_regions(regions_ver)
 
     def _evaluate_by_mask(self, image_ver: np.ndarray) -> np.ndarray:
         if config.is_alignment_needed():
@@ -72,7 +72,7 @@ class EvaluatorByAnnotation(Evaluator):
         sc.calc_scores(image_ver, self.image_mask_ref_text)
         return np.array(sc.scores_list)
 
-    def _evaluate_by_regions(self, regions: List[DetectionResult.Region], image_draw: np.ndarray) -> np.ndarray:
+    def _evaluate_by_regions(self, regions: List[DetectionResult.Region]) -> np.ndarray:
         img_empty = np.zeros(self.annotation.image_ref.shape[:2], dtype=np.uint8)
 
         if config.is_alignment_needed():
@@ -90,7 +90,6 @@ class EvaluatorByAnnotation(Evaluator):
         masks_ref = [region.draw(np.copy(img_empty), (255, 255, 255), filled=True) for region in regions_ref]
         masks_ver = [cv.drawContours(np.copy(img_empty), [region], -1, 255, -1) for region in regions_ver]
 
-        image_vis = np.copy(image_draw)
         rows = []
         bi = 1
 
@@ -112,19 +111,6 @@ class EvaluatorByAnnotation(Evaluator):
 
                     matched_polygons_amount += 1
                     rows.append([bi, matched_polygons_amount] + scores)
-                    # scores_es = sc.get_essential_scores()
-                    #
-                    # image_vis = regions[pi].draw(image_vis, (0, 255, 0), filled=False)
-                    # image_vis = cv.putText(
-                    #     img=image_vis, text=str([item for index, item in enumerate(scores_es.items()) if index < len(scores_es.items())/2]),
-                    #     org=utils.get_contour_center(regions[pi].contour), fontFace=cv.FONT_HERSHEY_PLAIN,
-                    #     fontScale=1, color=(255, 0, 0), thickness=1
-                    # )
-                    # image_vis = cv.putText(
-                    #     img=image_vis, text=str([item for index, item in enumerate(scores_es.items()) if index > len(scores_es.items())/2]),
-                    #     org=utils.get_contour_center(regions[pi].contour), fontFace=cv.FONT_HERSHEY_PLAIN,
-                    #     fontScale=1, color=(255, 0, 0), thickness=1
-                    # )
 
                 pi += 1
             if matched_polygons_amount == 0:
