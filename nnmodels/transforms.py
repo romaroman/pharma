@@ -27,14 +27,18 @@ def get_pipeline_transform() -> transforms.Compose:
     s = config.dataset_s * 0.8
 
     data_transforms = transforms.Compose([
-        transforms.RandomResizedCrop(size=config.dataset_input_shape[0]),
-        transforms.RandomApply([transforms.RandomAffine(scale=(0.5, 2.0), degrees=(15, 345))], p=0.2),
-        # transforms.RandomHorizontalFlip(),
+        transforms.RandomApply(
+            [transforms.RandomResizedCrop(size=config.dataset_input_shape[0], scale=(0.75, 1.25), ratio=(0.75, 1.25))],
+            p=0.25
+        ),
+        # transforms.RandomApply([transforms.RandomAffine(degrees=(0, 0), scale=(0.75, 1.25))], p=0.2),
+        transforms.RandomHorizontalFlip(p=0.3),
+        transforms.RandomVerticalFlip(p=0.3),
         transforms.RandomApply([transforms.ColorJitter(s, s, s, 1-s)], p=0.3),
-        transforms.RandomGrayscale(p=0.2),
-        GaussianBlur(kernel_size=int(0.1 * config.dataset_input_shape[0])),
+        transforms.RandomGrayscale(p=0.25),
+        GaussianBlur(kernel_size=3),
         transforms.ToTensor(),
-        transforms.RandomErasing(p=0.2, scale=(0.05, 0.2)),
+        # transforms.RandomErasing(p=0.2, scale=(0.05, 0.01)),
     ])
 
     return data_transforms

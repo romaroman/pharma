@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import torch
 import numpy as np
 
@@ -30,8 +33,19 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs
 
 
 def train_epoch(train_loader, model, loss_fn, optimizer, cuda, metrics):
+
     for metric in metrics:
         metric.reset()
+
+    checkpoints_folder = Path('./runs/checkpoints')
+    os.makedirs(checkpoints_folder, exist_ok=True)
+
+    try:
+        state_dict = torch.load(checkpoints_folder / 'model.pth')
+        model.load_state_dict(state_dict)
+        print("Loaded pre-trained model with success.")
+    except FileNotFoundError:
+        print("Pre-trained weights not found. Training from scratch.")
 
     model.train()
     losses = []
@@ -75,6 +89,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, metrics):
                 message += '\t{}: {}'.format(metric.name(), metric.value())
 
             print(message)
+            torch.save(model.state_dict(), checkpoints_folder / 'model.pth')
             losses = []
 
     total_loss /= (batch_idx + 1)

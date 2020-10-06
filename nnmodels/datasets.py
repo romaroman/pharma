@@ -7,8 +7,10 @@ import torch
 from torch.utils.data import Dataset, DataLoader, sampler
 from torchvision import datasets, transforms
 
-from nnmodels.transforms import get_pipeline_transform
 from nnmodels import config
+from nnmodels.transforms import get_pipeline_transform
+
+import utils
 
 
 def get_train_validation_data_loaders(dataset: Dataset) -> Tuple[DataLoader, DataLoader]:
@@ -37,20 +39,23 @@ class PharmaPackDatasetTriplet(Dataset):
 
     def __getitem__(self, index: int) -> Tuple[Tuple[torch.Tensor, torch.Tensor, torch.Tensor], List[int]]:
         image_positive, label1 = self.dataset[index]
-        positive_index = index
-
-        while positive_index == index:
-            positive_index = random.choice(list(enumerate(self.dataset.targets)))[0]
-
         negative_label = random.choice(list({cl for cl in self.dataset.classes} - {self.dataset.classes[label1]}))
         negative_index = np.random.choice(np.where(np.asarray(self.dataset.targets) == self.dataset.class_to_idx[negative_label])[0])
         image_negative = self.dataset[negative_index][0]
 
-        # triplet = np.vstack([
-        #     self.to_tensor()(image_positive).permute(1, 2, 0).numpy(),
-        #     self.get_pipeline_transform()(image_positive).permute(1, 2, 0).numpy(),
-        #     self.to_tensor()(img3).permute(1, 2, 0).numpy()
-        # ])
+        # for i in range(5**2):
+        #
+        #     triplet = np.vstack([
+        #         transforms.ToTensor()(image_positive).permute(1, 2, 0).numpy(),
+        #         get_pipeline_transform()(image_positive).permute(1, 2, 0).numpy(),
+        #         transforms.ToTensor()(image_negative).permute(1, 2, 0).numpy()
+        #     ])
+        #     # utils.display(triplet)
+        #     images.append((triplet * 255).astype(np.uint8))
+        #
+        # combined = utils.combine_images(images)
+        # utils.display(combined)
+
         return (
                    transforms.ToTensor()(image_positive),
                    get_pipeline_transform()(image_positive),
