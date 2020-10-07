@@ -10,11 +10,6 @@ def approximate_contour(contour: np.ndarray, epsilon: float = 0.01) -> np.ndarra
     return approx
 
 
-def get_mask_by_contour(image_ref: np.ndarray, contour: np.ndarray) -> np.ndarray:
-    image_mask = np.zeros_like(image_ref, dtype=np.uint8)
-    return cv.drawContours(image_mask, [contour], -1, 255, -1)
-
-
 def crop_image_by_contour(
         image_in: np.ndarray,
         contour: np.ndarray,
@@ -25,8 +20,9 @@ def crop_image_by_contour(
     if roughly_by_brect:
         return image_in[y:y + h, x:x + w]
     else:
-        image_mask = get_mask_by_contour(image_in[:, :, 1] if len(image_in.shape) == 3 else image_in, contour)
-        return cv.copyTo(image_in, image_mask)[y:y + h, x:x + w]
+        image_mask = np.zeros(image_in.shape[:2], dtype=np.uint8)
+        cv.drawContours(image_mask, [contour], -1, 255, -1)
+        return cv.bitwise_and(image_in, image_in, mask=image_mask)[y:y + h, x:x + w]
 
 
 def get_brect_contour(contour: np.ndarray) -> np.ndarray:

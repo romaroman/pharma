@@ -7,5 +7,5 @@ from utils.calc import get_contour_center, calc_distance
 from utils.convert import to_tuple, swap_dimensions, chunks
 from utils.helpers import Singleton, CustomEnum
 from utils.profiler import profiler
-from utils.contours import approximate_contour, get_mask_by_contour, crop_image_by_contour, get_brect_contour,\
-    contour_intersect, perspective_transform_contour
+from utils.contours import approximate_contour, crop_image_by_contour, get_brect_contour, contour_intersect,\
+    perspective_transform_contour, scale_contour

@@ -289,44 +289,46 @@ class DetectionResult:
             return cv.drawContours(image, [self.polygon], -1, color, -1 if filled else 2)
 
         def as_nn_input(self, image_to_crop: np.ndarray) -> np.ndarray:
-            image_rgb = self.crop_image(image_to_crop)
             dst_size = 256
-            biggest_side = max(image_rgb.shape)
-            is_h_bigger = biggest_side == image_rgb.shape[0]
+            downscale_ratio = 1 / (max(self.brect[2:]) / dst_size)
 
-            if biggest_side > dst_size:
-                image_rgb = utils.scale_image(image_rgb, 1 / (biggest_side / dst_size))
-                image_rgb = image_rgb[:dst_size, :dst_size, :]
-            else:
-                pass
-            h, w, _ = image_rgb.shape
+            image_to_crop_loseless = utils.scale_image(image_to_crop, downscale_ratio)
+            image_contour_mask = utils.scale_image(
+                cv.drawContours(np.zeros(image_to_crop.shape[:2], dtype=np.uint8), [self.polygon], -1, 255, -1),
+                downscale_ratio
+            )
+            contour = cv.findContours(image_contour_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0][0]
 
-            image_rgb_centered = np.zeros((dst_size, dst_size, 3), dtype=np.uint8)
-            if max(image_rgb.shape) == dst_size:
-                if is_h_bigger:
-                    diff = (dst_size - w) // 2
-                    image_rgb_centered[:h, diff:w + diff, :] = image_rgb
-                else:
-                    diff = (dst_size - h) // 2
-                    image_rgb_centered[diff:h + diff, :w, :] = image_rgb
-            else:
-                diffw = (dst_size - w) // 2
-                diffh = (dst_size - h) // 2
+            image_cropped = utils.crop_image_by_contour(image_to_crop_loseless, contour, False)
+            image_cropped = image_cropped[:dst_size, :dst_size, :]
 
-                image_rgb_centered[diffh:h + diffh, diffw:w + diffw, :] = image_rgb
+            h, w, _ = image_cropped.shape
 
-            image_gray = utils.to_gray(image_rgb_centered)
+            image_centered = np.zeros((dst_size, dst_size, 3), dtype=np.uint8)
+            diffw = (dst_size - w) // 2
+            diffh = (dst_size - h) // 2
+            image_centered[diffh:h + diffh, diffw:w + diffw, :] = image_cropped
 
-            image_to_fill_mask = np.all(image_rgb_centered == [0, 0, 0], axis=-1)
-            image_to_fill_mask = cv.dilate(image_to_fill_mask.astype(np.uint8) * 255, np.ones((3, 3))).astype(np.bool)
+            image_gray = utils.to_gray(image_centered)
 
-            image_contour_mask = (~image_to_fill_mask).astype(np.uint8)
+            image_zeros_mask_bool = np.all(image_centered == [0, 0, 0], axis=-1)
+            image_zeros_mask_uint = image_zeros_mask_bool.astype(np.uint8) * 255
 
-            mean_all = int(cv.mean(image_gray, image_contour_mask)[0])
-            image_filled = np.copy(image_rgb_centered)
-            image_filled[image_to_fill_mask] = mean_all
+            contours = cv.findContours(image_zeros_mask_uint, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[0]
+            image_border_mask_for_mean = cv.bitwise_xor(
+                ~image_zeros_mask_uint, cv.erode(~image_zeros_mask_uint, np.ones((5, 5)))
+            )
+            image_border_mask_for_blur = cv.drawContours(np.zeros_like(image_gray), contours, -1, 255, 3)
 
-            return image_filled
+            image_filled = np.copy(image_centered)
+            image_filled[image_zeros_mask_bool] = cv.mean(image_centered, image_border_mask_for_mean)[:3]
+            image_blurred = cv.GaussianBlur(image_filled, (15, 15), 1, 1)
+
+            image_filled_masked = cv.bitwise_and(image_filled, image_filled, mask=~image_border_mask_for_blur)
+            image_blurred_masked = cv.bitwise_and(image_blurred, image_blurred, mask=image_border_mask_for_blur)
+
+            image_combined = cv.bitwise_or(image_filled_masked, image_blurred_masked)
+            return image_combined
 
     def __init__(self, image_input: np.ndarray) -> NoReturn:
         self.image_input = morph.mscale(image_input, down=False)
