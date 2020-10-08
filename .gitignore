@@ -133,6 +133,7 @@ dmypy.json
 *.csv
 *.asv
 *.mat
+*.out
 .idea
 
 config.yaml
