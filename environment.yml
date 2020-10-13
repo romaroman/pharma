@@ -9,15 +9,16 @@ dependencies:
   - argon2-cffi=20.1.0=py38h7b6447c_1
   - attrs=20.1.0=py_0
   - backcall=0.2.0=py_0
+  - bitarray=1.5.3=py38h7b6447c_0
   - blas=1.0=mkl
   - bleach=3.1.5=py_0
   - blinker=1.4=py38_0
   - brotlipy=0.7.0=py38h7b6447c_1000
   - bzip2=1.0.8=h516909a_3
   - c-ares=1.16.1=h516909a_3
-  - ca-certificates=2020.7.22=0
+  - ca-certificates=2020.6.20=hecda079_0
   - cachetools=4.1.1=py_0
-  - certifi=2020.6.20=py38_0
+  - certifi=2020.6.20=py38h924ce5b_2
   - cffi=1.14.2=py38he30daa8_0
   - chardet=3.0.4=py38_1003
   - click=7.1.2=py_0
@@ -39,6 +40,7 @@ dependencies:
   - expat=2.2.9=he6710b0_2
   - fontconfig=2.13.0=h9420a91_0
   - freetype=2.10.2=h5ab3b9f_0
+  - future=0.18.2=py38_1
   - glib=2.65.0=h3eb4bd4_0
   - google-auth=1.21.3=py_0
   - google-auth-oauthlib=0.4.1=py_2
@@ -64,7 +66,9 @@ dependencies:
   - jpeg=9b=h024ee3a_2
   - json5=0.9.5=py_0
   - jsonschema=3.2.0=py38_0
+  - jupyter=1.0.0=py38_7
   - jupyter_client=6.1.6=py_0
+  - jupyter_console=6.2.0=py_0
   - jupyter_core=4.6.3=py38_0
   - jupyterlab=2.2.6=py_0
   - jupyterlab_server=1.2.0=py_0
@@ -107,6 +111,7 @@ dependencies:
   - nbconvert=5.6.1=py38_0
   - nbformat=5.0.7=py_0
   - ncurses=6.2=he6710b0_1
+  - nearpy=1.0.0=py_0
   - networkx=2.5=py_0
   - ninja=1.10.0=py38hfd86e86_0
   - notebook=6.1.1=py38_0
@@ -116,7 +121,7 @@ dependencies:
   - oauthlib=3.1.0=py_0
   - olefile=0.46=py_0
   - openpyxl=3.0.5=py_0
-  - openssl=1.1.1h=h7b6447c_0
+  - openssl=1.1.1h=h516909a_0
   - packaging=20.4=pyh9f0ad1d_0
   - pandas=1.1.1=py38he6710b0_0
   - pandas-profiling=2.9.0=pyh9f0ad1d_0
@@ -129,9 +134,9 @@ dependencies:
   - phik=0.10.0=py_0
   - pickleshare=0.7.5=py38_1000
   - pillow=7.2.0=py38hb39fc2d_0
-  - pip=20.2.3=py_0
   - prometheus_client=0.8.0=py_0
   - prompt-toolkit=3.0.7=py_0
+  - prompt_toolkit=3.0.7=0
   - protobuf=3.12.4=py38he6710b0_0
   - ptyprocess=0.6.0=py38_0
   - pyasn1=0.4.8=py_0
@@ -153,13 +158,17 @@ dependencies:
   - pyyaml=5.3.1=py38h7b6447c_1
   - pyzmq=19.0.1=py38he6710b0_1
   - qt=5.9.7=h5867ecd_1
+  - qtconsole=4.7.6=py_0
+  - qtpy=1.9.0=py_0
   - readline=8.0=h7b6447c_0
+  - redis-py=3.5.3=pyh9f0ad1d_0
   - requests=2.24.0=py_0
   - requests-oauthlib=1.3.0=py_0
   - rhash=1.3.6=h14c3975_1001
   - rsa=4.6=py_0
   - scikit-build=0.11.1=py38h950e882_1
   - scikit-image=0.16.2=py38h0573a6f_0
+  - scikit-learn=0.23.2=py38h0573a6f_0
   - scipy=1.5.2=py38h0b6359f_0
   - seaborn=0.10.1=py_0
   - seaborn-base=0.11.0=py_0
@@ -174,6 +183,7 @@ dependencies:
   - tensorboard-plugin-wit=1.6.0=py_0
   - terminado=0.8.3=py38_0
   - testpath=0.4.4=py_0
+  - threadpoolctl=2.1.0=pyh5ca1d4c_0
   - tk=8.6.10=hbc83047_0
   - toolz=0.10.0=py_0
   - torchvision=0.7.0=py38_cu102
@@ -196,5 +206,6 @@ dependencies:
   - pip:
     - opencv-contrib-python==4.4.0.42
     - opencv-python==4.4.0.42
+    - pip==20.2.3
 prefix: /opt/anaconda3/envs/pharma
 
