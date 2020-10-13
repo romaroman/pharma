@@ -64,3 +64,16 @@ class PharmaPackDatasetTriplet(Dataset):
 
     def __len__(self) -> int:
         return len(self.dataset)
+
+
+class PharmaPackDataset(Dataset):
+
+    def __init__(self) -> NoReturn:
+        self.dataset = datasets.ImageFolder(str(config.source_dir.resolve()))
+
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, int]:
+        image, label = self.dataset[index]
+        return transforms.ToTensor()(image), label
+
+    def __len__(self) -> int:
+        return len(self.dataset)
