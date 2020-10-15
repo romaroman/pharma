@@ -25,7 +25,7 @@ try:
 
     apex_support = True
 except ImportError:
-    logger.warning("Please install apex for mixed precision training from: https://github.com/NVIDIA/apex")
+    # logger.warning("Please install apex for mixed precision training from: https://github.com/NVIDIA/apex")
     apex_support = False
 
 

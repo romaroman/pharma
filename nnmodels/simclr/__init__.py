@@ -1,1 +1,1 @@
-from model import SimCLR
+from models import SimCLR

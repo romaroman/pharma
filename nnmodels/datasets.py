@@ -1,4 +1,5 @@
 import random
+from pathlib import Path
 from typing import Tuple, List, NoReturn
 
 import numpy as np
@@ -9,8 +10,6 @@ from torchvision import datasets, transforms
 
 from nnmodels import config
 from nnmodels.transforms import get_pipeline_transform
-
-import utils
 
 
 def get_train_validation_data_loaders(dataset: Dataset) -> Tuple[DataLoader, DataLoader]:
@@ -27,7 +26,7 @@ def get_train_validation_data_loaders(dataset: Dataset) -> Tuple[DataLoader, Dat
     train_loader = DataLoader(dataset, batch_size=config.batch_size, sampler=train_sampler,
                               num_workers=config.dataset_num_workers, drop_last=True, shuffle=False)
     test_loader = DataLoader(dataset, batch_size=config.batch_size, sampler=valid_sampler,
-                             num_workers=config.dataset_num_workers, drop_last=True)
+                             num_workers=config.dataset_num_workers, drop_last=True, shuffle=False)
 
     return train_loader, test_loader
 
@@ -68,8 +67,8 @@ class PharmaPackDatasetTriplet(Dataset):
 
 class PharmaPackDataset(Dataset):
 
-    def __init__(self) -> NoReturn:
-        self.dataset = datasets.ImageFolder(str(config.source_dir.resolve()))
+    def __init__(self, path: Path) -> NoReturn:
+        self.dataset = datasets.ImageFolder(str(path))
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, int]:
         image, label = self.dataset[index]
