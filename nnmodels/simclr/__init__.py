@@ -1,1 +1,1 @@
-from models import SimCLR
+from nnmodels.simclr.models import SimCLR

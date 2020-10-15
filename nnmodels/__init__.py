@@ -1,1 +1,1 @@
-import simclr
+from nnmodels import simclr
