@@ -1,5 +1,7 @@
+import os
 import confuse
 import logging
+
 from pathlib import Path
 from typing import Union, Tuple
 
@@ -13,7 +15,7 @@ logger = logging.getLogger('config')
 
 timestamp = utils.get_str_timestamp()
 confuse = confuse.Configuration('_', 'simclr')
-confuse.set_file('config.yaml')
+confuse.set_file(f"{os.getenv('PHARMAPACK_PROJECT_DIR')}/config.yaml")
 
 
 confuse_nn = confuse['NN']
