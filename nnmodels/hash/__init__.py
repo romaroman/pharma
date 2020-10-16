@@ -1,1 +1,1 @@
-from nnmodels.hash.model import ResNet18Hash
+from nnmodels.hash.model import HashEncoder

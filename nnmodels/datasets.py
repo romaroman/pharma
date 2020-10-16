@@ -74,6 +74,7 @@ class PharmaPackDataset(Dataset):
 
     def __init__(self, path: Path) -> NoReturn:
         self.dataset = datasets.ImageFolder(str(path))
+        self.actual_classes = {v: k for k, v in self.dataset.class_to_idx.items()}
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, int]:
         image, label = self.dataset[index]
@@ -81,3 +82,6 @@ class PharmaPackDataset(Dataset):
 
     def __len__(self) -> int:
         return len(self.dataset)
+
+    def get_actual_class_by_idx(self, index: int) -> str:
+        return self.actual_classes[index]
