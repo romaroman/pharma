@@ -8,33 +8,38 @@ import torch
 from torch.utils.data import Dataset, DataLoader, sampler
 from torchvision import datasets, transforms
 
-from nnmodels import config
 from nnmodels.transforms import get_pipeline_transform
 
 
-def get_train_validation_data_loaders(dataset: Dataset) -> Tuple[DataLoader, DataLoader]:
+def get_train_validation_data_loaders(
+        dataset: Dataset,
+        batch_size: int,
+        num_workers: int,
+        test_size: float) -> Tuple[DataLoader, DataLoader]:
     num_train = len(dataset)
     indices = list(range(num_train))
     np.random.shuffle(indices)
 
-    split = int(np.floor(config.dataset_valid_size * num_train))
+    split = int(np.floor(test_size * num_train))
     train_idx, valid_idx = indices[split:], indices[:split]
 
     train_sampler = sampler.SubsetRandomSampler(train_idx)
     valid_sampler = sampler.SubsetRandomSampler(valid_idx)
 
-    train_loader = DataLoader(dataset, batch_size=config.batch_size, sampler=train_sampler,
-                              num_workers=config.dataset_num_workers, drop_last=True, shuffle=False)
-    test_loader = DataLoader(dataset, batch_size=config.batch_size, sampler=valid_sampler,
-                             num_workers=config.dataset_num_workers, drop_last=True, shuffle=False)
+    train_loader = DataLoader(
+        dataset, batch_size=batch_size, sampler=train_sampler, num_workers=num_workers, drop_last=True, shuffle=False
+    )
+    test_loader = DataLoader(
+        dataset, batch_size=batch_size, sampler=valid_sampler, num_workers=num_workers, drop_last=True, shuffle=False
+    )
 
     return train_loader, test_loader
 
 
 class PharmaPackDatasetTriplet(Dataset):
 
-    def __init__(self) -> NoReturn:
-        self.dataset = datasets.ImageFolder(str(config.source_dir.resolve()))
+    def __init__(self, path: Path) -> NoReturn:
+        self.dataset = datasets.ImageFolder(str(path.resolve()))
 
     def __getitem__(self, index: int) -> Tuple[Tuple[torch.Tensor, torch.Tensor, torch.Tensor], List[int]]:
         image_positive, label1 = self.dataset[index]
