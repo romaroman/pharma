@@ -10,10 +10,11 @@ from nearpy.hashes import RandomBinaryProjections
 from nearpy.storage import RedisStorage
 
 import torch
+from torch.utils.data import DataLoader, sampler
 import torchvision
 
 from nnmodels.hash import ResNet18Hash
-from nnmodels.datasets import PharmaPackDataset, get_train_validation_data_loaders
+from nnmodels.datasets import PharmaPackDataset
 import utils
 
 
@@ -22,15 +23,13 @@ utils.setup_logger(logger_name, logging.INFO, 'hash.log')
 logger = logging.getLogger(logger_name)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('src', type=str)
+parser.add_argument('src_insert', type=str)
+parser.add_argument('src_search', type=str)
 parser.add_argument('dst', type=str)
-parser.add_argument('insert', type=bool)
-parser.add_argument('search', type=bool)
 
 parser.add_argument('--vector_dimension', type=int, default=256)
 parser.add_argument('--hash_length', type=int, default=24)
 parser.add_argument('--batch_size', type=int, default=512)
-parser.add_argument('--test_size', type=float, default=0.1)
 parser.add_argument('--flush_all', type=bool, default=False)
 
 
@@ -83,6 +82,17 @@ def search(loader, nearpy_engine, hash_model):
     return pd.DataFrame(results)
 
 
+def get_loader(path, batch_size):
+    dataset = PharmaPackDataset(path)
+    logger.info(f"Image amount is {len(dataset)}")
+
+    srs_sampler = sampler.SubsetRandomSampler(list(range(len(dataset))))
+
+    return DataLoader(
+        dataset, batch_size=batch_size, sampler=srs_sampler, num_workers=0, drop_last=True, shuffle=False
+    )
+
+
 if __name__ == '__main__':
     args = parser.parse_args()
 
@@ -103,20 +113,17 @@ if __name__ == '__main__':
     hashes = RandomBinaryProjections('default', projection_count=args.hash_length)
     engine = Engine(args.vector_dimension, lshashes=[hashes],  storage=RedisStorage(redis_db))
 
-    dataset = PharmaPackDataset(args.src)
-    logger.info(f"Image amount is {len(dataset)}")
-    train_loader, test_loader = get_train_validation_data_loaders(dataset, args.batch_size, 0, args.test_size)
+    if args.src_insert:
+        loader = get_loader(args.src_insert, args.batch_size)
+        insert(loader, engine, model)
+        logger.info(f"Finished inserting and inserted {redis_db.dbsize()}")
 
-    if args.insert:
-        insert(train_loader, engine, model)
-        logger.info("Finished inserting")
-
-    if args.search:
-        df_result = search(test_loader, engine, model)
+    if args.src_search:
+        loader = get_loader(args.src_search, args.batch_size)
+        df_result = search(loader, engine, model)
 
         if os.path.exists(args.dst):
             os.remove(args.dst)
 
         df_result.to_csv(args.dst, index=False)
-        logger.info("Finished searching")
-
+        logger.info(f"Finished searching and written {args.dst}")
