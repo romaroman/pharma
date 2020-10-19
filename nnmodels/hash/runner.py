@@ -7,7 +7,8 @@ import pandas as pd
 from redis import Redis
 
 from nearpy import Engine
-from nearpy.hashes import RandomBinaryProjections
+from nearpy.hashes import RandomBinaryProjectionTree, RandomBinaryProjections
+from nearpy.distances import EuclideanDistance
 from nearpy.storage import RedisStorage
 
 import torch
@@ -16,6 +17,8 @@ import torchvision
 
 from nnmodels.hash import HashEncoder
 from nnmodels.datasets import PharmaPackDataset
+
+from textdetector.fileinfo import FileInfo
 import utils
 
 
@@ -32,6 +35,7 @@ parser.add_argument('--vector_dimension', type=int, default=256)
 parser.add_argument('--hash_length', type=int, default=24)
 parser.add_argument('--batch_size', type=int, default=512)
 parser.add_argument('--flush_all', type=bool, default=False)
+parser.add_argument('--db', type=int, default=0)
 
 
 def unzip(data, target):
@@ -45,41 +49,49 @@ def unzip(data, target):
     return data, target
 
 
+def unzip_d(data):
+    if not type(data) in (tuple, list):
+        data = (data,)
+    if cuda:
+        data = tuple(d.cuda() for d in data)
+    return data
+
+
 def insert(loader, nearpy_engine, hash_model):
-    img_index = 0
 
     with torch.no_grad():
         model.eval()
 
-        for batch_idx, (data, target) in enumerate(loader, start=1):
-            data, target = unzip(data, target)
+        for batch_idx, (data, filenames) in enumerate(loader, start=1):
+            data = unzip_d(data)
 
             tensor_vectors = hash_model(*data)
-            for vector, actual in zip(tensor_vectors.cpu().numpy(), target.cpu().numpy()):
-                nearpy_engine.store_vector(v=vector, data=f"{str(actual)}_{utils.zfill_n(img_index, 12)}")
-                img_index += 1
+
+            for vector, filename in zip(tensor_vectors.cpu().numpy(), filenames):
+                nearpy_engine.store_vector(v=vector, data=filename)
 
             logger.info(f'Inserted {batch_idx * args.batch_size} vectors')
 
 
 def search(loader, nearpy_engine, hash_model):
     results = []
-    img_index = 0
 
     with torch.no_grad():
         hash_model.eval()
 
-        for batch_idx, (data, target) in enumerate(loader, start=1):
-            data, target = unzip(data, target)
+        for batch_idx, (data, filenames) in enumerate(loader, start=1):
+            data = unzip_d(data)
 
             tensor_vectors = hash_model(*data)
 
-            for vector, actual in zip(tensor_vectors.cpu().numpy(), target.cpu().numpy()):
+            for vector, filename in zip(tensor_vectors.cpu().numpy(), filenames):
                 neighbours = nearpy_engine.neighbours(vector)
+                # if len(neighbours) == 0:
+                #     results.append([filename, None, None])
+                # else:
                 for neighbour in neighbours:
                     vector_neighbour, predicted, score = neighbour
-                    results.append([f"{str(actual)}_{utils.zfill_n(img_index, 12)}", predicted, score])
-                img_index += 1
+                    results.append([filename, predicted, score])
 
             logger.info(f'Found {batch_idx * args.batch_size} neighbours')
 
@@ -103,32 +115,48 @@ if __name__ == '__main__':
     cuda = torch.cuda.is_available()
     model.to('cuda') if cuda else model.to('cpu')
 
-    redis_db = Redis(host='localhost', port=6379, db=0)
+    redis_db = Redis(host='localhost', port=6379, db=args.db)
     if args.flush_all:
-        answer = input("Do you really want to clear db [yes/no]?   ")
+        answer = input(f"Do you really want to clear {args.db} database [yes/no]?   ")
         if answer.startswith('yes'):
-            logger.info("Cleared Redis db")
+            logger.info(f"Cleared {args.db} database")
             redis_db.flushall()
         else:
             logger.info("Didn't clear storage")
 
-    hashes = RandomBinaryProjections('default', projection_count=args.hash_length)
-    engine = Engine(args.vector_dimension, lshashes=[hashes], storage=RedisStorage(redis_db))
+    engine = Engine(
+        dim=args.vector_dimension,
+        distance=EuclideanDistance(),
+        lshashes=[
+            RandomBinaryProjectionTree(hash_name='rbp_tree', minimum_result_size=3, projection_count=args.hash_length),
+            RandomBinaryProjections(hash_name='rbp', projection_count=args.hash_length)
+        ],
+        storage=RedisStorage(redis_db)
+    )
 
     if args.src_insert:
+        logger.info("Start inserting")
         loader = get_loader(args.src_insert, args.batch_size)
         insert(loader, engine, model)
         logger.info(f"Finished inserting and inserted {redis_db.dbsize()}")
 
     if args.src_search:
+        logger.info("Start searching")
         loader = get_loader(args.src_search, args.batch_size)
         df = search(loader, engine, model)
         df_res = pd.DataFrame()
 
-        df_res['actual'] = df[df.columns[0]]# .astype(np.int64)
-        df_res['predicted'] = df[df.columns[1]]# .str.slice(0, 3).str.replace('_', '').astype(np.int64)
-        df_res['score'] = df[df.columns[2]].astype(np.float)
-        # df_res['match'] = df.actual == df.predicted
+        descriptors = ['phone', 'class', 'distinct', 'sample', 'size', 'angle', 'side']
+
+        df_res[[f'{desc}_actual' for desc in descriptors]] = df.apply(
+            result_type='expand', func=lambda row: FileInfo.get_file_info_by_path(row[0]).to_list(), axis=1
+        )
+        df_res[[f'{desc}_predicted' for desc in descriptors]] = df.apply(
+            result_type='expand', func=lambda row: FileInfo.get_file_info_by_path(row[1]).to_list(), axis=1
+        )
+        df_res['index_actual'] = df[0].str.split('_').str[-1].str[:4].astype(np.int64)
+        df_res['index_predicted'] = df[1].str.split('_').str[-1].str[:4].astype(np.int64)
+        df_res['score'] = df[2].astype(np.float)
 
         dst_folder = "hashmatching"
 

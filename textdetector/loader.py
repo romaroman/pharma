@@ -47,7 +47,7 @@ class Loader:
 
     def _load(self) -> NoReturn:
         self.image_files = [
-            FileInfo.get_file_info(file) for file in
+            FileInfo.get_file_info_by_path(file) for file in
             (config.dir_source / str(config.database) / "cropped").glob('*.png')
         ]
 
@@ -113,7 +113,7 @@ class Loader:
         else:
             for file in self.DEBUG_FILES:
                 self.image_files.append(
-                    FileInfo.get_file_info(config.dir_source / str(config.database) / f"cropped/{file}.png")
+                    FileInfo.get_file_info_by_path(config.dir_source / str(config.database) / f"cropped/{file}.png")
                 )
 
     def _handle_regular_loading(self) -> NoReturn:

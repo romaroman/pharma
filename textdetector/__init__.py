@@ -1,3 +1,3 @@
-from runner import Runner
-import writer
-import config
+from textdetector.runner import Runner
+import textdetector.writer
+import textdetector.config

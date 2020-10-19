@@ -22,7 +22,9 @@ class FileInfo(ABC):
     ]))
 
     @staticmethod
-    def get_file_info(file_path: Path) -> Union["FileInfoEnrollment", "FileInfoRecognition"]:
+    def get_file_info_by_path(file_path: Union[Path, str]) -> Union["FileInfoEnrollment", "FileInfoRecognition"]:
+        if type(file_path) is str:
+            file_path = Path(file_path)
 
         if config.database is FileDatabase.Enrollment:
             return FileInfoEnrollment(file_path)
