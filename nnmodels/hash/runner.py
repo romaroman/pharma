@@ -38,7 +38,7 @@ parser.add_argument('--hash_length', type=int, default=24)
 parser.add_argument('--batch_size', type=int, default=512)
 parser.add_argument('--flush_all', type=bool, default=False)
 parser.add_argument('--neighbours', type=int, default=1)
-parser.add_argument('--db', type=str, default=0)
+parser.add_argument('--db', type=int, default=0)
 
 
 def unzip(data, target):
@@ -65,7 +65,7 @@ def insert(loader, nearpy_engine, hash_model):
     with torch.no_grad():
         model.eval()
 
-        bar = tqdm(np.arange(len(loader)), desc='Inserting...', total=len(loader))
+        bar = tqdm(np.arange(len(loader)), desc='Inserting\t', total=len(loader))
 
         for batch_idx, (data, filenames) in enumerate(loader, start=1):
             data = unzip_d(data)
@@ -76,8 +76,7 @@ def insert(loader, nearpy_engine, hash_model):
                 nearpy_engine.store_vector(v=vector, data=filename)
 
             bar.update()
-
-            # logger.info(f'Inserted {batch_idx * args.batch_size} vectors')
+        bar.close()
 
 
 def search(loader, nearpy_engine, hash_model):
@@ -85,7 +84,7 @@ def search(loader, nearpy_engine, hash_model):
 
     with torch.no_grad():
         hash_model.eval()
-        bar = tqdm(np.arange(len(loader)), desc='Searching...', total=len(loader))
+        bar = tqdm(np.arange(len(loader)), desc='Searching\t', total=len(loader))
 
         for batch_idx, (data, filenames) in enumerate(loader, start=1):
             data = unzip_d(data)
@@ -94,16 +93,13 @@ def search(loader, nearpy_engine, hash_model):
 
             for vector, filename in zip(tensor_vectors.cpu().numpy(), filenames):
                 neighbours = nearpy_engine.neighbours(vector)
-                # if len(neighbours) == 0:
-                #     results.append([filename, None, None])
-                # else:
+
                 for neighbour in neighbours:
                     vector_neighbour, predicted, score = neighbour
                     results.append([filename, predicted, score])
 
             bar.update()
-
-            # logger.info(f'Found {batch_idx * args.batch_size} neighbours')
+        bar.close()
 
     return pd.DataFrame(results)
 

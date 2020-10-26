@@ -9,13 +9,12 @@ parser.add_argument('--src_search', type=str)
 args = parser.parse_args()
 
 
-neighbours = [1, 5, 9, 13]
 models = ['resnet18', 'resnet50', 'resnet108']
 vectors = [256, 512, 1024]
 hashes = [64, 128, 256]
-experiments = itertools.product(*[neighbours, models, vectors, hashes])
+# neighbours = [1, 5, 9, 13]
 
-for neighbour, model, vector, hash in experiments:
+for i, (model, vector, hash) in enumerate(itertools.product(*[models, vectors, hashes])):
 
     batch_size = {
         'resnet18': 2500,
@@ -23,12 +22,12 @@ for neighbour, model, vector, hash in experiments:
         'resnet108': 600
     }.get(model, 512)
 
-    db = f"{model}_v{vector}_h{hash}"
 
     command = f"python nnmodels/hash/runner.py --src_insert {args.src_insert} --base_model {model} --vector_dimension {vector}" \
-              f" --hash_length {hash} --batch_size {batch_size} --neighbours {neighbour} --db {db}"
+              f" --hash_length {hash} --batch_size {batch_size} --db {i}"
 
     print(command)
-    exit_code = os.system(command)
-    if exit_code != 0:
-        break
+    # exit_code = os.system(command)
+    # if exit_code != 0:
+        # break
+#
