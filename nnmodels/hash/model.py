@@ -1,5 +1,3 @@
-from typing import Any
-
 import torch
 from torch import nn
 
@@ -10,7 +8,6 @@ class HashEncoder(nn.Module):
         super(HashEncoder, self).__init__()
 
         self.features = nn.Sequential(*list(pretrained_model.children())[:-1])
-
         self.fc = nn.Linear(pretrained_model.fc.in_features, output_size)
 
     def forward(self, x):

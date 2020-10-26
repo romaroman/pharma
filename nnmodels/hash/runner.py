@@ -1,13 +1,15 @@
 import os
 import logging
 import argparse
+from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
 from redis import Redis
 
 from nearpy import Engine
-from nearpy.hashes import RandomBinaryProjectionTree, RandomBinaryProjections
+from nearpy.hashes import RandomBinaryProjectionTree
+from nearpy.filters import NearestFilter
 from nearpy.distances import EuclideanDistance
 from nearpy.storage import RedisStorage
 
@@ -35,6 +37,7 @@ parser.add_argument('--vector_dimension', type=int, default=256)
 parser.add_argument('--hash_length', type=int, default=24)
 parser.add_argument('--batch_size', type=int, default=512)
 parser.add_argument('--flush_all', type=bool, default=False)
+parser.add_argument('--neighbours', type=int, default=1)
 parser.add_argument('--db', type=int, default=0)
 
 
@@ -62,6 +65,8 @@ def insert(loader, nearpy_engine, hash_model):
     with torch.no_grad():
         model.eval()
 
+        bar = tqdm(np.arange(len(loader)), desc='Inserting...', total=len(loader))
+
         for batch_idx, (data, filenames) in enumerate(loader, start=1):
             data = unzip_d(data)
 
@@ -70,7 +75,9 @@ def insert(loader, nearpy_engine, hash_model):
             for vector, filename in zip(tensor_vectors.cpu().numpy(), filenames):
                 nearpy_engine.store_vector(v=vector, data=filename)
 
-            logger.info(f'Inserted {batch_idx * args.batch_size} vectors')
+            bar.update()
+
+            # logger.info(f'Inserted {batch_idx * args.batch_size} vectors')
 
 
 def search(loader, nearpy_engine, hash_model):
@@ -78,6 +85,7 @@ def search(loader, nearpy_engine, hash_model):
 
     with torch.no_grad():
         hash_model.eval()
+        bar = tqdm(np.arange(len(loader)), desc='Searching...', total=len(loader))
 
         for batch_idx, (data, filenames) in enumerate(loader, start=1):
             data = unzip_d(data)
@@ -93,7 +101,9 @@ def search(loader, nearpy_engine, hash_model):
                     vector_neighbour, predicted, score = neighbour
                     results.append([filename, predicted, score])
 
-            logger.info(f'Found {batch_idx * args.batch_size} neighbours')
+            bar.update()
+
+            # logger.info(f'Found {batch_idx * args.batch_size} neighbours')
 
     return pd.DataFrame(results)
 
@@ -102,16 +112,21 @@ def get_loader(path, batch_size):
     dataset = PharmaPackDataset(path)
     logger.info(f"Image amount is {len(dataset)}")
 
-    srs_sampler = sampler.SubsetRandomSampler(list(range(len(dataset))))
-
-    return DataLoader(dataset, batch_size=batch_size, sampler=srs_sampler, num_workers=0, drop_last=True, shuffle=False)
+    return DataLoader(
+        dataset=dataset,
+        batch_size=batch_size,
+        sampler=sampler.SubsetRandomSampler(np.arange(len(dataset))),
+        num_workers=0,
+        drop_last=True,
+        shuffle=False
+    )
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
 
     base_model = torchvision.models.__dict__[args.base_model](pretrained=True)
-    model = HashEncoder(base_model, args.vector_dimension)
+    model = torch.nn.DataParallel(HashEncoder(base_model, args.vector_dimension))
     cuda = torch.cuda.is_available()
     model.to('cuda') if cuda else model.to('cpu')
 
@@ -128,11 +143,17 @@ if __name__ == '__main__':
         dim=args.vector_dimension,
         distance=EuclideanDistance(),
         lshashes=[
-            RandomBinaryProjectionTree(hash_name='rbp_tree', minimum_result_size=3, projection_count=args.hash_length),
-            RandomBinaryProjections(hash_name='rbp', projection_count=args.hash_length)
+            RandomBinaryProjectionTree(
+                hash_name='rbp_tree',
+                minimum_result_size=args.neighbours,
+                projection_count=args.hash_length
+            ),
+            # RandomBinaryProjections(hash_name='rbp', projection_count=args.hash_length)
         ],
+        vector_filters=[NearestFilter(24)],
         storage=RedisStorage(redis_db)
     )
+
 
     if args.src_insert:
         logger.info("Start inserting")
@@ -146,7 +167,10 @@ if __name__ == '__main__':
         df = search(loader, engine, model)
         df_res = pd.DataFrame()
 
-        descriptors = ['phone', 'class', 'distinct', 'sample', 'size', 'angle', 'side']
+        descriptors = ['class', 'phone', 'distinct', 'sample', 'size', 'angle', 'side']
+
+        df_res['filename_actual'] = df[0].astype(str)
+        df_res['filename_predicted'] = df[1].astype(str)
 
         df_res[[f'{desc}_actual' for desc in descriptors]] = df.apply(
             result_type='expand', func=lambda row: FileInfo.get_file_info_by_path(row[0]).to_list(), axis=1
@@ -162,6 +186,7 @@ if __name__ == '__main__':
 
         os.makedirs(dst_folder, exist_ok=True)
         dst_path = f"{dst_folder}/{args.base_model}_vec{args.vector_dimension}_hash{args.hash_length}.csv"
+
         if os.path.exists(dst_path):
             os.remove(dst_path)
 
