@@ -29,16 +29,16 @@ utils.setup_logger(logger_name, logging.INFO, 'hash.log')
 logger = logging.getLogger(logger_name)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('src_insert', type=str)
-parser.add_argument('src_search', type=str)
 
+parser.add_argument('--src_insert', type=str)
+parser.add_argument('--src_search', type=str)
 parser.add_argument('--base_model', type=str, default="resnet18")
 parser.add_argument('--vector_dimension', type=int, default=256)
 parser.add_argument('--hash_length', type=int, default=24)
 parser.add_argument('--batch_size', type=int, default=512)
 parser.add_argument('--flush_all', type=bool, default=False)
 parser.add_argument('--neighbours', type=int, default=1)
-parser.add_argument('--db', type=int, default=0)
+parser.add_argument('--db', type=str, default=0)
 
 
 def unzip(data, target):

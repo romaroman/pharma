@@ -4,8 +4,8 @@ import itertools
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('src_insert', type=str)
-parser.add_argument('src_search', type=str)
+parser.add_argument('--src_insert', type=str)
+parser.add_argument('--src_search', type=str)
 args = parser.parse_args()
 
 
@@ -25,8 +25,10 @@ for neighbour, model, vector, hash in experiments:
 
     db = f"{model}_v{vector}_h{hash}"
 
-    command = f"python runner.py {args.src_insert} {args.src_search} --base_model {model} --vector_dimension {vector}" \
-              f" --hash_length {hash} --batch_size {batch_size} --neighbours {neighbour} --db {db} --flush_all False"
+    command = f"python nnmodels/hash/runner.py --src_insert {args.src_insert} --base_model {model} --vector_dimension {vector}" \
+              f" --hash_length {hash} --batch_size {batch_size} --neighbours {neighbour} --db {db}"
 
     print(command)
-    os.system(command)
+    exit_code = os.system(command)
+    if exit_code != 0:
+        break
