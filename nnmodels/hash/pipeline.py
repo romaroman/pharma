@@ -17,17 +17,22 @@ hashes = [64, 128, 256]
 for i, (model, vector, hash) in enumerate(itertools.product(*[models, vectors, hashes])):
 
     batch_size = {
-        'resnet18': 2500,
-        'resnet50': 1500,
-        'resnet108': 600
+        'resnet18': 5000,
+        'resnet50': 3000,
+        'resnet108': 1000
     }.get(model, 512)
 
 
-    command = f"python nnmodels/hash/runner.py --src_insert {args.src_insert} --base_model {model} --vector_dimension {vector}" \
+    command = f"python nnmodels/hash/runner.py --base_model {model} --vector_dimension {vector}" \
               f" --hash_length {hash} --batch_size {batch_size} --db {i}"
 
+    if args.src_insert:
+        command += f" --src_insert {args.src_insert}"
+
+    if args.src_search:
+        command += f" --src_insert {args.src_search}"
+
     print(command)
-    # exit_code = os.system(command)
-    # if exit_code != 0:
-        # break
-#
+    exit_code = os.system(command)
+    if exit_code != 0:
+        break
