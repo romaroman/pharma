@@ -65,16 +65,16 @@ def insert(loader, hash_model: HashEncoder, db: Redis):
 
             result = hash_model(*data)
 
-            for vector_size, tensor in result.items():
-                for vector, filepath in zip(tensor.cpu().numpy(), filepaths):
-                    data = pickle.dumps({
-                        'vector': vector,
-                        'path': filepath,
-                        'model': hash_model.base_model,
-                    })
+            # for vector_size, tensor in result.items():
+            for vector, filepath in zip(result.cpu().numpy(), filepaths):
+                p_data = pickle.dumps({
+                    'vector': vector,
+                    'path': filepath,
+                    'model': hash_model.base_model,
+                })
 
-                    id = get_unique_identifier(hash_model.base_model, vector_size, Path(filepath))
-                    db.append(id, data)
+                id = get_unique_identifier(hash_model.base_model, 256, Path(filepath))
+                db.append(id, p_data)
 
             bar.update()
         bar.close()
@@ -112,10 +112,10 @@ if __name__ == '__main__':
         model = HashEncoder(base_model, [256, 512, 1024])
 
         loader = get_loader(args.src_insert, batch_size=4)
-        batch_size = dict(resnet18=12000, resnet50=6000, resnet108=3000).get(base_model, 512)
+        batch_size = dict(resnet18=1024, resnet50=512, resnet108=256).get(base_model, 512)
 
         cuda = torch.cuda.is_available()
-        model = torch.nn.DataParallel(model) if cuda else model
+        model = model #  if cuda else model
         model.to('cuda') if cuda else model.to('cpu')
 
         insert(loader, model, redis_db)

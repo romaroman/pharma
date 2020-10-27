@@ -14,11 +14,14 @@ class HashEncoder(nn.Module):
         self.base_model: str = base_model
         self.features: nn.Module = nn.Sequential(*list(pretrained_model.children())[:-1])
 
-        self.fcs: Dict[int, nn.Linear] = dict()
-        for output_size in output_sizes:
-            self.fcs[output_size] = nn.Linear(pretrained_model.fc.in_features, output_size)
+        self.fc = nn.Linear(pretrained_model.fc.in_features, output_sizes[0])
+
+        # self.fcs: Dict[int, nn.Linear] = dict()
+        # for output_size in output_sizes:
+        #     self.fcs[output_size] = nn.Linear(pretrained_model.fc.in_features, output_size)
 
     def forward(self, x):
         x = self.features(x)
         x = torch.flatten(x, 1)
-        return dict([(size, fc(x)) for size, fc in self.fcs.items()])
+        return self.fc(x)
+        #return dict([(size, fc(x)) for size, fc in self.fcs.items()])
