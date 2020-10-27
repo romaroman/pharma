@@ -107,10 +107,12 @@ if __name__ == '__main__':
             logger.info("Didn't clear storage")
 
     logger.info("Start inserting")
-    loader = get_loader(args.src_insert, batch_size=4)
 
     for index, base_model in enumerate(models, start=0):
         model = HashEncoder(base_model, [256, 512, 1024])
+
+        loader = get_loader(args.src_insert, batch_size=4)
+        batch_size = dict(resnet18=12000, resnet50=6000, resnet108=3000).get(base_model, 512)
 
         cuda = torch.cuda.is_available()
         model = torch.nn.DataParallel(model) if cuda else model

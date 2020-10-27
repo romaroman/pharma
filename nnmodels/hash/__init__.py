@@ -1,1 +1,1 @@
-from nnmodels.hash.model import HashEncoder
+from nnmodels.hash.encoder import HashEncoder
