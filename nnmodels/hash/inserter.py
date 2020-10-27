@@ -66,15 +66,16 @@ def insert(loader, hash_model: HashEncoder, db: Redis):
             result = hash_model(*data)
 
             # for vector_size, tensor in result.items():
-            for vector, filepath in zip(result.cpu().numpy(), filepaths):
-                p_data = pickle.dumps({
-                    'vector': vector,
-                    'path': filepath,
-                    'model': hash_model.base_model,
-                })
+            for vector_size, tensor in zip([256, 512, 1024], result):
+                for vector, filepath in zip(tensor.cpu().numpy(), filepaths):
+                    p_data = pickle.dumps({
+                        'vector': vector,
+                        'path': filepath,
+                        'model': hash_model.base_model,
+                    })
 
-                id = get_unique_identifier(hash_model.base_model, 256, Path(filepath))
-                db.append(id, p_data)
+                    id = get_unique_identifier(hash_model.base_model, vector_size, Path(filepath))
+                    db.append(id, p_data)
 
             bar.update()
         bar.close()

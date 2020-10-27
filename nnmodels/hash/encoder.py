@@ -14,7 +14,9 @@ class HashEncoder(nn.Module):
         self.base_model: str = base_model
         self.features: nn.Module = nn.Sequential(*list(pretrained_model.children())[:-1])
 
-        self.fc = nn.Linear(pretrained_model.fc.in_features, output_sizes[0])
+        self.fc1 = nn.Linear(pretrained_model.fc.in_features, output_sizes[0])
+        self.fc2 = nn.Linear(pretrained_model.fc.in_features, output_sizes[1])
+        self.fc3 = nn.Linear(pretrained_model.fc.in_features, output_sizes[1])
 
         # self.fcs: Dict[int, nn.Linear] = dict()
         # for output_size in output_sizes:
@@ -23,5 +25,5 @@ class HashEncoder(nn.Module):
     def forward(self, x):
         x = self.features(x)
         x = torch.flatten(x, 1)
-        return self.fc(x)
+        return self.fc1(x), self.fc2(x), self.fc3(x)
         #return dict([(size, fc(x)) for size, fc in self.fcs.items()])
