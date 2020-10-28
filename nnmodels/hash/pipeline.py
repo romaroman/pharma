@@ -1,7 +1,8 @@
 import os
 import argparse
 import itertools
-
+from lopq.search import LOPQSearcherLMDB
+from lopq.model import LOPQModel
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--src_insert', type=str)

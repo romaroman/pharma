@@ -121,12 +121,12 @@ def get_loader(path, batch_size):
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    base_model = torchvision.models.__dict__[args.base_model](pretrained=True)
-    model = torch.nn.DataParallel(HashEncoder(base_model, args.vector_dimension))
+    model = torch.nn.DataParallel(HashEncoder(args.base_model, [args.vector_dimension]))
     cuda = torch.cuda.is_available()
     model.to('cuda') if cuda else model.to('cpu')
 
     redis_db = Redis(host='localhost', port=6379, db=args.db)
+
     if args.flush_all:
         answer = input(f"Do you really want to clear {args.db} database [yes/no]?   ")
         if answer.startswith('yes'):

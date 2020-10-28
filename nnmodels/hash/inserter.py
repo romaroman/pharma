@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('dir_complete', type=str)
 parser.add_argument('--flushdb', type=bool, default=False)
-parser.add_argument('--db', type=int, default=1)
+parser.add_argument('--db', type=int, default=6)
 
 models = ['resnet18', 'resnet50', 'resnet101']
 vectors = [256, 512, 1024]
@@ -68,7 +68,7 @@ def insert(loader, hash_model: HashEncoder, db: Redis):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    redis_db = Redis(host='localhost', port=6379, db=6)
+    redis_db = Redis(host='localhost', port=6379, db=args.db)
 
     if args.flushdb:
         answer = input(f"Do you really want to clear {args.db} database [yes/no]?   ")
