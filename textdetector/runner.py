@@ -71,8 +71,8 @@ class Runner:
 
             detection = Detector(image_aligned)
             detection.detect(config.det_algorithms)
-
             writer.save_detection_results(detection, file)
+            return
 
             if config.exr_used:
                 referencer = Referencer(image_aligned, annotation)

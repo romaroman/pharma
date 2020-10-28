@@ -224,12 +224,12 @@ class Detector:
         return cv.bitwise_or(image_lines_h, image_lines_v)
 
     def save_results(self, path_parent_folder: Path) -> NoReturn:
-        os.makedirs(str(path_parent_folder.resolve()), exist_ok=True)
+        path_parent_folder.mkdir(parents=True, exist_ok=True)
 
         cv.imwrite(str(path_parent_folder / 'image_ref.png'), self.image_not_scaled)
 
         for algorithm, result in self.results.items():
-            os.makedirs(str((path_parent_folder / algorithm).resolve()), exist_ok=True)
+            (path_parent_folder / algorithm).mkdir(parents=True, exist_ok=True)
             cv.imwrite(str(path_parent_folder / algorithm / 'image_mask.png'), result.get_default_mask())
 
     @classmethod
@@ -289,6 +289,17 @@ class DetectionResult:
             return cv.drawContours(image, [self.polygon], -1, color, -1 if filled else 2)
 
         def as_nn_input(self, image_to_crop: np.ndarray) -> np.ndarray:
+
+            def get_colors_combinations(image_centered: np.ndarray, image_mask: np.ndarray, channel: int):
+                hist = cv.calcHist([image_centered], [channel], image_mask, [256], [0, 256])
+                color_mean_occurrence = hist[hist.nonzero()[0]].mean()
+                selected_colours = list(
+                    x[0] for x in filter(
+                        lambda x: x[1] > color_mean_occurrence,
+                        sorted(enumerate(hist), key=lambda x: x[1]))
+                )[:5]
+                return selected_colours
+
             dst_size = 256
             downscale_ratio = 1 / (max(self.brect[2:]) / dst_size)
 

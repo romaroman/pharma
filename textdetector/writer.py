@@ -21,7 +21,8 @@ def write_entity(
         extension: str
 ) -> NoReturn:
     dst_folder = config.dir_output / folder_suffix
-    utils.create_dirs(dst_folder)
+    dst_folder.mkdir(parents=True, exist_ok=True)
+
     dst_path = str(dst_folder / Path(filename + f".{extension}"))
 
     if extension == "png":
@@ -36,7 +37,7 @@ def write_entity(
 
 def write_image_region(image: np.ndarray, folder_suffix: str, filename: str, order: str) -> NoReturn:
     dst_folder = config.dir_output / folder_suffix / filename
-    utils.create_dirs(dst_folder)
+    dst_folder.mkdir(parents=True, exist_ok=True)
     dst_path = dst_folder / f"{order}.png"
 
     cv.imwrite(str(dst_path), image)
@@ -53,6 +54,7 @@ def save_detection_results(detection: Detector, fileinfo: FileInfo) -> NoReturn:
 
     for algorithm, result in detection.results.items():
         for method in result.masks.keys():
+
             common_part = f"{algorithm}/{method}"
             if 'mask' in config.det_write:
                 write_entity(result.masks[method], f"{common_part}/masks", fileinfo.filename, "png")
@@ -67,8 +69,7 @@ def save_detection_results(detection: Detector, fileinfo: FileInfo) -> NoReturn:
         if 'nn' in config.det_write:
             parent_folder = config.dir_output / "NN" / algorithm / fileinfo.get_unique_identifier()
 
-            if not parent_folder.exists():
-                utils.create_dirs(parent_folder)
+            parent_folder.mkdir(parents=True, exist_ok=True)
 
             for index, region in enumerate(result.get_default_regions(), start=1):
                 cv.imwrite(
@@ -91,4 +92,4 @@ def save_reference_results(referencer: Referencer, filename: str) -> NoReturn:
 def prepare_output_folder() -> NoReturn:
     if config.out_clear_output_dir:
         shutil.rmtree(config.dir_output, ignore_errors=True)
-        utils.create_dirs(config.dir_output)
+        config.dir_output.mkdir(parents=True, exist_ok=True)

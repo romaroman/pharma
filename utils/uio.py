@@ -1,8 +1,6 @@
 import datetime
-import os
 import logging
 import warnings
-from pathlib import Path
 
 from typing import NoReturn, List, Union, Tuple
 
@@ -162,10 +160,6 @@ def suppress_warnings() -> NoReturn:
 
 def get_str_timestamp() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
-
-
-def create_dirs(path: Path) -> NoReturn:
-    os.makedirs(str(path.resolve()), exist_ok=True)
 
 
 def add_text(image: np.ndarray, text: str, scale: int = 2) -> np.ndarray:

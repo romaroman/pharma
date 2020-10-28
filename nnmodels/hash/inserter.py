@@ -54,6 +54,7 @@ def get_unique_identifier(base_model: str, vector_size: int, filepath: Path) -> 
 
 
 def insert(loader, hash_model: HashEncoder, db: Redis):
+    parallel_model = torch.nn.DataParallel(hash_model)
 
     with torch.no_grad():
         model.eval()
@@ -63,10 +64,10 @@ def insert(loader, hash_model: HashEncoder, db: Redis):
         for batch_idx, (data, filepaths) in enumerate(loader, start=1):
             data = unzip_d(data)
 
-            result = hash_model(*data)
+            result = parallel_model(*data)
 
             # for vector_size, tensor in result.items():
-            for vector_size, tensor in zip([256, 512, 1024], result):
+            for vector_size, tensor in zip(hash_model.output_sizes, result):
                 for vector, filepath in zip(tensor.cpu().numpy(), filepaths):
                     p_data = pickle.dumps({
                         'vector': vector,
@@ -116,7 +117,6 @@ if __name__ == '__main__':
         batch_size = dict(resnet18=1024, resnet50=512, resnet108=256).get(base_model, 512)
 
         cuda = torch.cuda.is_available()
-        model = model #  if cuda else model
         model.to('cuda') if cuda else model.to('cpu')
 
         insert(loader, model, redis_db)
