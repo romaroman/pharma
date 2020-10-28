@@ -16,7 +16,7 @@ class HashEncoder(nn.Module):
         self.output_sizes: List[int] = output_sizes
         self.features: nn.Module = nn.Sequential(*list(pretrained_model.children())[:-1])
 
-        self.fcs = [nn.Linear(pretrained_model.fc.in_features, size) for size in self.output_sizes]
+        self.fcs = nn.ModuleList([nn.Linear(pretrained_model.fc.in_features, size) for size in self.output_sizes])
 
     def forward(self, x):
         x = self.features(x)

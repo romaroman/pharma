@@ -1,6 +1,5 @@
 import logging
 import argparse
-import hashlib
 import pickle
 
 import numpy as np
@@ -24,12 +23,12 @@ logger = logging.getLogger(logger_name)
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('src_insert', type=str)
+parser.add_argument('dir_complete', type=str)
 parser.add_argument('--flushdb', type=bool, default=False)
 parser.add_argument('--db', type=int, default=1)
 
-models = ['resnet18', 'resnet50', 'resnet108']
-
+models = ['resnet18', 'resnet50', 'resnet101']
+vectors = [256, 512, 1024]
 
 def unzip_d(data):
     if not type(data) in (tuple, list):
@@ -37,20 +36,6 @@ def unzip_d(data):
     if cuda:
         data = tuple(d.cuda() for d in data)
     return data
-
-
-def get_unique_identifier(base_model: str, vector_size: int, filepath: Path) -> str:
-    identifier = "_".join(
-        [
-            base_model,
-            str(vector_size),
-            filepath.parent.parent.stem,
-            filepath.stem
-        ]
-    )
-    # id = int(hashlib.md5(identifier.encode('utf-8')).hexdigest(), 16)
-
-    return identifier
 
 
 def insert(loader, hash_model: HashEncoder, db: Redis):
@@ -66,7 +51,6 @@ def insert(loader, hash_model: HashEncoder, db: Redis):
 
             result = parallel_model(*data)
 
-            # for vector_size, tensor in result.items():
             for vector_size, tensor in zip(hash_model.output_sizes, result):
                 for vector, filepath in zip(tensor.cpu().numpy(), filepaths):
                     p_data = pickle.dumps({
@@ -75,30 +59,16 @@ def insert(loader, hash_model: HashEncoder, db: Redis):
                         'model': hash_model.base_model,
                     })
 
-                    id = get_unique_identifier(hash_model.base_model, vector_size, Path(filepath))
-                    db.append(id, p_data)
+                    uuid = "+".join([base_model, str(vector_size), filepath.parent.parent.stem, filepath.stem])
+                    db.append(uuid, p_data)
 
             bar.update()
         bar.close()
 
 
-def get_loader(path, batch_size):
-    dataset = PharmaPackDataset(path)
-    logger.info(f"Image amount is {len(dataset)}")
-
-    return DataLoader(
-        dataset=dataset,
-        batch_size=batch_size,
-        sampler=sampler.SubsetRandomSampler(np.arange(len(dataset))),
-        num_workers=0,
-        drop_last=True,
-        shuffle=False
-    )
-
-
 if __name__ == '__main__':
     args = parser.parse_args()
-    redis_db = Redis(host='localhost', port=6379, db=1)
+    redis_db = Redis(host='localhost', port=6379, db=6)
 
     if args.flushdb:
         answer = input(f"Do you really want to clear {args.db} database [yes/no]?   ")
@@ -108,16 +78,26 @@ if __name__ == '__main__':
         else:
             logger.info("Didn't clear storage")
 
-    logger.info("Start inserting")
+    dir_complete = Path(args.dir_complete)
 
-    for index, base_model in enumerate(models, start=0):
-        model = HashEncoder(base_model, [256, 512, 1024])
+    for alg_folder in dir_complete.glob('*'):
+        for index, base_model in enumerate(models, start=0):
+            batch_size = dict(resnet18=5000, resnet50=2048, resnet101=2048).get(base_model, 512)
 
-        loader = get_loader(args.src_insert, batch_size=4)
-        batch_size = dict(resnet18=1024, resnet50=512, resnet108=256).get(base_model, 512)
+            dataset = PharmaPackDataset(alg_folder)
+            loader = DataLoader(
+                dataset=dataset,
+                batch_size=batch_size,
+                sampler=sampler.SubsetRandomSampler(np.arange(len(dataset))),
+                num_workers=0,
+                drop_last=True,
+                shuffle=False
+            )
 
-        cuda = torch.cuda.is_available()
-        model.to('cuda') if cuda else model.to('cpu')
+            model = HashEncoder(base_model, vectors)
+            cuda = torch.cuda.is_available()
+            model.to('cuda') if cuda else model.to('cpu')
 
-        insert(loader, model, redis_db)
-        logger.info(f"Finished inserting and inserted {redis_db.dbsize()}")
+            logger.info(f"Start inserting {base_model} with {len(loader)} batches and batch size {batch_size}")
+            insert(loader, model, redis_db)
+            logger.info(f"Finished inserting and inserted {redis_db.dbsize()}")
