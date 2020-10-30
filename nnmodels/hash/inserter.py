@@ -13,11 +13,12 @@ from torch.utils.data import DataLoader, sampler
 
 from nnmodels.hash import HashEncoder
 from nnmodels.datasets import PharmaPackDataset
+from nnmodels.hash.helpers import get_image_uuid
 
 import utils
 
 
-logger_name = 'nnmodels | hash'
+logger_name = 'nnmodels | inserter'
 utils.setup_logger(logger_name, logging.INFO, 'hash.log')
 logger = logging.getLogger(logger_name)
 
@@ -27,8 +28,8 @@ parser.add_argument('dir_complete', type=str)
 parser.add_argument('--flushdb', type=bool, default=False)
 parser.add_argument('--db', type=int, default=6)
 
-models = ['resnet18', 'resnet50', 'resnet101']
-vectors = [256, 512, 1024]
+base_models = ['resnet18']#, 'resnet50', 'resnet101']
+vectors = [256]#, 512, 1024]
 
 def unzip_d(data):
     if not type(data) in (tuple, list):
@@ -44,7 +45,7 @@ def insert(loader, hash_model: HashEncoder, db: Redis):
     with torch.no_grad():
         model.eval()
 
-        bar = tqdm(np.arange(len(loader)), desc='Inserting\t', total=len(loader))
+        bar = tqdm(np.arange(len(loader)), desc='Inserting', total=len(loader))
 
         for batch_idx, (data, filepaths) in enumerate(loader, start=1):
             data = unzip_d(data)
@@ -58,8 +59,7 @@ def insert(loader, hash_model: HashEncoder, db: Redis):
                         'path': filepath,
                         'model': hash_model.base_model,
                     })
-
-                    uuid = "+".join([base_model, str(vector_size), filepath.parent.parent.stem, filepath.stem])
+                    uuid = get_image_uuid(hash_model.base_model, vector_size, Path(filepath))
                     db.append(uuid, p_data)
 
             bar.update()
@@ -71,26 +71,25 @@ if __name__ == '__main__':
     redis_db = Redis(host='localhost', port=6379, db=args.db)
 
     if args.flushdb:
-        answer = input(f"Do you really want to clear {args.db} database [yes/no]?   ")
+        answer = input(f"Do you really want to flush db #{args.db}  [yes/no]?   ")
         if answer.startswith('yes'):
-            logger.info(f"Cleared {args.db} database")
+            logger.info(f"Flushed db #{args.db} ")
             redis_db.flushdb()
         else:
-            logger.info("Didn't clear storage")
+            logger.info(f"Didn't flush db #{args.db}")
 
-    dir_complete = Path(args.dir_complete)
+    for dir_alg in Path(args.dir_complete).glob('*'):
+        for base_model in base_models:
+            # batch_size = dict(resnet18=1024, resnet50=1024, resnet101=1024).get(base_model, 512)
+            batch_size = 4
 
-    for alg_folder in dir_complete.glob('*'):
-        for index, base_model in enumerate(models, start=0):
-            batch_size = dict(resnet18=5000, resnet50=2048, resnet101=2048).get(base_model, 512)
-
-            dataset = PharmaPackDataset(alg_folder)
+            dataset = PharmaPackDataset(dir_alg)
             loader = DataLoader(
                 dataset=dataset,
                 batch_size=batch_size,
                 sampler=sampler.SubsetRandomSampler(np.arange(len(dataset))),
                 num_workers=0,
-                drop_last=True,
+                drop_last=False,
                 shuffle=False
             )
 
@@ -98,6 +97,6 @@ if __name__ == '__main__':
             cuda = torch.cuda.is_available()
             model.to('cuda') if cuda else model.to('cpu')
 
-            logger.info(f"Start inserting {base_model} with {len(loader)} batches and batch size {batch_size}")
+            logger.info(f"Start inserting model={base_model} alg={dir_alg.stem} ba={len(loader)} bs={batch_size}")
             insert(loader, model, redis_db)
             logger.info(f"Finished inserting and inserted {redis_db.dbsize()}")
