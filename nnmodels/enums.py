@@ -8,3 +8,4 @@ class Model(CustomEnum):
     Resnet50 = auto(),
     Siamese = auto(),
     SimCLR = auto(),
+    Hash = auto()

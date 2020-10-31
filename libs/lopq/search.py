@@ -3,6 +3,7 @@
 import heapq
 import lmdb
 import array
+import pickle
 
 import numpy as np
 
@@ -300,7 +301,7 @@ class LOPQSearcherLMDB(LOPQSearcherBase):
         self.id_lambda = id_lambda
 
         self.env = lmdb.open(self.lmdb_path, map_size=1024*2000000*2, writemap=False, map_async=True, max_dbs=1)
-        self.index_db = self.env.open_db("index")
+        self.index_db = self.env.open_db(pickle.dumps("index"))
 
     def encode_cell(self, cell):
         return array.array("H", cell).tostring()

@@ -104,8 +104,8 @@ class Loader:
         if self.group_by:
             return self.image_chunks.values(), len(self.image_chunks.values())
         else:
-            chunks_amount = 100
-            return utils.chunks(self.image_files, chunks_amount), chunks_amount
+            chunks_length = 100
+            return utils.chunks(self.image_files, chunks_length), chunks_length
 
     def _handle_debug_files(self) -> NoReturn:
         if not self.DEBUG_FILES:

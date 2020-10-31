@@ -13,13 +13,13 @@ from torch.utils.data import DataLoader, sampler
 
 from nnmodels.hash import HashEncoder
 from nnmodels.datasets import PharmaPackDataset
-from nnmodels.hash.helpers import get_image_uuid
+from nnmodels.hash.helpers import encode_image_to_uuid
 
 import utils
 
 
 logger_name = 'nnmodels | inserter'
-utils.setup_logger(logger_name, logging.INFO, 'hash.log')
+utils.setup_logger(logger_name, logging.INFO)
 logger = logging.getLogger(logger_name)
 
 parser = argparse.ArgumentParser()
@@ -28,8 +28,9 @@ parser.add_argument('dir_complete', type=str)
 parser.add_argument('--flushdb', type=bool, default=False)
 parser.add_argument('--db', type=int, default=6)
 
-base_models = ['resnet18']#, 'resnet50', 'resnet101']
-vectors = [256]#, 512, 1024]
+base_models = ['resnet18', 'resnet50', 'resnet101']
+descriptor_lengths = [256, 512, 1024]
+
 
 def unzip_d(data):
     if not type(data) in (tuple, list):
@@ -50,17 +51,12 @@ def insert(loader, hash_model: HashEncoder, db: Redis):
         for batch_idx, (data, filepaths) in enumerate(loader, start=1):
             data = unzip_d(data)
 
-            result = parallel_model(*data)
+            tensor = parallel_model(*data)
 
-            for vector_size, tensor in zip(hash_model.output_sizes, result):
-                for vector, filepath in zip(tensor.cpu().numpy(), filepaths):
-                    p_data = pickle.dumps({
-                        'vector': vector,
-                        'path': filepath,
-                        'model': hash_model.base_model,
-                    })
-                    uuid = get_image_uuid(hash_model.base_model, vector_size, Path(filepath))
-                    db.append(uuid, p_data)
+            for descriptor_length, tensor in zip(hash_model.descriptor_lengths, tensor):
+                for descriptor, filepath in zip(tensor.cpu().numpy(), filepaths):
+                    uuid = encode_image_to_uuid(hash_model.base_model, descriptor_length, Path(filepath))
+                    db.append(uuid, pickle.dumps(descriptor))
 
             bar.update()
         bar.close()
@@ -80,8 +76,8 @@ if __name__ == '__main__':
 
     for dir_alg in Path(args.dir_complete).glob('*'):
         for base_model in base_models:
-            # batch_size = dict(resnet18=1024, resnet50=1024, resnet101=1024).get(base_model, 512)
-            batch_size = 4
+            batch_size = dict(resnet18=1024, resnet50=1024, resnet101=1024).get(base_model, 512)
+            # batch_size = 256
 
             dataset = PharmaPackDataset(dir_alg)
             loader = DataLoader(
@@ -93,7 +89,7 @@ if __name__ == '__main__':
                 shuffle=False
             )
 
-            model = HashEncoder(base_model, vectors)
+            model = HashEncoder(base_model, descriptor_lengths)
             cuda = torch.cuda.is_available()
             model.to('cuda') if cuda else model.to('cpu')
 

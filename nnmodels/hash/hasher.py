@@ -1,12 +1,12 @@
-import logging
 import argparse
-import itertools
+import logging
 import pickle
+import itertools
 
 from tqdm import tqdm
 from redis import Redis
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, NoReturn, Tuple
 
 import pandas as pd
 import numpy as np
@@ -16,16 +16,12 @@ from nearpy.hashes import RandomBinaryProjections, RandomBinaryProjectionTree, L
 from nearpy.distances import EuclideanDistance
 from nearpy.storage import RedisStorage
 
-from nnmodels.hash.helpers import get_image_uuid
+from nnmodels.hash.helpers import encode_image_to_uuid, decode_image_from_uuid
 from libs.lopq import LOPQModel, LOPQSearcherLMDB
 from textdetector.fileinfo import FileInfo
 
 import utils
 
-
-logger_name = 'nnmodels | hasher'
-utils.setup_logger(logger_name, logging.INFO)
-logger = logging.getLogger(logger_name)
 
 parser = argparse.ArgumentParser()
 
@@ -34,20 +30,25 @@ parser.add_argument('--flushdb', type=bool, default=False)
 parser.add_argument('--db_insert', type=int, default=8)
 parser.add_argument('--db_complete', type=int, default=6)
 
-base_models = ['resnet18']#, 'resnet50', 'resnet101']
-vector_sizes = [256]#, 512, 1024]
+logger_name = 'nnmodels | hasher'
+utils.setup_logger(logger_name, logging.INFO)
+logger = logging.getLogger(logger_name)
+
 hash_lengths = [64, 96, 128, 160, 256]
 
 
-def dump_hashes(hashes: List[LSHash], folder):
+def dump_engine_tree_hashes(hashes: List[LSHash], folder):
     folder.mkdir(parents=True, exist_ok=True)
 
-    for hash in filter(lambda l: type(l) is RandomBinaryProjectionTree, hashes):
-        with open(folder / f"{hash.hash_name}.pkl", "wb") as f:
-            pickle.dump(hash.get_config(), f)
+    tree_hashes = list(filter(lambda l: type(l) is RandomBinaryProjectionTree, hashes))
+    for tree_hash in tree_hashes:
+        with open(folder / f"{tree_hash.hash_name}.pkl", "wb") as f:
+            pickle.dump(tree_hash.get_config(), f)
+
+    # logger.info(f"Dumped {len(tree_hashes)} tree hashes")
 
 
-def load_hashes(folder, minimum_result_size: Union[None, int] = None) -> List[LSHash]:
+def load_engine_tree_hashes(folder, minimum_result_size: Union[None, int] = None) -> List[RandomBinaryProjectionTree]:
     hashes = []
 
     for file in folder.glob('*.pkl'):
@@ -64,8 +65,151 @@ def load_hashes(folder, minimum_result_size: Union[None, int] = None) -> List[LS
     return hashes
 
 
-def get_vector_by_file(db_complete: Redis, file: Path) -> np.ndarray:
-    return pickle.loads(db_complete.get(get_image_uuid(base_model, vector_size, file)))['vector']
+def init_nearpy_hash_engine(dir_alg: Path, base_model: str, descriptor_length: int, db_insert: Redis):
+    def generate_hash_names(prefix: str) -> List[str]:
+        return [
+            "+".join([
+                prefix, base_model, str(descriptor_length), dir_alg.stem, str(hash_length)
+            ]) for hash_length in hash_lengths
+        ]
+
+    rbt_hashes = [
+        RandomBinaryProjections(hash_name=hash_name, projection_count=hash_length)
+        for hash_name, hash_length in zip(generate_hash_names("rbp"), hash_lengths)
+    ]
+    rbpt_hashes = [
+        RandomBinaryProjectionTree(hash_name=hash_name, minimum_result_size=1, projection_count=hash_length)
+        for hash_name, hash_length in zip(generate_hash_names("rbpt"), hash_lengths)
+    ]
+
+    return Engine(
+        dim=descriptor_length,
+        distance=EuclideanDistance(),
+        lshashes=rbpt_hashes + rbt_hashes,
+        storage=RedisStorage(db_insert)
+    )
+
+
+def init_nearpy_search_engine(nearpy_engine_insert: Engine, neighbours_amount: int, dir_alg: Path, descriptor_length: int):
+    tree_hashes_updated = load_engine_tree_hashes(dir_alg.parent.parent / 'TreeHashes', neighbours_amount)
+    bin_hashes = [lshash for lshash in nearpy_engine_insert.lshashes if type(lshash) is RandomBinaryProjections]
+
+    return Engine(
+        dim=descriptor_length,
+        distance=nearpy_engine_insert.distance,
+        lshashes=bin_hashes + tree_hashes_updated,
+        storage=nearpy_engine_insert.storage
+    )
+
+
+def load_descriptors(
+        dir_alg: Path, base_model: str, descriptor_length: int, db_complete: Redis
+) -> Tuple[List[np.ndarray], List[str], List[np.ndarray], List[str]]:
+    descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search = list(), list(), list(), list()
+
+    for file in dir_alg.glob('**/*.png'):
+
+        fi = FileInfo.get_file_info_by_path(file)
+        uuid = encode_image_to_uuid(base_model, descriptor_length, file)
+        descriptor_bytes = db_complete.get(uuid)
+
+        if descriptor_bytes:
+            descriptor = pickle.loads(descriptor_bytes)
+            if fi.angle == 360:
+                uuids_to_hash.append(uuid)
+                descriptors_to_hash.append(descriptor)
+            else:
+                uuids_to_search.append(uuid)
+                descriptors_to_search.append(descriptor)
+
+    return descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search
+
+
+def hash_nearpy(
+        engine: Engine,
+        descriptors_to_hash: List[np.ndarray],
+        uuids_to_hash: List[str],
+        dir_alg: Path,
+        base_model: str,
+        descriptor_length: int
+) -> NoReturn:
+    logger.info(f"Start hashing alg={dir_alg.stem} model={base_model} dlen={descriptor_length}")
+
+    total = len(descriptors_to_hash)
+    pbar = tqdm(np.arange(total), desc='Hashing', total=total)
+    for descriptor, uuid in zip(descriptors_to_hash, uuids_to_hash):
+        engine.store_vector(descriptor, uuid)
+        pbar.update()
+
+    pbar.close()
+    dump_engine_tree_hashes(engine.lshashes, dir_alg.parent.parent / 'TreeHashes')
+
+
+def search_nearpy(
+        nearpy_engine_hash: Engine,
+        descriptors_to_search: List[np.ndarray],
+        uuids_to_search: List[str],
+        dir_alg: Path,
+        descriptor_length: int
+) -> pd.DataFrame:
+    results = []
+    
+    for neighbours_amount in range(1, 12, 2):
+        
+        engine_search = init_nearpy_search_engine(nearpy_engine_hash, neighbours_amount, dir_alg, descriptor_length)
+
+        total = len(descriptors_to_search)
+        pbar = tqdm(np.arange(total), total=total)
+        logger.info(f"Start searching alg={dir_alg.stem} model={base_model} dlen={descriptor_length} nbs={neighbours_amount}")
+
+        for descriptor_actual, uuid_actual in zip(descriptors_to_search, uuids_to_search):
+            parts_actual = list(decode_image_from_uuid(uuid_actual))
+
+            neighbours = engine_search.neighbours(descriptor_actual)
+            for neighbour in neighbours:
+                _, uuid_predicted, distance = neighbour
+                parts_predicted = list(decode_image_from_uuid(uuid_predicted))
+                result = [neighbours_amount, distance] + parts_actual + parts_predicted
+                results.append(result)
+
+            pbar.update()
+        pbar.close()
+
+    return pd.DataFrame(results)
+
+
+# def insert_lopq():
+#     lopq_model = LOPQModel()
+#     lopq_model.fit(np.asarray(descriptors_to_hash), n_init=1)
+#     searcher = LOPQSearcherLMDB(lopq_model, "/data/500gb/pharmapack/LMDB/default.lmdb")
+#     pass
+#
+#
+# def search_lopq():
+#     pass
+
+def process_single_subset(
+        dir_alg: Path, base_model: str, descriptor_length: int, db_insert: Redis, db_complete: Redis
+) -> NoReturn:
+
+    descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search = load_descriptors(
+        dir_alg, base_model, descriptor_length, db_complete
+    )
+    nearpy_engine_hash = init_nearpy_hash_engine(dir_alg, base_model, descriptor_length, db_insert)
+
+    hash_nearpy(nearpy_engine_hash, descriptors_to_hash, uuids_to_hash, dir_alg, base_model, descriptor_length)
+
+    df = search_nearpy(nearpy_engine_hash, descriptors_to_search, uuids_to_search, dir_alg, descriptor_length)
+
+    df_uuid = "+".join([dir_alg.stem, base_model, str(descriptor_length)])
+    df_path = Path(f"pipeline_results/{df_uuid}.csv")
+    df_path.parent.mkdir(parents=True, exist_ok=True)
+
+    df.to_csv(df_path, index=False)
+
+
+base_models = ['resnet18', 'resnet50', 'resnet101']
+descriptor_lengths = [256, 512, 1024]
 
 
 if __name__ == '__main__':
@@ -76,87 +220,12 @@ if __name__ == '__main__':
     if args.flushdb:
         answer = input(f"Do you really want to clear {args.db} database [yes/no]?   ")
         if answer.startswith('yes'):
-            logger.info(f"Cleared {args.db} database")
             db_insert.flushdb()
+            logger.info(f"Cleared {args.db} database")
         else:
             logger.info("Didn't clear storage")
 
-    dir_complete = Path(args.dir_complete)
-    dirs_alg = list(dir_complete.glob('*'))
-
-    for index, (dir_alg, base_model, vector_size) in \
-            enumerate(itertools.product(*[dirs_alg, base_models, vector_sizes]), start=0):
-
-        generate_hash_names = lambda prefix: ["+".join([prefix, base_model, str(vector_size), dir_alg.stem, str(hash_length)]) for hash_length in hash_lengths]
-
-        hash_names = generate_hash_names("rbp")
-        rbt_hashes = [
-            RandomBinaryProjections(hash_name=hash_name, projection_count=hash_length)
-            for hash_name, hash_length in zip(hash_names, hash_lengths)
-        ]
-
-        hash_names = generate_hash_names("rbpt")
-        rbpt_hashes = [
-            RandomBinaryProjectionTree(hash_name=hash_name, minimum_result_size=1, projection_count=hash_length)
-            for hash_name, hash_length in zip(hash_names, hash_lengths)
-        ]
-        engine = Engine(
-            dim=vector_size,
-            distance=EuclideanDistance(),
-            lshashes=rbpt_hashes + rbt_hashes,
-            storage=RedisStorage(db_insert)
-        )
-
-        files_to_hash, files_to_search = list(), list()
-        for file in dir_alg.glob('**/*.png'):
-            fi = FileInfo.get_file_info_by_path(file)
-
-            if fi.angle == 360:
-                files_to_hash.append(file)
-            else:
-                files_to_search.append(file)
-
-        logger.info(f"Start hashing model={base_model} alg={dir_alg.stem} vs={vector_size}")
-
-        total = len(files_to_hash)
-        pbar = tqdm(np.arange(total), desc='Hashing', total=total)
-
-        vectors = []
-        for file in files_to_hash:
-            uuid = get_image_uuid(base_model, vector_size, file)
-            data = pickle.loads(db_complete.get(uuid))
-            engine.store_vector(data['vector'], uuid)
-            vectors.append(data['vector'])
-            pbar.update()
-
-        pbar.close()
-        m = LOPQModel(V=8, M=8, subquantizer_clusters=4)
-        m.fit(np.asarray(vectors), n_init=1)
-        dump_hashes(engine.lshashes, dir_complete.parent / 'TreeHashes')
-
-        min_neighbours = list(range(1, 15, 3))
-        total = len(files_to_search) * len(min_neighbours)
-        pbar = tqdm(np.arange(total), desc='Searching', total=total)
-
-        results = []
-        for min_neighbour in min_neighbours:
-            rbpt_hashes_updated = load_hashes(dir_complete.parent / 'TreeHashes', min_neighbour)
-
-            engine_search = Engine(
-                dim=vector_size,
-                distance=engine.distance,
-                lshashes=rbt_hashes + rbpt_hashes_updated,
-                storage=engine.storage
-            )
-
-            for file in files_to_search:
-                uuid = get_image_uuid(base_model, vector_size, file)
-                data = pickle.loads(db_complete.get(uuid))
-                neighbours = engine_search.neighbours(data['vector'])
-                results.append([min_neighbour, file, [n[1:] for n in neighbours]])
-
-                pbar.update()
-
-        pbar.close()
-
-        pd.DataFrame(results)
+    for subset in itertools.product(*[list(Path(args.dir_complete).glob('*')), base_models, descriptor_lengths]):
+        dir_alg, base_model, descriptor_length = subset
+        logger.info(f"Start working on alg={dir_alg.stem} model={base_model} dlen={descriptor_length}")
+        process_single_subset(dir_alg, base_model, descriptor_length, db_insert, db_complete)
