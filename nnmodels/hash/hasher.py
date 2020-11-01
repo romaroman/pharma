@@ -18,7 +18,6 @@ from nearpy.storage import RedisStorage
 
 from nnmodels.hash.helpers import encode_image_to_uuid, decode_image_from_uuid
 from libs.lopq import LOPQModel, LOPQSearcherLMDB
-from textdetector.fileinfo import FileInfo
 
 import utils
 
@@ -109,19 +108,18 @@ def load_descriptors(
 ) -> Tuple[List[np.ndarray], List[str], List[np.ndarray], List[str]]:
     descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search = list(), list(), list(), list()
 
-    for file in dir_alg.glob('**/*.png'):
+    keys = db_complete.keys(f"{base_model}+{descriptor_length}+{dir_alg.stem}*")
 
-        fi = FileInfo.get_file_info_by_path(file)
-        uuid = encode_image_to_uuid(base_model, descriptor_length, file)
-        descriptor_bytes = db_complete.get(uuid)
+    for key in keys:
+        descriptor_bytes = db_complete.get(key)
 
         if descriptor_bytes:
             descriptor = pickle.loads(descriptor_bytes)
-            if fi.angle == 360:
-                uuids_to_hash.append(uuid)
+            if key.decode("utf-8").find("az360") != -1:
+                uuids_to_hash.append(key)
                 descriptors_to_hash.append(descriptor)
             else:
-                uuids_to_search.append(uuid)
+                uuids_to_search.append(key)
                 descriptors_to_search.append(descriptor)
 
     logger.info(f"Loaded {len(descriptors_to_hash)} to hash and {len(descriptors_to_search)} to search")
@@ -145,7 +143,7 @@ def hash_nearpy(
         pbar.update()
 
     pbar.close()
-    dump_engine_tree_hashes(engine.lshashes, dir_alg.parent.parent / 'TreeHashes')
+    # dump_engine_tree_hashes(engine.lshashes, dir_alg.parent.parent / 'TreeHashes')
 
 
 def search_nearpy(
@@ -192,29 +190,30 @@ def search_nearpy(
 #     pass
 
 def process_single_subset(
-        dir_alg: Path, base_model: str, descriptor_length: int, neighbours_amount: int, db_insert: Redis, db_complete: Redis
+        dir_alg: Path, base_model: str, descriptor_length: int, db_insert: Redis, db_complete: Redis
 ) -> NoReturn:
 
     descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search = load_descriptors(
         dir_alg, base_model, descriptor_length, db_complete
     )
-    nearpy_engine = init_nearpy_engine(descriptor_length, neighbours_amount, db_insert)
+    neighbours_amounts = [5]  # [1, 3, 5, 7]
+    for neighbours_amount in neighbours_amounts:
+        nearpy_engine = init_nearpy_engine(descriptor_length, neighbours_amount, db_insert)
 
-    hash_nearpy(nearpy_engine, descriptors_to_hash, uuids_to_hash, dir_alg, base_model, descriptor_length)
+        hash_nearpy(nearpy_engine, descriptors_to_hash, uuids_to_hash, dir_alg, base_model, descriptor_length)
 
-    df = search_nearpy(nearpy_engine, descriptors_to_search, uuids_to_search, dir_alg, descriptor_length)
+        df = search_nearpy(nearpy_engine, descriptors_to_search, uuids_to_search, dir_alg, descriptor_length)
 
-    df_uuid = "+".join([dir_alg.stem, base_model, str(descriptor_length), str(neighbours_amount)])
-    df_path = Path(f"pipeline_results/{df_uuid}.csv")
-    df_path.parent.mkdir(parents=True, exist_ok=True)
+        df_uuid = "+".join([dir_alg.stem, base_model, str(descriptor_length), str(neighbours_amount)])
+        df_path = Path(f"pipeline_results/{df_uuid}.csv")
+        df_path.parent.mkdir(parents=True, exist_ok=True)
 
-    df.to_csv(df_path, index=False)
+        df.to_csv(df_path, index=False)
 
 
 base_models = ['resnet18', 'resnet50', 'resnet101']
 descriptor_lengths = [256, 512, 1024]
 hash_lengths = [64, 96, 128, 160, 256]
-neighbours_amounts = [1, 3, 5, 7]
 
 
 if __name__ == '__main__':
@@ -230,9 +229,9 @@ if __name__ == '__main__':
         else:
             logger.info("Didn't clear storage")
 
-    for subset in itertools.product(*[list(Path(args.dir_complete).glob('*')), base_models, descriptor_lengths, neighbours_amounts]):
+    for subset in itertools.product(*[list(Path(args.dir_complete).glob('*')), base_models, descriptor_lengths]):
         dir_alg, base_model, descriptor_length, neighbours_amount = subset
         if dir_alg.stem == 'MSER':
             continue
-        logger.info(f"Start working on alg={dir_alg.stem} model={base_model} dlen={descriptor_length} nbs={neighbours_amount}")
-        process_single_subset(dir_alg, base_model, descriptor_length, neighbours_amount, db_insert, db_complete)
+        logger.info(f"Start working on alg={dir_alg.stem} model={base_model} dlen={descriptor_length}")
+        process_single_subset(dir_alg, base_model, descriptor_length, db_insert, db_complete)
