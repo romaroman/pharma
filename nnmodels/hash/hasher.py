@@ -34,8 +34,6 @@ logger_name = 'nnmodels | hasher'
 utils.setup_logger(logger_name, logging.INFO)
 logger = logging.getLogger(logger_name)
 
-hash_lengths = [64, 96, 128, 160, 256]
-
 
 def dump_engine_tree_hashes(hashes: List[LSHash], folder):
     folder.mkdir(parents=True, exist_ok=True)
@@ -65,7 +63,11 @@ def load_engine_tree_hashes(folder, minimum_result_size: Union[None, int] = None
     return hashes
 
 
-def init_nearpy_hash_engine(dir_alg: Path, base_model: str, descriptor_length: int, db_insert: Redis):
+def init_nearpy_engine(
+        descriptor_length: int,
+        neighbours_amount: int,
+        db_insert: Redis
+) -> Engine:
     def generate_hash_names(prefix: str) -> List[str]:
         return [
             "+".join([
@@ -78,7 +80,7 @@ def init_nearpy_hash_engine(dir_alg: Path, base_model: str, descriptor_length: i
         for hash_name, hash_length in zip(generate_hash_names("rbp"), hash_lengths)
     ]
     rbpt_hashes = [
-        RandomBinaryProjectionTree(hash_name=hash_name, minimum_result_size=1, projection_count=hash_length)
+        RandomBinaryProjectionTree(hash_name=hash_name, minimum_result_size=neighbours_amount, projection_count=hash_length)
         for hash_name, hash_length in zip(generate_hash_names("rbpt"), hash_lengths)
     ]
 
@@ -122,6 +124,7 @@ def load_descriptors(
                 uuids_to_search.append(uuid)
                 descriptors_to_search.append(descriptor)
 
+    logger.info(f"Loaded {len(descriptors_to_hash)} to hash and {len(descriptors_to_search)} to search")
     return descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search
 
 
@@ -146,7 +149,7 @@ def hash_nearpy(
 
 
 def search_nearpy(
-        nearpy_engine_hash: Engine,
+        nearpy_engine: Engine,
         descriptors_to_search: List[np.ndarray],
         uuids_to_search: List[str],
         dir_alg: Path,
@@ -154,28 +157,28 @@ def search_nearpy(
 ) -> pd.DataFrame:
     results = []
     
-    for neighbours_amount in range(1, 12, 2):
+    # for neighbours_amount in range(1, 12, 2):
         
-        engine_search = init_nearpy_search_engine(nearpy_engine_hash, neighbours_amount, dir_alg, descriptor_length)
+    # engine_search = init_nearpy_search_engine(nearpy_engine_hash, neighbours_amount, dir_alg, descriptor_length)
 
-        total = len(descriptors_to_search)
-        pbar = tqdm(np.arange(total), total=total)
-        logger.info(f"Start searching alg={dir_alg.stem} model={base_model} dlen={descriptor_length} nbs={neighbours_amount}")
+    total = len(descriptors_to_search)
+    pbar = tqdm(np.arange(total), total=total)
+    logger.info(f"Start searching alg={dir_alg.stem} model={base_model} dlen={descriptor_length}")
 
-        for descriptor_actual, uuid_actual in zip(descriptors_to_search, uuids_to_search):
-            parts_actual = list(decode_image_from_uuid(uuid_actual))
+    for descriptor_actual, uuid_actual in zip(descriptors_to_search, uuids_to_search):
+        parts_actual = list(decode_image_from_uuid(uuid_actual))
 
-            neighbours = engine_search.neighbours(descriptor_actual)
-            for neighbour in neighbours:
-                _, uuid_predicted, distance = neighbour
-                parts_predicted = list(decode_image_from_uuid(uuid_predicted))
-                result = [neighbours_amount, distance] + parts_actual + parts_predicted
-                results.append(result)
+        neighbours = nearpy_engine.neighbours(descriptor_actual)
+        for neighbour in neighbours:
+            _, uuid_predicted, distance = neighbour
+            parts_predicted = list(decode_image_from_uuid(uuid_predicted))
+            result = [neighbours_amount, distance] + parts_actual + parts_predicted
+            results.append(result)
 
-            pbar.update()
-        pbar.close()
+        pbar.update()
+    pbar.close()
 
-    return pd.DataFrame(results)
+    # return pd.DataFrame(results)
 
 
 # def insert_lopq():
@@ -189,19 +192,19 @@ def search_nearpy(
 #     pass
 
 def process_single_subset(
-        dir_alg: Path, base_model: str, descriptor_length: int, db_insert: Redis, db_complete: Redis
+        dir_alg: Path, base_model: str, descriptor_length: int, neighbours_amount: int, db_insert: Redis, db_complete: Redis
 ) -> NoReturn:
 
     descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search = load_descriptors(
         dir_alg, base_model, descriptor_length, db_complete
     )
-    nearpy_engine_hash = init_nearpy_hash_engine(dir_alg, base_model, descriptor_length, db_insert)
+    nearpy_engine = init_nearpy_engine(descriptor_length, neighbours_amount, db_insert)
 
-    hash_nearpy(nearpy_engine_hash, descriptors_to_hash, uuids_to_hash, dir_alg, base_model, descriptor_length)
+    hash_nearpy(nearpy_engine, descriptors_to_hash, uuids_to_hash, dir_alg, base_model, descriptor_length)
 
-    df = search_nearpy(nearpy_engine_hash, descriptors_to_search, uuids_to_search, dir_alg, descriptor_length)
+    df = search_nearpy(nearpy_engine, descriptors_to_search, uuids_to_search, dir_alg, descriptor_length)
 
-    df_uuid = "+".join([dir_alg.stem, base_model, str(descriptor_length)])
+    df_uuid = "+".join([dir_alg.stem, base_model, str(descriptor_length), str(neighbours_amount)])
     df_path = Path(f"pipeline_results/{df_uuid}.csv")
     df_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -210,6 +213,8 @@ def process_single_subset(
 
 base_models = ['resnet18', 'resnet50', 'resnet101']
 descriptor_lengths = [256, 512, 1024]
+hash_lengths = [64, 96, 128, 160, 256]
+neighbours_amounts = [1, 3, 5, 7]
 
 
 if __name__ == '__main__':
@@ -225,7 +230,9 @@ if __name__ == '__main__':
         else:
             logger.info("Didn't clear storage")
 
-    for subset in itertools.product(*[list(Path(args.dir_complete).glob('*')), base_models, descriptor_lengths]):
-        dir_alg, base_model, descriptor_length = subset
-        logger.info(f"Start working on alg={dir_alg.stem} model={base_model} dlen={descriptor_length}")
-        process_single_subset(dir_alg, base_model, descriptor_length, db_insert, db_complete)
+    for subset in itertools.product(*[list(Path(args.dir_complete).glob('*')), base_models, descriptor_lengths, neighbours_amounts]):
+        dir_alg, base_model, descriptor_length, neighbours_amount = subset
+        if dir_alg.stem == 'MSER':
+            continue
+        logger.info(f"Start working on alg={dir_alg.stem} model={base_model} dlen={descriptor_length} nbs={neighbours_amount}")
+        process_single_subset(dir_alg, base_model, descriptor_length, neighbours_amount, db_insert, db_complete)
