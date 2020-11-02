@@ -115,11 +115,12 @@ def load_descriptors(
 
         if descriptor_bytes:
             descriptor = pickle.loads(descriptor_bytes)
-            if key.decode("utf-8").find("az360") != -1:
-                uuids_to_hash.append(key)
+            key_str = key.decode("utf-8")
+            if key_str.find("az360") != -1:
+                uuids_to_hash.append(key_str)
                 descriptors_to_hash.append(descriptor)
             else:
-                uuids_to_search.append(key)
+                uuids_to_search.append(key_str)
                 descriptors_to_search.append(descriptor)
 
     logger.info(f"Loaded {len(descriptors_to_hash)} to hash and {len(descriptors_to_search)} to search")
@@ -170,7 +171,7 @@ def search_nearpy(
         for neighbour in neighbours:
             _, uuid_predicted, distance = neighbour
             parts_predicted = list(decode_image_from_uuid(uuid_predicted))
-            result = [neighbours_amount, distance] + parts_actual + parts_predicted
+            result = [distance] + parts_actual + parts_predicted
             results.append(result)
 
         pbar.update()
@@ -230,7 +231,7 @@ if __name__ == '__main__':
             logger.info("Didn't clear storage")
 
     for subset in itertools.product(*[list(Path(args.dir_complete).glob('*')), base_models, descriptor_lengths]):
-        dir_alg, base_model, descriptor_length, neighbours_amount = subset
+        dir_alg, base_model, descriptor_length = subset
         if dir_alg.stem == 'MSER':
             continue
         logger.info(f"Start working on alg={dir_alg.stem} model={base_model} dlen={descriptor_length}")
