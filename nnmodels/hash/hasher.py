@@ -154,6 +154,7 @@ def load_descriptors_l2(
 
         pbar.update()
     pbar.close()
+    logger.info(f"Loaded {len(descriptors_based)} based and {len(descriptors_to_search)} to search")
 
     return descriptors_based, uuids_based, descriptors_to_search, uuids_to_search
 
