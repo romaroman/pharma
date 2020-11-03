@@ -219,14 +219,14 @@ def search_l2(
     results = []
 
     total = len(descriptors_to_search) * len(descriptors_based)
-    pbar = tqdm(np.arange(total), desc='Searching', total=total)
+    pbar = tqdm(np.arange(total), desc='Searching L2', total=total)
 
     for descriptor_to_search, uuid_to_search in zip(descriptors_to_search, uuids_to_search):
         filename_search = (uuid_to_search).split('+')[-1]
 
         for descriptor_based, uuid_based in zip(descriptors_based, uuids_based):
             filename_based = (uuid_based).split('+')[-1]
-            distance = np.linalg.norm(descriptor_to_search['vector'] - descriptor_based['vector'])
+            distance = np.linalg.norm(descriptor_to_search - descriptor_based)
             results.append([distance, filename_search, filename_based])
 
         pbar.update()
@@ -238,6 +238,8 @@ def search_l2(
 def process_single_subset(
         dir_alg: Path, base_model: str, descriptor_length: int, db_insert: Redis, db_complete: Redis
 ) -> NoReturn:
+    logger.info(f"Start working on alg={dir_alg.stem} model={base_model} dlen={descriptor_length}")
+
 
     # neighbours_amounts = [11]  # [1, 3, 5, 7]
     #
@@ -290,6 +292,5 @@ if __name__ == '__main__':
     #     dir_alg, base_model, descriptor_length = subset
     #     if dir_alg.stem == 'MSER':
     #         continue
-    #     logger.info(f"Start working on alg={dir_alg.stem} model={base_model} dlen={descriptor_length}")
     #     process_single_subset(dir_alg, base_model, descriptor_length, db_insert, db_complete)
     process_single_subset(Path('/fls/pharmapack/NN/Complete/MI1'), 'resnet18', 256, db_insert, db_complete)
