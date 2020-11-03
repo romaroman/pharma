@@ -1,8 +1,10 @@
 import argparse
 import logging
 import pickle
-import itertools
 
+from itertools import repeat
+from functools import partial
+from multiprocessing import Pool
 from tqdm import tqdm
 from redis import Redis
 from pathlib import Path
@@ -210,6 +212,13 @@ def search_nearpy(
 # def search_lopq():
 #     pass
 
+def calc_l2(based_tuple, search_tuple):
+    descriptor_based, uuid_based = based_tuple
+    descriptor_to_search, filename_search = search_tuple
+    filename_based = (uuid_based).split('+')[-1]
+    distance = np.linalg.norm(descriptor_to_search['vector'] - descriptor_based['vector'])
+    return [distance, filename_search, filename_based]
+
 
 def search_l2(
     descriptors_based: List[np.ndarray],
@@ -219,16 +228,21 @@ def search_l2(
 ):
     results = []
 
-    total = len(descriptors_to_search) * len(descriptors_based)
+    total = len(descriptors_to_search)
     pbar = tqdm(np.arange(total), desc='Searching L2', total=total)
 
     for descriptor_to_search, uuid_to_search in zip(descriptors_to_search, uuids_to_search):
         filename_search = (uuid_to_search).split('+')[-1]
 
-        for descriptor_based, uuid_based in zip(descriptors_based, uuids_based):
-            filename_based = (uuid_based).split('+')[-1]
-            distance = np.linalg.norm(descriptor_to_search - descriptor_based)
-            results.append([distance, filename_search, filename_based])
+        pool = Pool(processes=46)
+
+        res = pool.map(
+            partial(calc_l2, search_tuple=(descriptor_to_search, filename_search)),
+            zip(descriptors_based, uuids_based)
+        )
+        pool.close()
+        results.extend(res)
+
 
         pbar.update()
     pbar.close()
