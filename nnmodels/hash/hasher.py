@@ -216,7 +216,8 @@ def calc_l2(based_tuple, search_tuple):
     descriptor_based, uuid_based = based_tuple
     descriptor_to_search, filename_search = search_tuple
     filename_based = (uuid_based).split('+')[-1]
-    distance = np.linalg.norm(descriptor_to_search['vector'] - descriptor_based['vector'])
+    # distance = np.linalg.norm(descriptor_to_search['vector'] - descriptor_based['vector'])
+    distance = np.linalg.norm(descriptor_to_search - descriptor_based)
     return [distance, filename_search, filename_based]
 
 
