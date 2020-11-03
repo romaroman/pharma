@@ -141,15 +141,16 @@ def load_descriptors_l2(
     keys_o = db_complete.keys(f"{base_model}+{descriptor_length}+{dir_alg.stem}*Ph1*")
     keys = []
     for key in keys_o:
-        if key.find('0842_D01_S001') != -1 or\
-                key.find('0235_D01_S001') != -1 or\
-                key.find('0457_D01_S001') != -1 or\
-                key.find('0131_D01_S001') != -1 or\
-                key.find('0715_D01_S001') != -1 or\
-                key.find('0174_D01_S001') != -1 or\
-                key.find('0701_D01_S001') != -1 or\
-                key.find('0475_D01_S001') != -1 or\
-                key.find('0102_D01_S001') != -1:
+        key_s = key.decode('utf-8')
+        if key_s.find('0842_D01_S001') != -1 or\
+                key_s.find('0235_D01_S001') != -1 or\
+                key_s.find('0457_D01_S001') != -1 or\
+                key_s.find('0131_D01_S001') != -1 or\
+                key_s.find('0715_D01_S001') != -1 or\
+                key_s.find('0174_D01_S001') != -1 or\
+                key_s.find('0701_D01_S001') != -1 or\
+                key_s.find('0475_D01_S001') != -1 or\
+                key_s.find('0102_D01_S001') != -1:
             keys.append(key)
 
     total = len(keys)
