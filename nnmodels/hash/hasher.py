@@ -137,7 +137,8 @@ def load_descriptors_l2(
     descriptors_based, uuids_based, descriptors_to_search, uuids_to_search = list(), list(), list(), list()
 
     keys = db_complete.keys(f"{base_model}+{descriptor_length}+{dir_alg.stem}*Ph1*")
-
+    total = len(keys)
+    pbar = tqdm(np.arange(total), total=total, desc='Loading')
     for key in keys:
         descriptor_bytes = db_complete.get(key)
 
@@ -150,6 +151,9 @@ def load_descriptors_l2(
             elif key_str.find("az3") != -1:
                 uuids_to_search.append(key_str)
                 descriptors_to_search.append(descriptor)
+
+        pbar.update()
+    pbar.close()
 
     return descriptors_based, uuids_based, descriptors_to_search, uuids_to_search
 
@@ -235,11 +239,11 @@ def process_single_subset(
         dir_alg: Path, base_model: str, descriptor_length: int, db_insert: Redis, db_complete: Redis
 ) -> NoReturn:
 
-    neighbours_amounts = [11]  # [1, 3, 5, 7]
-
-    descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search = load_descriptors_nearpy(
-        dir_alg, base_model, descriptor_length, db_complete
-    )
+    # neighbours_amounts = [11]  # [1, 3, 5, 7]
+    #
+    # descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search = load_descriptors_nearpy(
+    #     dir_alg, base_model, descriptor_length, db_complete
+    # )
     descriptors_based_l2, uuids_based_l2, descriptors_to_search_l2, uuids_to_search_l2 = load_descriptors_l2(
         dir_alg, base_model, descriptor_length, db_complete
     )
