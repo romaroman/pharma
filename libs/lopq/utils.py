@@ -181,6 +181,7 @@ def compute_codes_parallel(data, model, num_procs=4):
 
     N = len(data)
     partitions = [data[a:b] for a, b in get_chunk_ranges(N, num_procs)]
-    codes = parmap(compute_partition, partitions, num_procs)
+
+    codes = [compute_partition(p) for p in partitions]
 
     return chain(*codes)

@@ -19,18 +19,26 @@ from nearpy.distances import EuclideanDistance
 from nearpy.storage import RedisStorage
 from nearpy.filters import NearestFilter
 
-from nnmodels.hash.helpers import encode_image_to_uuid, decode_image_from_uuid
-from libs.lopq import LOPQModel, LOPQSearcherLMDB
+from libs.lopq import LOPQModel, LOPQSearcher
 
 import utils
 
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('dir_complete', type=str)
 parser.add_argument('--flushdb', type=bool, default=False)
 parser.add_argument('--db_insert', type=int, default=8)
 parser.add_argument('--db_complete', type=int, default=6)
+parser.add_argument('--neighbours_amount', type=int, default=5)
+parser.add_argument('--base_model', type=str, default='resnet18')
+parser.add_argument('--descriptor_length', type=int, default=256)
+parser.add_argument('--alg', type=str, default='MI1')
+
+parser.add_argument('--V', type=int, default=16)
+parser.add_argument('--M', type=int, default=16)
+parser.add_argument('--clusters', type=int, default=1024)
+
+
 
 logger_name = 'nnmodels | hasher'
 utils.setup_logger(logger_name, logging.INFO)
@@ -109,12 +117,15 @@ def init_nearpy_search_engine(nearpy_engine_insert: Engine, neighbours_amount: i
     )
 
 
-def load_descriptors_nearpy(
-        dir_alg: Path, base_model: str, descriptor_length: int, db_complete: Redis
+def load_descriptors(
+        alg: str, base_model: str, descriptor_length: int, db_complete: Redis
 ) -> Tuple[List[np.ndarray], List[str], List[np.ndarray], List[str]]:
     descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search = list(), list(), list(), list()
 
-    keys = db_complete.keys(f"{base_model}+{descriptor_length}+{dir_alg.stem}*")
+    keys = db_complete.keys(f"{base_model}+{descriptor_length}+{alg}*")
+
+    total = len(keys)
+    pbar = tqdm(np.arange(total), total=total, desc='Loading')
 
     for key in keys:
         descriptor_bytes = db_complete.get(key)
@@ -129,16 +140,19 @@ def load_descriptors_nearpy(
                 uuids_to_search.append(key_str)
                 descriptors_to_search.append(descriptor)
 
+        pbar.update()
+    pbar.close()
+
     logger.info(f"Loaded {len(descriptors_to_hash)} to hash and {len(descriptors_to_search)} to search")
     return descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search
 
 
 def load_descriptors_l2(
-        dir_alg: Path, base_model: str, descriptor_length: int, db_complete: Redis
+        alg: str, base_model: str, descriptor_length: int, db_complete: Redis
 ) -> Tuple[List[np.ndarray], List[str], List[np.ndarray], List[str]]:
     descriptors_based, uuids_based, descriptors_to_search, uuids_to_search = list(), list(), list(), list()
 
-    keys_o = db_complete.keys(f"{base_model}+{descriptor_length}+{dir_alg.stem}*Ph1*")
+    keys_o = db_complete.keys(f"{base_model}+{descriptor_length}+{alg}*Ph1*")
     keys = []
     for key in keys_o:
         key_s = key.decode('utf-8')
@@ -216,15 +230,38 @@ def search_nearpy(
     return pd.DataFrame(results)
 
 
-# def insert_lopq():
-#     lopq_model = LOPQModel()
-#     lopq_model.fit(np.asarray(descriptors_to_hash), n_init=1)
-#     searcher = LOPQSearcherLMDB(lopq_model, "/data/500gb/pharmapack/LMDB/default.lmdb")
-#     pass
-#
-#
-# def search_lopq():
-#     pass
+def search_lopq(
+    descriptors_train_lopq: List[np.ndarray],
+    uuids_train_lopq: List[str],
+    descriptors_search_lopq: List[np.ndarray],
+    uuids_search_lopq: List[str],
+) -> NoReturn:
+    train_array = np.asarray(descriptors_train_lopq)
+
+    lopq_model = LOPQModel(V=args.V, M=args.M, subquantizer_clusters=args.clusters)
+    lopq_model.fit(train_array, n_init=1)
+
+    lopq_searcher = LOPQSearcher(model=lopq_model)
+    lopq_searcher.add_data(train_array, ids=uuids_train_lopq)
+
+    results = list()
+    total = len(descriptors_search_lopq)
+    pbar = tqdm(np.arange(total), desc='Searching', total=total)
+    
+    for descriptor_search, uuid_search in zip(descriptors_search_lopq, uuids_search_lopq):
+        neighbours, _ = lopq_searcher.search(descriptor_search, quota=args.neighbours_amount, with_dists=True)
+        neighbours = list(neighbours)
+        if neighbours:
+            for neighbour in neighbours:
+                results.append([uuid_search, neighbour.id, neighbour.dist])
+        else:
+            results.append([uuid_search, np.nan, np.nan])
+
+        pbar.update()
+    pbar.close()
+
+    return pd.DataFrame(results)
+
 
 def calc_l2(based_tuple, search_tuple):
     descriptor_based, uuid_based = based_tuple
@@ -266,38 +303,47 @@ def search_l2(
 
 
 def process_single_subset(
-        dir_alg: Path, base_model: str, descriptor_length: int, db_insert: Redis, db_complete: Redis
+        alg: str,
+        base_model: str,
+        descriptor_length: int,
+        db_insert: Redis,
+        db_complete: Redis
 ) -> NoReturn:
-    logger.info(f"Start working on alg={dir_alg.stem} model={base_model} dlen={descriptor_length}")
+    logger.info(f"Start working on alg={alg} model={base_model} dlen={descriptor_length}")
 
+    descriptors_train_lopq, uuids_train_lopq, descriptors_search_lopq, uuids_search_lopq = load_descriptors(
+        alg, base_model, descriptor_length, db_complete
+    )
 
-    # neighbours_amounts = [11]  # [1, 3, 5, 7]
-    #
-    # descriptors_to_hash, uuids_to_hash, descriptors_to_search, uuids_to_search = load_descriptors_nearpy(
+    df = search_lopq(descriptors_train_lopq, uuids_train_lopq, descriptors_search_lopq, uuids_search_lopq)
+
+    df_uuid = "+".join(["lopq", alg, base_model, str(descriptor_length)])
+    df_path = Path(f"lopq/{df_uuid}.csv")
+    df_path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(df_path, index=False)
+
+    # descriptors_based_l2, uuids_based_l2, descriptors_to_search_l2, uuids_to_search_l2 = load_descriptors_l2(
     #     dir_alg, base_model, descriptor_length, db_complete
     # )
-    descriptors_based_l2, uuids_based_l2, descriptors_to_search_l2, uuids_to_search_l2 = load_descriptors_l2(
-        dir_alg, base_model, descriptor_length, db_complete
-    )
-    df = search_l2(descriptors_based_l2, uuids_based_l2, descriptors_to_search_l2, uuids_to_search_l2)
-    df_uuid = "+".join([dir_alg.stem, base_model, str(descriptor_length)])
-    df_path = Path(f"l2_results/{df_uuid}.csv")
-    df_path.parent.mkdir(parents=True, exist_ok=True)
+    # df = search_l2(descriptors_based_l2, uuids_based_l2, descriptors_to_search_l2, uuids_to_search_l2)
+    # df_uuid = "+".join([dir_alg.stem, base_model, str(descriptor_length)])
+    # df_path = Path(f"l2_results/{df_uuid}.csv")
+    # df_path.parent.mkdir(parents=True, exist_ok=True)
+    #
+    # df.to_csv(df_path, index=False)
 
-    df.to_csv(df_path, index=False)
-    return
-    for neighbours_amount in neighbours_amounts:
-        nearpy_engine = init_nearpy_engine(descriptor_length, neighbours_amount, base_model, dir_alg.stem, db_insert)
-
-        hash_nearpy(nearpy_engine, descriptors_to_hash, uuids_to_hash)
-
-        df = search_nearpy(nearpy_engine, descriptors_to_search, uuids_to_search)
-
-        df_uuid = "+".join([dir_alg.stem, base_model, str(descriptor_length), str(neighbours_amount)])
-        df_path = Path(f"pipeline_results/{df_uuid}.csv")
-        df_path.parent.mkdir(parents=True, exist_ok=True)
-
-        df.to_csv(df_path, index=False)
+    # for neighbours_amount in neighbours_amounts:
+    #     nearpy_engine = init_nearpy_engine(descriptor_length, neighbours_amount, base_model, dir_alg.stem, db_insert)
+    #
+    #     hash_nearpy(nearpy_engine, descriptors_to_hash, uuids_to_hash)
+    #
+    #     df = search_nearpy(nearpy_engine, descriptors_to_search, uuids_to_search)
+    #
+    #     df_uuid = "+".join([dir_alg.stem, base_model, str(descriptor_length), str(neighbours_amount)])
+    #     df_path = Path(f"pipeline_results/{df_uuid}.csv")
+    #     df_path.parent.mkdir(parents=True, exist_ok=True)
+    #
+    #     df.to_csv(df_path, index=False)
 
 
 base_models = ['resnet18', 'resnet50', 'resnet101']
@@ -323,4 +369,5 @@ if __name__ == '__main__':
     #     if dir_alg.stem == 'MSER':
     #         continue
     #     process_single_subset(dir_alg, base_model, descriptor_length, db_insert, db_complete)
-    process_single_subset(Path('/fls/pharmapack/NN/Complete/MI1'), 'resnet18', 256, db_insert, db_complete)
+
+    process_single_subset(args.alg, args.base_model, args.descriptor_length, db_insert, db_complete)
