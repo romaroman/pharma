@@ -1,8 +1,10 @@
 # Copyright 2015, Yahoo Inc.
 # Licensed under the terms of the Apache License, Version 2.0. See the LICENSE file associated with the project for terms.
-import numpy as np
 import multiprocessing
+from functools import reduce
 from itertools import chain
+
+import numpy as np
 
 
 def iterate_splits(x, splits):
@@ -16,8 +18,8 @@ def iterate_splits(x, splits):
     :returns (np.array, int):
         subvector, split index pairs
     """
-    split_size = len(x) / splits
-    for split in xrange(splits):
+    split_size = len(x) // splits
+    for split in range(splits):
         start = split * split_size
         yield x[start:start + split_size], split
 
@@ -67,15 +69,15 @@ def load_xvecs(filename, base_type='f', max_num=None):
 
     f = open(filename, 'rb')
     D = np.uint32(struct.unpack('I', f.read(4))[0])
-    N = size / (4 + D * format_size)
+    N = size // (4 + D * format_size)
 
     if max_num is None:
         max_num = N
 
     f.seek(0)
     A = np.zeros((max_num, D), dtype=py_type)
-    for i in xrange(max_num):
-        for j in xrange(D + 1):
+    for i in range(max_num):
+        for j in range(D + 1):
             if j == 0:
                 np.uint32(struct.unpack(format_code, f.read(4)))
             else:
@@ -151,7 +153,7 @@ def get_chunk_ranges(N, num_procs):
     divide the data return a list of (start_index, end_index) pairs that divide the data as evenly as possible
     into num_procs buckets.
     """
-    per_thread = N / num_procs
+    per_thread = N // num_procs
     allocation = [per_thread] * num_procs
     allocation[0] += N - num_procs * per_thread
     data_ranges = [0] + reduce(lambda acc, num: acc + [num + (acc[-1] if len(acc) else 0)], allocation, [])
