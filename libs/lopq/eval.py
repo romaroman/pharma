@@ -125,7 +125,7 @@ def get_recall(searcher, queries, nns, thresholds=[1, 10, 100, 1000], normalize=
         query_time += time.clock() - start
 
         if verbose and i % 50 == 0:
-            print '%d cells visitied for query %d' % (cells_visited, i)
+            print('%d cells visitied for query %d' % (cells_visited, i))
 
         for j, res in enumerate(results):
             rid, code = res
