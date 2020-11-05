@@ -13,18 +13,18 @@ from multiprocessing import Pool
 
 def split_csv(csv_path):
     df_orig = pd.read_csv(csv_path, index_col=None)
-    df_orig = df_orig.drop(['1','2','3','5','6','7'], axis=1)
-    df_orig['4'] = df_orig['4'].str.replace('S0010', 'S010')
-    df_orig['8'] = df_orig['8'].str.replace('S0010', 'S010')
+    df_orig['0'] = df_orig['0'].str.replace('S0010', 'S010').str[17:]
+    df_orig['1'] = df_orig['1'].str.replace('S0010', 'S010').str[17:]
 
     df = pd.DataFrame()
-    df['score'] = df_orig['0'].astype(np.float)
-    df['index'] = df_orig['4'].str[4:31]
-    df['id_actual'] = df_orig['4'].str[8:17]
-    df['index_actual'] = df_orig['4'].str[38:].astype(np.int)
-    df['id_predicted'] = df_orig['8'].str[8:17]
+    df['score'] = df_orig['2'].astype(np.float)
+    df['index'] = df_orig['0'].str[4:31]
+    df['id_actual'] = df_orig['0'].str[8:17]
+    df['index_actual'] = df_orig['0'].str[38:].astype(np.int)
     
-    parent_dir = (Path('separate') / csv_path.stem)
+    df['id_predicted'] = df_orig['1'].str[8:17]
+    
+    parent_dir = (Path('separate/lopq') / csv_path.stem)
     parent_dir.mkdir(parents=True, exist_ok=True)
     dfs = [x for _, x in df.groupby('index')]
 
@@ -39,6 +39,8 @@ def split_csv(csv_path):
 #         print(f"{csv_path.stem}\t{index_single}\t{id_actual_single}")
         
 if __name__ == '__main__':
-    csvs = list(Path('pipeline_results').glob('*.csv'))
-    pool = Pool(processes=len(csvs))
-    pool.map(split_csv, csvs)
+    csvs = list(Path('lopq').glob('*.csv'))
+    for csv in csvs:
+        split_csv(csv)
+#     pool = Pool(processes=len(csvs))
+#     pool.map(split_csv, csvs)

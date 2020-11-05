@@ -9,10 +9,18 @@ from p_tqdm import p_map
 
 fill_value = 100
 def calc_one(path):
-    df = pd.read_csv(path, index_col=None)    
+    actual = path.stem[4:13]
+
+    df = pd.read_csv(path, index_col=None)
+    df = df[df.score < 5]
+    
+    if df.shape[0] == 0 or df.shape[1] == 0:
+        return [path.stem, actual, "", False] 
+    
     df_piv = df.pivot_table(index='id_predicted', columns='index_actual', values='score', fill_value=fill_value, aggfunc=lambda x: [s for s in x])
 
     scores = df_piv.to_numpy().T
+    
     d = dict()
     for i, score in enumerate(scores, start=1):
         score = [s if s != fill_value else [fill_value] for s in score]
@@ -30,11 +38,11 @@ def calc_one(path):
         else:
             d[m] = 1
     predicted = df_piv.index[max(d, key=d.get)]
-    actual = path.stem[4:13]
-    return path.parent.stem.split('+') + [path.stem, actual, predicted, actual == predicted] 
+    
+    return [path.stem, actual, predicted, actual == predicted] 
 
 
 if __name__ == '__main__':
-    items = list(Path('/home/chaban/pharmapack-recognition/separate/').glob('**/*.csv'))
-    res = p_map(calc_one, items, num_cpus=32)
-    pd.DataFrame(res).to_csv('result.csv')
+    items = list(Path('/home/chaban/pharmapack-recognition/separate/lopq/').glob('**/*.csv'))
+    res = p_map(calc_one, items, num_cpus=44)
+    pd.DataFrame(res).to_csv('accuracy_lopq_fs5.csv')
