@@ -8,7 +8,7 @@ from multiprocessing import Pool
 from tqdm import tqdm
 from redis import Redis
 from pathlib import Path
-from typing import List, Union, NoReturn, Tuple
+from typing import List, Union, NoReturn, Tuple, Any
 
 import pandas as pd
 import numpy as np
@@ -29,15 +29,19 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--flushdb', type=bool, default=False)
 parser.add_argument('--db_insert', type=int, default=8)
 parser.add_argument('--db_complete', type=int, default=6)
-parser.add_argument('--neighbours_amount', type=int, default=5)
+
+parser.add_argument('--segmentation_algorithm', type=str, default='MI1')
 parser.add_argument('--base_model', type=str, default='resnet18')
 parser.add_argument('--descriptor_length', type=int, default=256)
-parser.add_argument('--alg', type=str, default='MI1')
+parser.add_argument('--neighbours_amount', type=int, default=5)
 
-parser.add_argument('--V', type=int, default=16)
-parser.add_argument('--M', type=int, default=16)
-parser.add_argument('--clusters', type=int, default=1024)
+parser.add_argument('--search_algorithm', type=str, default='LOPQ')
 
+parser.add_argument('--nerpy_hash_length', type=int, default=96)
+
+parser.add_argument('--LOPQ_V', type=int, default=16)
+parser.add_argument('--LOPQ_M', type=int, default=16)
+parser.add_argument('--LOPQ_clusters', type=int, default=1024)
 
 
 logger_name = 'nnmodels | hasher'
@@ -77,13 +81,12 @@ def init_nearpy_engine(
         descriptor_length: int,
         neighbours_amount: int,
         base_model: str,
-        alg: str,
         db_insert: Redis
 ) -> Engine:
     def generate_hash_names(prefix: str) -> List[str]:
         return [
             "+".join([
-                prefix, base_model, str(descriptor_length), alg, str(hash_length)
+                prefix, base_model, str(descriptor_length), args.segmentation_alg, str(hash_length)
             ]) for hash_length in hash_lengths
         ]
 
@@ -209,7 +212,7 @@ def search_nearpy(
         nearpy_engine: Engine,
         descriptors_to_search: List[np.ndarray],
         uuids_to_search: List[str],
-) -> pd.DataFrame:
+) -> List[List[Any]]:
     results = []
 
     total = len(descriptors_to_search)
@@ -227,7 +230,7 @@ def search_nearpy(
         pbar.update()
     pbar.close()
 
-    return pd.DataFrame(results)
+    return results
 
 
 def search_lopq(
@@ -235,10 +238,10 @@ def search_lopq(
     uuids_train_lopq: List[str],
     descriptors_search_lopq: List[np.ndarray],
     uuids_search_lopq: List[str],
-) -> NoReturn:
+) -> List[List[Any]]:
     train_array = np.asarray(descriptors_train_lopq)
 
-    lopq_model = LOPQModel(V=args.V, M=args.M, subquantizer_clusters=args.clusters)
+    lopq_model = LOPQModel(V=args.LOPQ_V, M=args.LOPQ_M, subquantizer_clusters=args.LOPQ_clusters)
     lopq_model.fit(train_array, n_init=1)
 
     lopq_searcher = LOPQSearcher(model=lopq_model)
@@ -260,7 +263,7 @@ def search_lopq(
         pbar.update()
     pbar.close()
 
-    return pd.DataFrame(results)
+    return results
 
 
 def calc_l2(based_tuple, search_tuple):
@@ -294,61 +297,20 @@ def search_l2(
         )
         pool.close()
         results.extend(res)
-
-
         pbar.update()
     pbar.close()
 
     return pd.DataFrame(results)
 
 
-def process_single_subset(
-        alg: str,
-        base_model: str,
-        descriptor_length: int,
-        db_insert: Redis,
-        db_complete: Redis
-) -> NoReturn:
-    logger.info(f"Start working on alg={alg} model={base_model} dlen={descriptor_length}")
-
-    descriptors_train_lopq, uuids_train_lopq, descriptors_search_lopq, uuids_search_lopq = load_descriptors(
-        alg, base_model, descriptor_length, db_complete
-    )
-
-    df = search_lopq(descriptors_train_lopq, uuids_train_lopq, descriptors_search_lopq, uuids_search_lopq)
-
-    df_uuid = "+".join(["lopq", alg, base_model, str(descriptor_length)])
-    df_path = Path(f"lopq/{df_uuid}.csv")
+def save_results(results: List[List[Any]]) -> NoReturn:
+    df_uuid = "+".join([args.search_algorithm, args.segmentation_algorithm, args.base_model,
+                        str(args.descriptor_length), str(args.neighbours_amount)])
+    df_path = Path(f"search_results/{df_uuid}.csv")
     df_path.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame(results)
     df.to_csv(df_path, index=False)
-
-    # descriptors_based_l2, uuids_based_l2, descriptors_to_search_l2, uuids_to_search_l2 = load_descriptors_l2(
-    #     dir_alg, base_model, descriptor_length, db_complete
-    # )
-    # df = search_l2(descriptors_based_l2, uuids_based_l2, descriptors_to_search_l2, uuids_to_search_l2)
-    # df_uuid = "+".join([dir_alg.stem, base_model, str(descriptor_length)])
-    # df_path = Path(f"l2_results/{df_uuid}.csv")
-    # df_path.parent.mkdir(parents=True, exist_ok=True)
-    #
-    # df.to_csv(df_path, index=False)
-
-    # for neighbours_amount in neighbours_amounts:
-    #     nearpy_engine = init_nearpy_engine(descriptor_length, neighbours_amount, base_model, dir_alg.stem, db_insert)
-    #
-    #     hash_nearpy(nearpy_engine, descriptors_to_hash, uuids_to_hash)
-    #
-    #     df = search_nearpy(nearpy_engine, descriptors_to_search, uuids_to_search)
-    #
-    #     df_uuid = "+".join([dir_alg.stem, base_model, str(descriptor_length), str(neighbours_amount)])
-    #     df_path = Path(f"pipeline_results/{df_uuid}.csv")
-    #     df_path.parent.mkdir(parents=True, exist_ok=True)
-    #
-    #     df.to_csv(df_path, index=False)
-
-
-base_models = ['resnet18', 'resnet50', 'resnet101']
-descriptor_lengths = [256, 512, 1024]
-hash_lengths = [64, 96, 128, 160, 256]
+    logger.info(f"Saved {df_path.name} with {df.index.__len__()} entries")
 
 
 if __name__ == '__main__':
@@ -364,10 +326,12 @@ if __name__ == '__main__':
         else:
             logger.info("Didn't clear storage")
 
-    # for subset in itertools.product(*[list(Path(args.dir_complete).glob('*')), base_models, descriptor_lengths]):
-    #     dir_alg, base_model, descriptor_length = subset
-    #     if dir_alg.stem == 'MSER':
-    #         continue
-    #     process_single_subset(dir_alg, base_model, descriptor_length, db_insert, db_complete)
+    logger.info(f"Start working on search_alg={args.search_algorithm} seg_alg={args.segmentation_algorithm} "
+                f"model={args.base_model} dlen={args.descriptor_length} na={args.neighbours_amount}")
 
-    process_single_subset(args.alg, args.base_model, args.descriptor_length, db_insert, db_complete)
+    descriptors_train_lopq, uuids_train_lopq, descriptors_search_lopq, uuids_search_lopq = load_descriptors(
+        args.segmentation_algorithm, args.base_model, args.descriptor_length, db_complete
+    )
+
+    results = search_lopq(descriptors_train_lopq, uuids_train_lopq, descriptors_search_lopq, uuids_search_lopq)
+    save_results(results)
