@@ -6,6 +6,8 @@ from multiprocessing import Pool, Value
 
 import cv2 as cv
 
+from finegrained.extractor import Extractor, DescriptorType
+
 from textdetector import config, writer
 from textdetector.loader import Loader
 from textdetector.aligner import Aligner
@@ -61,6 +63,15 @@ class Runner:
             annotation = Annotation.load_annotation_by_pattern(file.get_annotation_pattern())
             image_input = cv.imread(str(file.path.resolve()))
 
+            extractor = Extractor(
+                descriptor_types=[
+                    DescriptorType.AKAZE,
+                    DescriptorType.SIFT,
+                    DescriptorType.ORB,
+                ]
+            )
+            Extractor.save_descriptors(extractor.extract(image_input), file.filename)
+            return
             homo_mat = utils.find_homography_matrix(utils.to_gray(image_input), utils.to_gray(annotation.image_ref))
             image_aligned = Aligner.align(image_input, annotation.image_ref, homo_mat)
 

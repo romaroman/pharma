@@ -17,11 +17,6 @@ class DetectionAlgorithm(CustomEnum):
     MSER = "MSER",
     MajorVoting = "MV"
 
-    @staticmethod
-    def load_from_config(keyword: str) -> List['DetectionAlgorithm']:
-        if keyword.lower() == 'all':
-            return DetectionAlgorithm.to_list()
-
 
 class ApproximationMethod(CustomEnum):
     Contour = auto(),
@@ -39,7 +34,7 @@ class FileDatabase(CustomEnum):
     PharmaPack_R_I_S3 = auto(),
 
     @staticmethod
-    def get_list_of_recognition_databases() -> List['FileDatabase']:
+    def get_recognition_databases_list() -> List['FileDatabase']:
         return [FileDatabase.PharmaPack_R_I_S1, FileDatabase.PharmaPack_R_I_S2, FileDatabase.PharmaPack_R_I_S3]
 
 

@@ -28,7 +28,7 @@ class FileInfo(ABC):
 
         if config.database is FileDatabase.Enrollment:
             return FileInfoEnrollment(file_path)
-        elif config.database in FileDatabase.get_list_of_recognition_databases():
+        elif config.database in FileDatabase.get_recognition_databases_list():
             return FileInfoRecognition(file_path)
 
     def __init__(self, file_path: Path) -> NoReturn:

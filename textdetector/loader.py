@@ -14,7 +14,7 @@ logger = logging.getLogger('loader')
 
 class Loader:
     DEBUG_FILES = [
-        'PharmaPack_R_I_S1_Ph1_P0056_D01_S001_C1_P1',
+        # 'PharmaPack_R_I_S1_Ph1_P0056_D01_S001_C1_P1',
     ]
 
     def __init__(self) -> NoReturn:

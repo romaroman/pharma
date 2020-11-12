@@ -16,9 +16,9 @@ dependencies:
   - brotlipy=0.7.0=py38h7b6447c_1000
   - bzip2=1.0.8=h516909a_3
   - c-ares=1.16.1=h516909a_3
-  - ca-certificates=2020.6.20=hecda079_0
+  - ca-certificates=2020.10.14=0
   - cachetools=4.1.1=py_0
-  - certifi=2020.6.20=py38h924ce5b_2
+  - certifi=2020.6.20=py38_0
   - cffi=1.14.2=py38he30daa8_0
   - chardet=3.0.4=py38_1003
   - click=7.1.2=py_0
@@ -121,7 +121,7 @@ dependencies:
   - oauthlib=3.1.0=py_0
   - olefile=0.46=py_0
   - openpyxl=3.0.5=py_0
-  - openssl=1.1.1h=h516909a_0
+  - openssl=1.1.1h=h7b6447c_0
   - packaging=20.4=pyh9f0ad1d_0
   - pandas=1.1.1=py38he6710b0_0
   - pandas-profiling=2.9.0=pyh9f0ad1d_0
@@ -188,7 +188,7 @@ dependencies:
   - toolz=0.10.0=py_0
   - torchvision=0.7.0=py38_cu102
   - tornado=6.0.4=py38h7b6447c_1
-  - tqdm=4.48.2=pyh9f0ad1d_0
+  - tqdm=4.50.2=py_0
   - traitlets=4.3.3=py38_0
   - urllib3=1.25.10=py_0
   - visions=0.5.0=pyh9f0ad1d_0
@@ -204,8 +204,11 @@ dependencies:
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.5=h9ceee32_0
   - pip:
+    - lmdb==1.0.0
+    - lopq==1.0.0
     - opencv-contrib-python==4.4.0.42
     - opencv-python==4.4.0.42
     - pip==20.2.3
+    - pydegensac==0.1.2
 prefix: /opt/anaconda3/envs/pharma
 
