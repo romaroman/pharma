@@ -1,6 +1,7 @@
 from enum import auto
-from typing import List
+from typing import List, Any
 
+import cv2 as cv
 from utils import CustomEnum
 
 
@@ -9,7 +10,7 @@ class Mode(CustomEnum):
     Release = auto()
 
 
-class DetectionAlgorithm(CustomEnum):
+class SegmentationAlgorithm(CustomEnum):
     MorphologyIteration1 = "MI1",
     MorphologyIteration2 = "MI2",
 
@@ -36,12 +37,6 @@ class FileDatabase(CustomEnum):
     @staticmethod
     def get_recognition_databases_list() -> List['FileDatabase']:
         return [FileDatabase.PharmaPack_R_I_S1, FileDatabase.PharmaPack_R_I_S2, FileDatabase.PharmaPack_R_I_S3]
-
-
-class FilePhone(CustomEnum):
-    Phone1 = auto(),
-    Phone2 = auto(),
-    Phone3 = auto()
 
 
 class AnnotationLabel(CustomEnum):
@@ -100,3 +95,20 @@ class AlignmentMethod(CustomEnum):
     NoAlignment = auto(),
     Reference = auto(),
     ToCorners = auto()
+
+
+class Model(CustomEnum):
+    Triplet = auto(),
+    Resnet50 = auto(),
+    Siamese = auto(),
+    SimCLR = auto(),
+    Hash = auto()
+
+class Descriptor(CustomEnum):
+
+    AKAZE = "AKAZE",
+    SIFT = "SIFT",
+    # SURF = "SURF",
+    ORB = "ORB",
+    BRISK = "BRISK",
+    KAZE = "KAZE",

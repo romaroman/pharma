@@ -1,16 +1,26 @@
-App: PharmapackRecognition
+App: PharmaPackRecognition
 
-Mode: Debug
-Database: Enrollment
+General:
+  Seed: 666
 
-Dirs:
-  SourceDir: /fls/pharmapack
-  OutputDir: /fls/pharmapack/Output
+  Mode: Debug
+  Database: Enrollment
 
-ImageLoading:
+  DirSource: /fls/pharmapack
+  DirOutput: /fls/pharmapack/Output
+  ClearDirOutput: True
+
+  LogLevel: INFO
+  Profile: False
+
+  Multithreading: False
+  Threads: Auto
+
+Loading:
   UseDebugFiles: False
+
   Shuffle: False
-  Seed: True
+  UseSeed: True
   Fraction: 1
 
   Filter:
@@ -25,48 +35,65 @@ ImageLoading:
   SortBy: [PackageClass, Phone]
   GroupBy: [] #[PackageClass, Distinct]
 
-Output:
-  ClearOutputDir: True
-  LogLevel: INFO
-  Profile: False
+FineGrained:
+  DescriptorsUsed: [AKAZE, SIFT, ORB]
 
-Multithreading:
-  Used: False
-  Threads: 6
-
-QualityEstimation:
-  RaiseErrors: False
-  GlaresUsed: True
-  BlurUsed: True
-
-AlignmentMethod: NoAlignment
-
-Detection:
+Segmentation:
   ScaleFactor: 1
-  Algorithms: [MSER, MorphologyIteration1, MorphologyIteration2, MajorVoting] # LineSegmentation
+
+  AlignmentMethod: Reference
+  Algorithms: [MSER, MorphologyIteration1] # LineSegmentation, MorphologyIteration2, MajorVoting
 
   ApproximationMethodDefault: Contour
-  ApproximationMethodsUsed: [Contour, Brect, Rrect, Hull]
+  ApproximationMethodsUsed: [Contour, Hull]
 
-  Write: [mask, regions, json, nn, verref]
+  Write: [nn] # mask, regions, json, verref
 
-Evaluation:
-  Annotation:
-    Mask: True
-    Regions: True
-  Verification:
-    Mask: True
-    Regions: True
-  Metrics: [a]
+  QualityEstimation:
+    Raise: False
+    UseGlares: True
+    UseBlur: True
 
-ExtractReference:
-  Used: False
-  Write: True
+  Evaluation:
+    Annotation:
+      Mask: True
+      Regions: True
+    Verification:
+      Mask: True
+      Regions: True
+    Metrics: [all]
+
+  ExtractReference:
+    Used: False
+    Write: True
+
+Hash:
+  Algorithms: [MSER, MorphologyIteration1]
+  BaseModel: resnet18
+  DescriptorLength: 256
+
+  NeighboursAmount: 15
+  TopNeighboursAmount: 9
+  TopRankedSize: 10
+
+  Storage:
+    Redis:
+      Complete: 6
+      Insert: 8
+      Port: 6379
+      Host: localhost
+    LMDB:
+      Path: "/ndata/chaban/lmdb"
+
+  NearPy:
+    Length: 128
+
+  LOPQ:
+    CoarseClusters: 16
+    Subvectors: 16
+    SubquantizerClusters: 512
 
 NN:
-  UsedModel: Hash
-  SourceDir: /data/500gb/pharmapack/CNNInput
-
   Common:
     BatchSize: 128
     Epochs: 10
@@ -84,32 +111,8 @@ NN:
       NumWorkers: 0
       ValidSize: 0.05
 
-  Hash:
-    Algorithms: [MSER, MI1]
-    BaseModels: [resnet18, resnet50, resnet101]
-    DescriptorLengths: [256, 512, 1024]
-
-    Storage:
-      Redis:
-        CompleteDB: 6
-        InsertDB: 8
-        Port: 6379
-        Host: localhost
-      LMDB:
-        Path: "/ndata/chaban/lmdb"
-
-    NearPy:
-      HashLengths: [64, 96, 128, 160, 256]
-      Neighbours: [1, 3, 5, 7, 9, 12]
-
-    LOPQ:
-      Models:
-        - CoarseClusters: 8
-          Subvectors: 4
-          SubquantizerClusters: 256
-
   SimCLR:
-    BaseModel: ResNet50
+    BaseModel: resnet50
     OutDim: 512
 
     Loss:
