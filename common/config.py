@@ -1,6 +1,7 @@
 import os
 import logging
 
+from abc import ABC, abstractmethod
 from confuse import Configuration
 from typing import List, Dict
 from pathlib import Path
@@ -12,9 +13,16 @@ from common.enums import ApproximationMethod, EvalMetric, SegmentationAlgorithm,
 import utils
 
 
+class __Config(ABC):
+
+    def __init__(self):
+
+
 class GeneralConfig:
 
     def __init__(self, confuse: Configuration):
+        self.confuse: Configuration = confuse
+
         self.timestamp = utils.get_str_timestamp()
 
         self.seed: int = confuse['Seed'].as_number()
@@ -49,6 +57,8 @@ class FineGrainedConfig:
 class LoadingConfig:
 
     def __init__(self, confuse: Configuration):
+        self.confuse: Configuration = confuse
+
         self.use_debug_files: bool = confuse['UseDebugFiles'].get()
 
         self.shuffle: bool = confuse['Shuffle'].get()
@@ -71,6 +81,8 @@ class LoadingConfig:
 class SegmentationConfig:
 
     def __init__(self, confuse: Configuration):
+        self.confuse: Configuration = confuse
+
         self.scale_factor: float = confuse['ScaleFactor'].as_number()
 
         self.alignment_method: AlignmentMethod = \

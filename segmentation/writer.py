@@ -56,7 +56,7 @@ def save_segmentation_results(segmenter: Segmenter, fileinfo: FileInfo) -> NoRet
     for algorithm, result in segmenter.results.items():
         for method in result.masks.keys():
 
-            common_part = f"{algorithm.blob()}/{method}"
+            common_part = f"{algorithm.blob()}/{method.blob()}"
             if 'mask' in config.general.det_write:
                 write_entity(result.masks[method], f"{common_part}/masks", fileinfo.filename, "png")
 

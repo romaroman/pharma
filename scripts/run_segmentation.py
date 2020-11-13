@@ -18,7 +18,7 @@ if __name__ == '__main__':
     )
     utils.suppress_warnings()
 
-    logger.info(f"Currently used configuration:\n{config.segmentation.dump()}")
+    logger.info(f"Currently used configuration:\n{config.segmentation.confuse.dump()}")
     segmentation.Runner.process()
 
     sys.exit(0)

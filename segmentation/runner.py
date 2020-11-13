@@ -71,6 +71,7 @@ class Runner:
             segmenter = Segmenter(image_aligned)
             segmenter.segment(config.segmentation.algorithms)
             writer.save_segmentation_results(segmenter, file)
+            return
 
             if config.segmentation.extract_reference:
                 referencer = Referencer(image_aligned, annotation)
