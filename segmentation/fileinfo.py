@@ -4,8 +4,8 @@ from pathlib import Path
 from abc import ABC
 from typing import NoReturn, Union, Dict, List, Pattern
 
-from textdetector import config
-from textdetector.enums import FileDatabase
+from common import config
+from common.enums import FileDatabase
 
 import utils
 
@@ -26,9 +26,9 @@ class FileInfo(ABC):
         if type(file_path) is str:
             file_path = Path(file_path)
 
-        if config.database is FileDatabase.Enrollment:
+        if config.general.database is FileDatabase.Enrollment:
             return FileInfoEnrollment(file_path)
-        elif config.database in FileDatabase.get_recognition_databases_list():
+        elif config.general.database in FileDatabase.get_recognition_databases_list():
             return FileInfoRecognition(file_path)
 
     def __init__(self, file_path: Path) -> NoReturn:

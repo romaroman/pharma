@@ -3,7 +3,7 @@ from typing import NoReturn, Union, Dict, Any
 import cv2 as cv
 import numpy as np
 
-from textdetector import config
+from common import config
 
 import utils
 
@@ -56,7 +56,7 @@ class QualityEstimator:
         self.blur_score_ver = self.calculate_blur_score(image_ver)
         self.blur_score_ref = self.calculate_blur_score(image_ref)
 
-        if config.is_debug():
+        if config.general.is_debug():
             self.image_blur_visualization = np.hstack([
                 cv.putText(
                     img=utils.to_rgb(np.copy(image_ver)), text=str(self.blur_score_ver), org=(100, 100),
@@ -99,7 +99,7 @@ class QualityEstimator:
         for el in ellipses:
             cv.ellipse(image_ellipses_enlarged, el, 0, cv.FILLED, cv.LINE_8)
 
-        if config.is_debug():
+        if config.general.is_debug():
             contours, _ = cv.findContours(image_ellipses_enlarged, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
             self.image_glares_visualization = cv.drawContours(utils.to_rgb(np.copy(image)), contours, -1, (0, 0, 255), 4)
 
@@ -121,20 +121,20 @@ class QualityEstimator:
         image_ver = cv.cvtColor(image_ver, cv.COLOR_BGR2GRAY)
         image_ref = cv.cvtColor(image_ref, cv.COLOR_BGR2GRAY)
 
-        if config.qe_glares:
+        if config.segmentation.quality_glares:
             self.is_glared = self.does_image_contain_glares(image_ver)
-            if config.qe_raise and self.is_glared:
+            if config.segmentation.quality_raise and self.is_glared:
                 raise ImageContainsGlares
 
-        if config.qe_blur:
+        if config.segmentation.quality_blur:
             self.is_blurred = self.is_image_blurred(image_ver, image_ref)
-            if config.qe_raise and self.is_blurred:
+            if config.segmentation.quality_raise and self.is_blurred:
                 raise ImageIsBlurred
 
         return not self.is_glared and not self.is_blurred
 
     def perform_estimation(self, image_ver: np.ndarray, image_ref: np.ndarray, homo_mat: np.ndarray) -> NoReturn:
-        if config.is_alignment_needed():
+        if config.segmentation.is_alignment_needed():
             self.estimate_not_aligned(image_ver, image_ref, homo_mat)
         else:
             self.estimate_aligned(image_ver, image_ref)
@@ -151,9 +151,9 @@ class QualityEstimator:
         }
 
         dict_result = dict()
-        if config.qe_blur:
+        if config.segmentation.quality_blur:
             dict_result.update(dict_blur)
-        if config.qe_glares:
+        if config.segmentation.quality_glares:
             dict_result.update(dict_glares)
 
         return dict_result

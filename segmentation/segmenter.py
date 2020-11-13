@@ -1,4 +1,3 @@
-import os
 import logging
 import itertools
 
@@ -9,16 +8,18 @@ from typing import List, NoReturn, Dict, Union, Tuple
 import cv2 as cv
 import numpy as np
 
-from textdetector import config, morph
-from textdetector.enums import DetectionAlgorithm, ApproximationMethod
+from common import config
+from common.enums import SegmentationAlgorithm, ApproximationMethod
+
+from segmentation import morph
 
 import utils
 
 
-logger = logging.getLogger('detector')
+logger = logging.getLogger('segmentation | segmenter')
 
 
-class Detector:
+class Segmenter:
 
     def __init__(self, image_input: np.ndarray) -> NoReturn:
         self.image_not_scaled = image_input
@@ -35,35 +36,35 @@ class Detector:
         self.image_filtered: np.ndarray = np.zeros_like(self.image_gray)
 
         self.visualization: Union[np.ndarray, None] = None
-        self.results: Dict[str, DetectionResult] = dict()
+        self.results: Dict[SegmentationAlgorithm, SegmentationResult] = dict()
 
-    def detect(self, algorithms: List[DetectionAlgorithm]) -> NoReturn:
+    def segment(self, algorithms: List[SegmentationAlgorithm]) -> NoReturn:
         self.image_edges = morph.extract_edges(self.image_std_filtered, self.image_bw, post_morph=True)
         self.image_cleared_borders = morph.clear_borders(self.image_edges)
         self.image_filled = utils.fill_holes(self.image_cleared_borders)
         self.image_filtered = morph.filter_non_text_blobs(self.image_filled)
 
         for algorithm in algorithms:
-            if algorithm is not DetectionAlgorithm.MajorVoting:
-                self.results[algorithm.vs()] = DetectionResult(self._run_algorithm(algorithm))
+            if algorithm is not SegmentationAlgorithm.MajorVoting:
+                self.results[algorithm] = SegmentationResult(self._run_algorithm(algorithm))
             else:
                 for algorithm, mask in self._perform_major_voting().items():
-                    self.results[algorithm] = DetectionResult(mask)
+                    self.results[algorithm] = SegmentationResult(mask)
 
         pass
 
-    def _run_algorithm(self, algorithm: DetectionAlgorithm) -> np.ndarray:
-        if algorithm is DetectionAlgorithm.MorphologyIteration1:
+    def _run_algorithm(self, algorithm: SegmentationAlgorithm) -> np.ndarray:
+        if algorithm is SegmentationAlgorithm.MorphologyIteration1:
             return self._run_morphology_iteration_1()
-        if algorithm is DetectionAlgorithm.MorphologyIteration2:
+        if algorithm is SegmentationAlgorithm.MorphologyIteration2:
             return self._run_morphology_iteration_2()
-        if algorithm is DetectionAlgorithm.LineSegmentation:
+        if algorithm is SegmentationAlgorithm.LineSegmentation:
             return self._run_line_segmentation()
-        if algorithm is DetectionAlgorithm.MSER:
+        if algorithm is SegmentationAlgorithm.MSER:
             return self._run_MSER()
 
-    def get_result_by_algorithm(self, algorithm: DetectionAlgorithm) -> 'DetectionResult':
-        return self.results[algorithm.vs()]
+    def get_result_by_algorithm(self, algorithm: SegmentationAlgorithm) -> 'SegmentationResult':
+        return self.results[algorithm]
 
     def _run_morphology_iteration_1(self) -> np.ndarray:
         image_morphed = morph.apply_line_morphology(self.image_filtered, morph.mscale(30))
@@ -125,7 +126,7 @@ class Detector:
     def _run_morphology_iteration_2(self) -> np.ndarray:
         image_word_linearly_morphed = np.zeros(self.image_not_scaled.shape[:2], dtype=np.uint8)
 
-        for region in self.results['MI1'].get_default_regions():
+        for region in self.results[SegmentationAlgorithm.MorphologyIteration1].get_default_regions():
             edges = region.crop_image(morph.mscale(self.image_edges, down=False))
             edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, np.ones((3, 3)))
             filled = utils.fill_holes(edges)
@@ -178,7 +179,11 @@ class Detector:
 
         if self.results:
             for algorithm, result in self.results.items():
-                images.append(utils.add_text(result.get_default_visualization(self.image_not_scaled), algorithm))
+                images.append(
+                    utils.add_text(
+                        result.get_default_visualization(self.image_not_scaled), algorithm.blob()
+                    )
+                )
 
         for i, image in enumerate(images):
             if len(image.shape) != 3:
@@ -199,7 +204,9 @@ class Detector:
 
         return image_mser
 
-    def _perform_major_voting(self) -> Dict[str, np.ndarray]:
+    def _perform_major_voting(
+            self
+    ) -> Dict[Tuple[SegmentationAlgorithm, SegmentationAlgorithm, SegmentationAlgorithm], np.ndarray]:
         resulting_masks = dict()
 
         combinations = list(itertools.combinations(list(self.results.keys()), 3))
@@ -214,7 +221,7 @@ class Detector:
             alg13 = cv.bitwise_and(mask1, mask3)
             alg23 = cv.bitwise_and(mask2, mask3)
 
-            resulting_masks["+".join([alg1, alg2, alg3])] = cv.bitwise_or(cv.bitwise_or(alg12, alg13), alg23)
+            resulting_masks[(alg1, alg2, alg3)] = cv.bitwise_or(cv.bitwise_or(alg12, alg13), alg23)
 
         return resulting_masks
 
@@ -229,33 +236,33 @@ class Detector:
         cv.imwrite(str(path_parent_folder / 'image_ref.png'), self.image_not_scaled)
 
         for algorithm, result in self.results.items():
-            (path_parent_folder / algorithm).mkdir(parents=True, exist_ok=True)
-            cv.imwrite(str(path_parent_folder / algorithm / 'image_mask.png'), result.get_default_mask())
+            (path_parent_folder / algorithm.blob()).mkdir(parents=True, exist_ok=True)
+            cv.imwrite(str(path_parent_folder / algorithm.blob() / 'image_mask.png'), result.get_default_mask())
 
     @classmethod
-    def load_results(cls, path_parent_folder: Path) -> Tuple[np.ndarray, Dict[str, 'DetectionResult']]:
-        dict_result = dict()
+    def load_results(cls, path_parent_folder: Path) -> Tuple[np.ndarray, Dict[str, 'SegmentationResult']]:
+        results = dict()
         image_ref = cv.imread(str(path_parent_folder / 'image_ref.png'))
 
         algorithm_folders = [d for d in path_parent_folder.iterdir() if d.is_dir()]
         for algorithm_folder in algorithm_folders:
-            dict_result[algorithm_folder.stem] = DetectionResult(cv.imread(str(algorithm_folder / 'image_mask.png'), 0))
+            results[algorithm_folder.stem] = SegmentationResult(cv.imread(str(algorithm_folder / 'image_mask.png'), 0))
 
-        return image_ref, dict_result
+        return image_ref, results
 
     @classmethod
     def load_results_by_pattern(
             cls,
             pattern: Pattern
-    ) -> Tuple[np.ndarray, Dict[str, 'DetectionResult']]:
-        for file in (config.dir_source / 'VerificationReferences').glob("*"):
+    ) -> Tuple[np.ndarray, Dict[str, 'SegmentationResult']]:
+        for file in (config.general.dir_source / 'VerificationReferences').glob("*"):
             if pattern.search(str(file)):
                 return cls.load_results(file)
         else:
             raise FileNotFoundError
 
 
-class DetectionResult:
+class SegmentationResult:
 
     class Region:
 
@@ -347,7 +354,7 @@ class DetectionResult:
         self.masks: Dict[ApproximationMethod, np.ndarray] = dict()
         self.regions: Dict[ApproximationMethod, List['Region']] = dict()
 
-        for method in config.det_approximation_methods_used:
+        for method in config.segmentation.approximation_methods_used:
             self.regions[method] = self.find_regions(method)
             self.masks[method] = self.create_mask(method)
 
@@ -379,13 +386,13 @@ class DetectionResult:
         return cv.drawContours(np.copy(image), [region.polygon for region in self.regions[method]], -1, (0, 255, 0), 5)
 
     def get_default_visualization(self, image: np.ndarray) -> np.ndarray:
-        return self.create_visualization(image, config.det_approximation_method_default)
+        return self.create_visualization(image, config.segmentation.approximation_method_default)
 
     def get_default_mask(self) -> np.ndarray:
-        return self.masks[config.det_approximation_method_default]
+        return self.masks[config.segmentation.approximation_method_default]
 
     def get_default_regions(self) -> List['Region']:
-        return self.regions[config.det_approximation_method_default]
+        return self.regions[config.segmentation.approximation_method_default]
 
     def get_mask(self, method: ApproximationMethod) -> np.ndarray:
         return self.masks[method]

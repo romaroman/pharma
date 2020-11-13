@@ -2,7 +2,7 @@ from typing import NoReturn, Dict, Any, List
 
 import pandas as pd
 
-from textdetector import config
+from common import config
 
 
 class Collector:
@@ -27,8 +27,8 @@ class Collector:
             self.add_result(result)
 
     def dump(self) -> NoReturn:
-        df_file = f"session_pd_{config.timestamp}.csv"
-        dst_path = config.dir_output / df_file
+        df_file = f"session_{config.general.timestamp}.csv"
+        dst_path = config.general.dir_output / df_file
 
         if dst_path.exists():
             pd.concat([pd.read_csv(dst_path, index_col=None), self.storage]).to_csv(dst_path, index=False)

@@ -5,16 +5,16 @@ from typing import NoReturn, Dict, Union, List, Tuple
 import cv2 as cv
 import numpy as np
 
-from textdetector import config
+from common import config
+from common.enums import EvalMetric, AnnotationLabel, ApproximationMethod
 
-from textdetector.detector import Detector, DetectionResult
-from textdetector.annotation import Annotation
-from textdetector.enums import EvalMetric, AnnotationLabel, ApproximationMethod
+from segmentation.segmenter import Segmenter, SegmentationResult, SegmentationAlgorithm
+from segmentation.annotation import Annotation
 
 import utils
 
 
-logger = logging.getLogger('evaluator')
+logger = logging.getLogger('segmentation | evaluator')
 
 
 class Evaluator(ABC):
@@ -22,17 +22,17 @@ class Evaluator(ABC):
     def __init__(self, homo_mat: Union[np.ndarray, None] = None) -> NoReturn:
         self.homo_mat: Union[None, np.ndarray] = homo_mat
 
-        self.results_mask: Dict[str, np.ndarray] = dict()
-        self.results_regions: Dict[str, np.ndarray] = dict()
+        self.results_mask: Dict[SegmentationAlgorithm, np.ndarray] = dict()
+        self.results_regions: Dict[SegmentationAlgorithm, np.ndarray] = dict()
 
     @abstractmethod
-    def evaluate(self, detection: Detector) -> NoReturn:
+    def evaluate(self, segmenter: Segmenter) -> NoReturn:
         raise NotImplemented
 
-    def get_mask_results(self) -> Dict[str, np.ndarray]:
+    def get_mask_results(self) -> Dict[SegmentationAlgorithm, np.ndarray]:
         return self.results_mask
 
-    def get_regions_results(self) -> Dict[str, np.ndarray]:
+    def get_regions_results(self) -> Dict[SegmentationAlgorithm, np.ndarray]:
         return self.results_regions
 
 
@@ -47,23 +47,23 @@ class EvaluatorByAnnotation(Evaluator):
             labels=AnnotationLabel.get_list_of_text_labels(), color=(255, 255, 255)
         ))
 
-    def evaluate(self, detection: Detector) -> NoReturn:
-        if config.is_alignment_needed() and self.homo_mat is None:
+    def evaluate(self, segmenter: Segmenter) -> NoReturn:
+        if config.segmentation.is_alignment_needed() and self.homo_mat is None:
             self.homo_mat = utils.find_homography_matrix(
-                utils.to_gray(detection.image_not_scaled), utils.to_gray(self.annotation.image_ref)
+                utils.to_gray(segmenter.image_not_scaled), utils.to_gray(self.annotation.image_ref)
             )
 
-        for algorithm, result in detection.results.items():
-            if config.ev_ano_mask:
+        for algorithm, result in segmenter.results.items():
+            if config.segmentation.eval_annotation_mask:
                 image_ver_mask = result.get_default_mask()
                 self.results_mask[algorithm] = self._evaluate_by_mask(image_ver_mask)
 
-            if config.ev_ano_regions:
+            if config.segmentation.eval_annotation_regions:
                 regions_ver = result.get_default_regions()
                 self.results_regions[algorithm] = self._evaluate_by_regions(regions_ver)
 
     def _evaluate_by_mask(self, image_ver: np.ndarray) -> np.ndarray:
-        if config.is_alignment_needed():
+        if config.segmentation.is_alignment_needed():
             image_ver = cv.warpPerspective(
                 image_ver, self.homo_mat, utils.swap_dimensions(self.annotation.image_ref.shape)
             )
@@ -72,10 +72,10 @@ class EvaluatorByAnnotation(Evaluator):
         sc.calc_scores(image_ver, self.image_mask_ref_text)
         return np.array(sc.scores_list)
 
-    def _evaluate_by_regions(self, regions: List[DetectionResult.Region]) -> np.ndarray:
+    def _evaluate_by_regions(self, regions: List[SegmentationResult.Region]) -> np.ndarray:
         img_empty = np.zeros(self.annotation.image_ref.shape[:2], dtype=np.uint8)
 
-        if config.is_alignment_needed():
+        if config.segmentation.is_alignment_needed():
             regions_ver = [
                 cv.perspectiveTransform(
                     region.polygon.astype(np.float32),
@@ -91,11 +91,11 @@ class EvaluatorByAnnotation(Evaluator):
         masks_ver = [cv.drawContours(np.copy(img_empty), [region], -1, 255, -1) for region in regions_ver]
 
         rows = []
-        bi = 1
+        index_ref = 1
 
         for mask_ref, region_ref in zip(masks_ref, regions_ref):
             matched_polygons_amount = 0
-            pi = 0
+            index_ver = 0
 
             for mask_ver, region_ver in zip(masks_ver, regions_ver):
                 if cv.countNonZero(cv.bitwise_and(mask_ref, mask_ver)) > 0:
@@ -110,12 +110,12 @@ class EvaluatorByAnnotation(Evaluator):
                     scores = sc.scores_list
 
                     matched_polygons_amount += 1
-                    rows.append([bi, matched_polygons_amount] + scores)
+                    rows.append([index_ref, matched_polygons_amount] + scores)
 
-                pi += 1
+                index_ver += 1
             if matched_polygons_amount == 0:
-                rows.append([bi, matched_polygons_amount] + ScoreCalculator.generate_negative_results())
-            bi += 1
+                rows.append([index_ref, matched_polygons_amount] + ScoreCalculator.generate_negative_results())
+            index_ref += 1
 
         return np.array(rows)
 
@@ -125,29 +125,29 @@ class EvaluatorByVerification(Evaluator):
     def __init__(
             self,
             image_reference: np.ndarray,
-            results: Dict[str, DetectionResult],
+            results: Dict[str, SegmentationResult],
             homo_mat: Union[np.ndarray, None] = None
     ) -> NoReturn:
         super().__init__(homo_mat)
 
         self.image_reference: np.ndarray = image_reference
-        self.results: Dict[str, DetectionResult] = results
+        self.results: Dict[str, SegmentationResult] = results
 
-    def evaluate(self, detection: Detector) -> NoReturn:
+    def evaluate(self, segmenter: Segmenter) -> NoReturn:
         if self.homo_mat is None:
             self.homo_mat = utils.find_homography_matrix(
-                utils.to_gray(detection.image_not_scaled), utils.to_gray(self.image_reference)
+                utils.to_gray(segmenter.image_not_scaled), utils.to_gray(self.image_reference)
             )
 
-        for alg_ver, result_ver in detection.results.items():
+        for alg_ver, result_ver in segmenter.results.items():
             result_ref = self.results[alg_ver]
 
-            if config.ev_ver_mask:
+            if config.segmentation.eval_verification_mask:
                 image_ver = result_ver.get_default_mask()
                 image_ref = result_ref.get_mask(ApproximationMethod.Contour)
                 self.results_mask[alg_ver] = self._evaluate_by_mask(image_ver, image_ref)
 
-            if config.ev_ver_regions:
+            if config.segmentation.eval_verification_regions:
                 regions_ver = result_ver.get_default_regions()
                 regions_ref = result_ref.get_regions(ApproximationMethod.Contour)
                 self.results_regions[alg_ver] = self._evaluate_by_regions(regions_ver, regions_ref)
@@ -163,13 +163,13 @@ class EvaluatorByVerification(Evaluator):
 
     def _evaluate_by_regions(
             self,
-            regions_ver: List[DetectionResult.Region],
-            regions_ref: List[DetectionResult.Region]
+            regions_ver: List[SegmentationResult.Region],
+            regions_ref: List[SegmentationResult.Region]
     ) -> NoReturn:
 
         img_empty = np.zeros(self.image_reference.shape[:2], dtype=np.uint8)
 
-        if config.is_alignment_needed():
+        if config.segmentation.is_alignment_needed():
             polygons_ver = [
                 cv.perspectiveTransform(
                     region.polygon.astype(np.float32),
@@ -248,7 +248,7 @@ class ScoreCalculator:
     @classmethod
     def generate_negative_results(cls) -> List[float]:
         results = list()
-        for _ in config.ev_metrics:
+        for _ in config.segmentation.eval_metrics:
             results.append(np.round(np.random.uniform(-1.25, -0.75), 3))
         return results
 
@@ -282,17 +282,14 @@ class ScoreCalculator:
 
             self.scores_list = [iou, tpr, fpr, tnr, fnr, prv, acc, fdr, prc, fro, npv, plr, nlr, f1s]
 
-        self.round_scores()
-        self.create_dict()
-
-    def round_scores(self) -> NoReturn:
+        # round scores
         for i, result in enumerate(self.scores_list):
             self.scores_list[i] = np.round(result, 3)
-
-    def create_dict(self) -> NoReturn:
-        for i, metric in enumerate(config.ev_metrics):
-            self.scores_dict[metric.vs()] = self.scores_list[i]
+        
+        # create result dict
+        for i, metric in enumerate(config.segmentation.eval_metrics):
+            self.scores_dict[metric.blob()] = self.scores_list[i]
 
     def get_essential_scores(self) -> Dict[str, float]:
-        names = [m.vs() for m in EvalMetric.get_essential()]
+        names = [m.blob() for m in EvalMetric.get_essential()]
         return dict(filter(lambda i: i[0] in names, self.scores_dict.items()))

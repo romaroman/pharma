@@ -2,12 +2,11 @@ import argparse
 import logging
 import pickle
 
-from itertools import repeat
-from functools import partial
 from multiprocessing import Pool
 from tqdm import tqdm
 from redis import Redis
 from pathlib import Path
+from functools import partial
 from typing import List, Union, NoReturn, Tuple, Any
 
 import pandas as pd

@@ -4,13 +4,14 @@ from typing import Tuple, Union
 import cv2 as cv
 import numpy as np
 
-from textdetector import config, morph
-from textdetector.enums import AlignmentMethod
+from common import config
+from common.enums import AlignmentMethod
+from segmentation import morph
 
 import utils
 
 
-logger = logging.getLogger('aligner')
+logger = logging.getLogger('segmentation | aligner')
 
 
 class Aligner:
@@ -95,16 +96,16 @@ class Aligner:
             image_ref: Union[None, np.ndarray] = None,
             homo_mat: Union[None, np.ndarray] = None
     ) -> np.ndarray:
-        if config.alignment_method is AlignmentMethod.Reference:
+        if config.segmentation.alignment_method is AlignmentMethod.Reference:
             if image_ref is not None:
                 image_aligned = cls.align_with_reference(image_input, image_ref, homo_mat)
             else:
                 logger.warning('Cannot align image without reference')
                 raise ValueError
-        elif config.alignment_method is AlignmentMethod.ToCorners:
+        elif config.segmentation.alignment_method is AlignmentMethod.ToCorners:
             image_aligned = cls.align_to_corners(image_input)
         else:
             image_aligned = np.copy(image_input)
 
-        morph.prepare_image(image_aligned, config.det_scale_factor)
+        morph.prepare_image(image_aligned, config.segmentation.scale_factor)
         return image_aligned

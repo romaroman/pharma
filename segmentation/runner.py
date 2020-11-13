@@ -6,18 +6,18 @@ from multiprocessing import Pool, Value
 
 import cv2 as cv
 
-from finegrained.extractor import Extractor, DescriptorType
+from common import config
 
-from textdetector import config, writer
-from textdetector.loader import Loader
-from textdetector.aligner import Aligner
-from textdetector.detector import Detector
-from textdetector.fileinfo import FileInfoEnrollment, FileInfoRecognition
-from textdetector.evaluator import EvaluatorByAnnotation, EvaluatorByVerification
-from textdetector.referencer import Referencer
-from textdetector.annotation import Annotation
-from textdetector.collector import Collector
-from textdetector.qualityestimator import QualityEstimator
+from segmentation import writer
+from segmentation.loader import Loader
+from segmentation.aligner import Aligner
+from segmentation.segmenter import Segmenter
+from segmentation.fileinfo import FileInfoEnrollment, FileInfoRecognition
+from segmentation.evaluator import EvaluatorByAnnotation, EvaluatorByVerification
+from segmentation.referencer import Referencer
+from segmentation.annotation import Annotation
+from segmentation.collector import Collector
+from segmentation.qualityestimator import QualityEstimator
 
 import utils
 
@@ -30,28 +30,25 @@ class Runner:
 
     @classmethod
     def process(cls) -> NoReturn:
-        loader = Loader()
+        loader = Loader((config.general.dir_source / str(config.general.database) / "cropped"))
         chunks, chunks_amount = loader.get_chunks()
 
         collector = Collector()
 
-        logger.info(f"Preparing to process {len(loader.image_files)} images "
-                    f"split on {chunks_amount} chunks "
-                    f"{f'via {config.mlt_threads} threads' if not config.is_debug() else ''}...\n")
+        logger.info(f"Preparing to segment {len(loader.image_files)} images "
+                    f"split on chunks with {chunks_amount} length "
+                    f"{f'via {config.general.threads} threads' if not config.general.is_debug() else ''}...\n")
 
-        if not config.mlt_used:
-            for chunk in chunks:
+        for chunk in chunks:
+            if config.general.multithreading:
+                pool = Pool(processes=config.general.threads)
+                results = pool.map(cls._process_single_file, chunk)
+                pool.close()
+            else:
                 results = [cls._process_single_file(file) for file in chunk]
-                collector.add_results(results)
-                collector.dump()
 
-        else:
-            for chunk in chunks:
-                with Pool(processes=config.mlt_threads) as pool:
-                    results = pool.map(cls._process_single_file, chunk)
-                    pool.close()
-                    collector.add_results(results)
-                    collector.dump()
+            collector.add_results(results)
+            collector.dump()
 
         collector.dump()
 
@@ -63,44 +60,34 @@ class Runner:
             annotation = Annotation.load_annotation_by_pattern(file.get_annotation_pattern())
             image_input = cv.imread(str(file.path.resolve()))
 
-            extractor = Extractor(
-                descriptor_types=[
-                    DescriptorType.AKAZE,
-                    DescriptorType.SIFT,
-                    DescriptorType.ORB,
-                ]
-            )
-            Extractor.save_descriptors(extractor.extract(image_input), file.filename)
-            return
             homo_mat = utils.find_homography_matrix(utils.to_gray(image_input), utils.to_gray(annotation.image_ref))
             image_aligned = Aligner.align(image_input, annotation.image_ref, homo_mat)
 
-            if config.qe_blur or config.qe_glares:
+            if config.segmentation.quality_blur or config.segmentation.quality_glares:
                 qe = QualityEstimator()
                 qe.perform_estimation(image_aligned, annotation.image_ref, homo_mat)
                 result['quality_estimation'] = qe.to_dict()
 
-            detection = Detector(image_aligned)
-            detection.detect(config.det_algorithms)
-            writer.save_detection_results(detection, file)
-            return
+            segmenter = Segmenter(image_aligned)
+            segmenter.segment(config.segmentation.algorithms)
+            writer.save_segmentation_results(segmenter, file)
 
-            if config.exr_used:
+            if config.segmentation.extract_reference:
                 referencer = Referencer(image_aligned, annotation)
                 referencer.extract_reference_regions()
                 writer.save_reference_results(referencer, file.filename)
 
-            if config.ev_ano_mask or config.ev_ano_regions:
+            if config.segmentation.eval_annotation_mask or config.segmentation.eval_annotation_regions:
                 evaluator = EvaluatorByAnnotation(annotation, homo_mat)
-                evaluator.evaluate(detection)
+                evaluator.evaluate(segmenter)
 
                 result['eval_annotation_mask'] = evaluator.get_mask_results()
                 result['eval_annotation_regions'] = evaluator.get_regions_results()
 
-            if config.ev_ver_mask or config.ev_ver_regions:
-                image_ref, results = Detector.load_results_by_pattern(file.get_verification_pattern())
+            if config.segmentation.eval_verification_mask or config.segmentation.eval_verification_regions:
+                image_ref, results = Segmenter.load_results_by_pattern(file.get_verification_pattern())
                 evaluator = EvaluatorByVerification(image_ref, results)
-                evaluator.evaluate(detection)
+                evaluator.evaluate(segmenter)
 
                 result['eval_verification_mask'] = evaluator.get_mask_results()
                 result['eval_verification_regions'] = evaluator.get_regions_results()
@@ -112,7 +99,7 @@ class Runner:
                 'traceback': traceback.format_exc()
             })
 
-            if config.is_debug():
+            if config.general.is_debug():
                 traceback.print_exc()
         finally:
             with counter.get_lock():

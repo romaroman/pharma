@@ -3,12 +3,12 @@ from typing import NoReturn, Dict, Union
 
 import numpy as np
 
-from textdetector.annotation import Annotation, BoundingRectangle, BoundingRectangleRotated
+from segmentation.annotation import Annotation, BoundingRectangle, BoundingRectangleRotated
 
 import utils
 
 
-logger = logging.getLogger('referencer')
+logger = logging.getLogger('segmentation | referencer')
 
 
 class Referencer:

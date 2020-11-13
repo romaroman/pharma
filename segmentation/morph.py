@@ -5,7 +5,7 @@ import cv2 as cv
 import numpy as np
 import skimage.measure
 
-from textdetector import config
+from common import config
 
 import utils
 
@@ -14,10 +14,10 @@ def mscale(
         obj: Union[int, float, Tuple[int, int], np.ndarray],
         down: bool = True
 ) -> Union[int, float, Tuple[int, int], np.ndarray]:
-    if config.det_scale_factor == 1.0:
+    if config.segmentation.scale_factor == 1.0:
         return obj
 
-    scale_f = float(config.det_scale_factor if down else 1 / config.det_scale_factor)
+    scale_f = float(config.segmentation.scale_factor if down else 1 / config.segmentation.scale_factor)
 
     if type(obj) is int:
         return int(obj * scale_f)

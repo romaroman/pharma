@@ -9,8 +9,8 @@ import cv2 as cv
 import numpy as np
 import pandas as pd
 
-from textdetector import config
-from textdetector.enums import AnnotationLabel
+from common import config
+from common.enums import AnnotationLabel
 
 import utils
 
@@ -291,7 +291,7 @@ class Annotation:
 
     @staticmethod
     def load_annotation_by_pattern(pattern: Pattern) -> 'Annotation':
-        for annotation_file in (config.dir_source / 'Annotations').glob("*.xml"):
+        for annotation_file in (config.general.dir_source / 'Annotations').glob("*.xml"):
             if pattern.search(str(annotation_file)):
                 return Annotation(annotation_file)
         else:

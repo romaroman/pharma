@@ -2,8 +2,6 @@ import cv2 as cv
 import numpy as np
 from torchvision import transforms
 
-from nnmodels import config
-
 
 class GaussianBlur(object):
     def __init__(self, kernel_size, min=0.1, max=2.0):
@@ -24,17 +22,15 @@ class GaussianBlur(object):
 
 
 def get_pipeline_transform() -> transforms.Compose:
-    s = config.dataset_s * 0.8
-
     data_transforms = transforms.Compose([
         transforms.RandomApply(
-            [transforms.RandomResizedCrop(size=config.dataset_input_shape[0], scale=(0.75, 1.25), ratio=(0.75, 1.25))],
+            [transforms.RandomResizedCrop(size=256, scale=(0.75, 1.25), ratio=(0.75, 1.25))],
             p=0.25
         ),
         # transforms.RandomApply([transforms.RandomAffine(degrees=(0, 0), scale=(0.75, 1.25))], p=0.2),
         transforms.RandomHorizontalFlip(p=0.3),
         transforms.RandomVerticalFlip(p=0.3),
-        transforms.RandomApply([transforms.ColorJitter(s, s, s, 1-s)], p=0.3),
+        transforms.RandomApply([transforms.ColorJitter(0.8, 0.8, 0.8, 0.2)], p=0.3),
         transforms.RandomGrayscale(p=0.25),
         GaussianBlur(kernel_size=3),
         transforms.ToTensor(),

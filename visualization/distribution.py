@@ -60,7 +60,7 @@ if __name__ == '__main__':
     df_std = df.groupby('er_package_class').std().reset_index()
     df_median = df.groupby('er_package_class').median().reset_index()
 
-    metrics = [metric.vs() for metric in EvalMetric if metric.vs() != 'R']
+    metrics = [metric.blob() for metric in EvalMetric if metric.blob() != 'R']
     algorithms = [col.split('_')[1] for col in df.columns.to_list() if col.find('ALL_SNS') != -1]
     modes = ['ALL', 'TXT', 'DIFF', 'MEAN', 'STD', 'MEDIAN']
     nbins = 50

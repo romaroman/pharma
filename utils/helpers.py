@@ -17,7 +17,7 @@ class CustomEnum(Enum):
     def __str__(self) -> str:
         return str(self.name)
 
-    def vs(self) -> str:
+    def blob(self) -> str:
         return str(self.value[0])
 
     @classmethod
