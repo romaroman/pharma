@@ -53,7 +53,7 @@ class EvaluatorByAnnotation(Evaluator):
                 utils.to_gray(segmenter.image_not_scaled), utils.to_gray(self.annotation.image_ref)
             )
 
-        for algorithm, result in segmenter.results.items():
+        for algorithm, result in segmenter.results_aligned.items():
             if config.segmentation.eval_annotation_mask:
                 image_ver_mask = result.get_default_mask()
                 self.results_mask[algorithm] = self._evaluate_by_mask(image_ver_mask)
@@ -139,7 +139,7 @@ class EvaluatorByVerification(Evaluator):
                 utils.to_gray(segmenter.image_not_scaled), utils.to_gray(self.image_reference)
             )
 
-        for alg_ver, result_ver in segmenter.results.items():
+        for alg_ver, result_ver in segmenter.results_aligned.items():
             result_ref = self.results[alg_ver]
 
             if config.segmentation.eval_verification_mask:

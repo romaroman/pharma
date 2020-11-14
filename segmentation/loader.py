@@ -28,7 +28,6 @@ class Loader:
         else:
             self._handle_regular_loading()
 
-
     def _load(self) -> NoReturn:
         self.image_files = [FileInfo.get_file_info_by_path(file) for file in self.dir_source.glob('*.png')]
         logger.info(f"Loaded {len(self.image_files)} files from {self.dir_source}")

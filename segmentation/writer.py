@@ -1,5 +1,6 @@
 import json
 import shutil
+import logging
 from pathlib import Path
 from typing import Union, Dict, List, NoReturn, Any
 
@@ -13,6 +14,9 @@ from segmentation.fileinfo import FileInfo
 from segmentation.referencer import Referencer
 
 import utils
+
+
+logger = logging.getLogger("segmentation | writer")
 
 
 def write_entity(
@@ -50,17 +54,17 @@ def write_json(data: Any, path: str) -> NoReturn:
 
 
 def save_segmentation_results(segmenter: Segmenter, fileinfo: FileInfo) -> NoReturn:
-    if not config.general.det_write:
+    if not config.segmentation.write:
         return
 
-    for algorithm, result in segmenter.results.items():
+    for algorithm, result in segmenter.results_aligned.items():
         for method in result.masks.keys():
 
             common_part = f"{algorithm.blob()}/{method.blob()}"
-            if 'mask' in config.general.det_write:
-                write_entity(result.masks[method], f"{common_part}/masks", fileinfo.filename, "png")
+            if 'mask_aligned' in config.segmentation.write:
+                write_entity(result.masks[method], f"{common_part}/masks_aligned", fileinfo.filename, "png")
 
-            if 'regions' in config.general.det_write:
+            if 'regions' in config.segmentation.write:
                 for index, region in enumerate(result.regions[method], start=1):
                     write_image_region(
                         region.crop_image(segmenter.image_not_scaled),
@@ -68,7 +72,7 @@ def save_segmentation_results(segmenter: Segmenter, fileinfo: FileInfo) -> NoRet
                     )
 
         if 'nn' in config.segmentation.write:
-            parent_folder = config.general.dir_output / "NN" / algorithm.blob() / fileinfo.get_unique_identifier()
+            parent_folder = config.general.dir_source / "NN" / algorithm.blob() / fileinfo.get_unique_identifier()
 
             parent_folder.mkdir(parents=True, exist_ok=True)
 
@@ -81,6 +85,11 @@ def save_segmentation_results(segmenter: Segmenter, fileinfo: FileInfo) -> NoRet
         if 'verref' in config.segmentation.write:
             segmenter.save_results(config.general.dir_source / "VerificationReferences" / fileinfo.filename)
 
+        if 'mask_unaligned' in config.segmentation.write:
+            dst_path = config.general.dir_source / "MasksUnaligned" / f"{algorithm.blob()}:{fileinfo.filename}.png"
+            dst_path.parent.mkdir(parents=True, exist_ok=True)
+            cv.imwrite(str(dst_path), segmenter.results_unaligned[algorithm].get_default_mask())
+
 
 def save_reference_results(referencer: Referencer, filename: str) -> NoReturn:
     if not config.segmentation.extract_reference_write or not config.segmentation.extract_reference:
@@ -92,5 +101,11 @@ def save_reference_results(referencer: Referencer, filename: str) -> NoReturn:
 
 def prepare_output_folder() -> NoReturn:
     if config.general.clear_dir_output:
-        shutil.rmtree(config.general.dir_output, ignore_errors=True)
-        config.general.dir_output.mkdir(parents=True, exist_ok=True)
+        answer = input(f"Do you really want to clear {config.general.dir_output}? [yes/no]")
+
+        if answer == "yes":
+            logger.info(f"Start clearing {config.general.dir_output}")
+            shutil.rmtree(config.general.dir_output, ignore_errors=True)
+            config.general.dir_output.mkdir(parents=True, exist_ok=True)
+        else:
+            logger.info(f"{config.general.dir_output} isn't cleared")

@@ -6,7 +6,7 @@ import numpy as np
 from common.enums import Descriptor
 
 
-class Extractor:
+class Detector:
 
     __akaze = cv.AKAZE_create()
     __sift = cv.SIFT_create()
@@ -16,7 +16,7 @@ class Extractor:
     __kaze = cv.KAZE_create()
 
     @classmethod
-    def __get_extractor(cls, descriptor: Descriptor) -> Any:
+    def __get_detector(cls, descriptor: Descriptor) -> Any:
         return {
             Descriptor.AKAZE: cls.__akaze,
             Descriptor.SIFT: cls.__sift,
@@ -27,22 +27,22 @@ class Extractor:
         }.get(descriptor)
 
     @classmethod
-    def extract_descriptor(
+    def detect_descriptor(
             cls,
             image: np.ndarray,
             descriptor: Descriptor,
             image_mask: Union[None, np.ndarray] = None
     ) -> Tuple[List[cv.KeyPoint], np.ndarray]:
-        return cls.__get_extractor(descriptor).detectAndCompute(image, image_mask)
+        return cls.__get_detector(descriptor).detectAndCompute(image, image_mask)
 
     @classmethod
-    def extract_descriptors(
+    def detect_descriptors(
             cls,
             image: np.ndarray,
             descriptors: List[Descriptor],
             image_mask: Union[None, np.ndarray] = None
     ) -> Dict[Descriptor, Tuple[List[cv.KeyPoint], np.ndarray]]:
         return dict([
-            (descriptor, cls.extract_descriptor(image, descriptor, image_mask))
+            (descriptor, cls.detect_descriptor(image, descriptor, image_mask))
             for descriptor in descriptors
         ])

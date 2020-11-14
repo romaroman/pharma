@@ -7,6 +7,7 @@ from multiprocessing import Pool, Value
 import cv2 as cv
 
 from common import config
+from finegrained import Detector, Serializer
 
 from segmentation import writer
 from segmentation.loader import Loader
@@ -57,7 +58,7 @@ class Runner:
         result = {'session': {'status': 'success'}, 'file_info': file.to_dict()}
 
         try:
-            annotation = Annotation.load_annotation_by_pattern(file.get_annotation_pattern())
+            annotation = Annotation.load_by_pattern(file.get_annotation_pattern())
             image_input = cv.imread(str(file.path.resolve()))
 
             homo_mat = utils.find_homography_matrix(utils.to_gray(image_input), utils.to_gray(annotation.image_ref))
@@ -68,9 +69,16 @@ class Runner:
                 qe.perform_estimation(image_aligned, annotation.image_ref, homo_mat)
                 result['quality_estimation'] = qe.to_dict()
 
-            segmenter = Segmenter(image_aligned)
+            segmenter = Segmenter(image_aligned, image_input, homo_mat)
             segmenter.segment(config.segmentation.algorithms)
             writer.save_segmentation_results(segmenter, file)
+
+            for algorithm, result in segmenter.results_unaligned.items():
+                detections = Detector.detect_descriptors(
+                    image_input, config.finegrained.descriptors_used, result.get_default_mask()
+                )
+                Serializer.save_detections_to_file(detections, f"{algorithm.blob()}:{file.filename}", False)
+
             return
 
             if config.segmentation.extract_reference:
@@ -110,5 +118,7 @@ class Runner:
                 'index': counter.value,
             })
 
-            logger.info(f"#{utils.zfill_n(counter.value, 6)} | {result['session']['status'].upper()} | {file.filename}")
+            logger.info(
+                f" | {utils.zfill_n(counter.value, 6)} | {result['session']['status'].upper()} | {file.filename}"
+            )
             return result

@@ -3,7 +3,7 @@ import math
 from pathlib import Path
 from xml.etree import ElementTree
 from abc import ABC, abstractmethod
-from typing import List, Tuple, NoReturn, Union, Pattern, Dict
+from typing import List, Tuple, NoReturn, Union, Dict
 
 import cv2 as cv
 import numpy as np
@@ -226,25 +226,30 @@ class Annotation:
     def is_empty_graphic(self) -> bool:
         return self.get_amount_of_regions_by_labels(AnnotationLabel.get_list_of_graphic_labels()) == 0
 
-    def create_mask(self) -> np.ndarray:
+    def create_mask(
+            self,
+            color: Union[None, Tuple[int, int, int]] = None,
+            filled: bool = False
+    ) -> np.ndarray:
         self.image_mask = np.zeros_like(self.image_ref)
 
         for bounding_rectangle in self.bounding_rectangles:
-            bounding_rectangle.draw(self.image_mask, filled=True)
+            bounding_rectangle.draw(self.image_mask, color=color, filled=filled)
 
         return self.image_mask
 
     def create_mask_by_labels(
             self,
             labels: List[AnnotationLabel],
-            color: Union[None, Tuple[int, int, int]] = None
+            color: Union[None, Tuple[int, int, int]] = None,
+            filled: bool = False
     ) -> np.ndarray:
 
         image_mask = np.zeros_like(self.image_mask)
 
         for bounding_rectangle in self.bounding_rectangles:
             if bounding_rectangle.label in labels:
-                bounding_rectangle.draw(image_mask, color=color, filled=True)
+                bounding_rectangle.draw(image_mask, color=color, filled=filled)
 
         return image_mask
 
@@ -290,9 +295,10 @@ class Annotation:
         ]
 
     @staticmethod
-    def load_annotation_by_pattern(pattern: Pattern) -> 'Annotation':
-        for annotation_file in (config.general.dir_source / 'Annotations').glob("*.xml"):
-            if pattern.search(str(annotation_file)):
-                return Annotation(annotation_file)
+    def load_by_pattern(pattern: str) -> 'Annotation':
+        files = list((config.general.dir_source / 'Annotations').glob(pattern + ".xml"))
+
+        if files:
+            return Annotation(files[0])
         else:
             raise FileNotFoundError

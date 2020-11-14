@@ -15,13 +15,18 @@ import utils
 
 class __Config(ABC):
 
-    def __init__(self):
-
-
-class GeneralConfig:
-
     def __init__(self, confuse: Configuration):
         self.confuse: Configuration = confuse
+
+    # @abstractmethod
+    # def validate(self) -> bool:
+    #     raise NotImplemented
+
+
+class GeneralConfig(__Config):
+
+    def __init__(self, confuse: Configuration):
+        super().__init__(confuse)
 
         self.timestamp = utils.get_str_timestamp()
 
@@ -48,16 +53,19 @@ class GeneralConfig:
         return self.mode is Mode.Debug
 
 
-class FineGrainedConfig:
+class FineGrainedConfig(__Config):
 
     def __init__(self, confuse: Configuration):
+        super().__init__(confuse)
+
+        self.descriptor_default: Descriptor = Descriptor[confuse['DescriptorDefault'].as_str()]
         self.descriptors_used: List[Descriptor] = [Descriptor[dt] for dt in confuse['DescriptorsUsed'].get()]
 
 
-class LoadingConfig:
+class LoadingConfig(__Config):
 
     def __init__(self, confuse: Configuration):
-        self.confuse: Configuration = confuse
+        super().__init__(confuse)
 
         self.use_debug_files: bool = confuse['UseDebugFiles'].get()
 
@@ -69,7 +77,7 @@ class LoadingConfig:
         self.filter_mode: str = confuse['Filter']['Mode'].as_str().lower()
 
         for key in confuse['Filter']:
-            if key.lower() in ['packageclass', 'phone', 'distinct', 'sample', 'size']:
+            if key.lower() in ['packageclass', 'phone', 'distinct', 'sample', 'size', 'angle', 'side']:
                 values = confuse['Filter'][key].get()
                 if values:
                     self.filter_by.update({key.lower(): values})
@@ -78,10 +86,10 @@ class LoadingConfig:
         self.group_by: List[str] = [i.lower() for i in confuse['GroupBy'].get()]
 
 
-class SegmentationConfig:
+class SegmentationConfig(__Config):
 
     def __init__(self, confuse: Configuration):
-        self.confuse: Configuration = confuse
+        super().__init__(confuse)
 
         self.scale_factor: float = confuse['ScaleFactor'].as_number()
 
@@ -123,11 +131,10 @@ class SegmentationConfig:
         return self.alignment_method is not AlignmentMethod.Reference
 
 
-class HashConfig:
+class HashConfig(__Config):
 
     def __init__(self, confuse: Configuration):
-
-        self.confuse = confuse
+        super().__init__(confuse)
 
         self.algorithms: List[SegmentationAlgorithm] = \
             [SegmentationAlgorithm[alg] for alg in confuse['Algorithms'].get()]

@@ -41,11 +41,11 @@ class FileInfo(ABC):
         self.sample: int = self._extract_numerical_info('sample')
         self.size: int = self._extract_numerical_info('size')
 
-    def get_annotation_pattern(self) -> Pattern:
-        return re.compile(f"PFP_Ph._P{utils.zfill_n(self.package_class)}_D0{self.distinct}_S00._C._az..._side.")
+    def get_annotation_pattern(self) -> str:
+        return f"*{utils.zfill_n(self.package_class)}_D0{self.distinct}*"
 
-    def get_verification_pattern(self) -> Pattern:
-        return re.compile(f"PFP_Ph1_P{utils.zfill_n(self.package_class)}_D0{self.distinct}_S00{self.sample}_C._az360_side.")
+    def get_verification_pattern(self) -> str:
+        return f"*1_P{utils.zfill_n(self.package_class)}_D0{self.distinct}_S00{self.sample}_C._az360*"
 
     def get_unique_identifier(self) -> str:
         return f"{utils.zfill_n(self.package_class, 4)}_{utils.zfill_n(self.distinct, 2)}_{utils.zfill_n(self.sample, 2)}"

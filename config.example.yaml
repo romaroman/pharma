@@ -36,6 +36,7 @@ Loading:
   GroupBy: [] #[PackageClass, Distinct]
 
 FineGrained:
+  DescriptorDefault: AKAZE
   DescriptorsUsed: [AKAZE, SIFT, ORB]
 
 Segmentation:

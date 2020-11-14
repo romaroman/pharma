@@ -12,13 +12,13 @@ if __name__ == '__main__':
     segmentation.writer.prepare_output_folder()
 
     utils.setup_logger(
-        'text_detector',
+        'segmentation',
         config.general.log_level,
         str(config.general.dir_output / 'log.txt')
     )
     utils.suppress_warnings()
 
-    logger.info(f"Currently used configuration:\n{config.segmentation.confuse.dump()}")
+    logger.info(f"Currently used configuration:\n{config.segmentation.confuse.parent.dump()}")
     segmentation.Runner.process()
 
     sys.exit(0)

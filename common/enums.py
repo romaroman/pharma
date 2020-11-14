@@ -20,11 +20,11 @@ class SegmentationAlgorithm(CustomEnum):
 
 
 class ApproximationMethod(CustomEnum):
-    Contour = auto(),
-    Brect = auto(),
-    Rrect = auto(),
-    Hull = auto(),
-    Approximation = auto(),
+    Contour = "Contour",
+    Brect = "Brect",
+    Rrect = "Rrect",
+    Hull = "Hull",
+    HullApproximated = "HullApproximated",
 
 
 class FileDatabase(CustomEnum):

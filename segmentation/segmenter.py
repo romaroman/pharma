@@ -1,7 +1,6 @@
 import logging
 import itertools
 
-from re import Pattern
 from pathlib import Path
 from typing import List, NoReturn, Dict, Union, Tuple
 
@@ -12,6 +11,7 @@ from common import config
 from common.enums import SegmentationAlgorithm, ApproximationMethod
 
 from segmentation import morph
+from segmentation.aligner import Aligner
 
 import utils
 
@@ -21,12 +21,19 @@ logger = logging.getLogger('segmentation | segmenter')
 
 class Segmenter:
 
-    def __init__(self, image_input: np.ndarray) -> NoReturn:
-        self.image_not_scaled = image_input
+    def __init__(
+            self, 
+            image_input: np.ndarray, 
+            image_orig: Union[None, np.ndarray] = None, 
+            homo_mat: Union[None, np.ndarray] = None
+    ) -> NoReturn:
+        self.image_not_scaled: np.ndarray = image_input
+        self.image_orig: Union[None, np.ndarray] = image_orig
+        self.homo_mat: Union[None, np.ndarray] = homo_mat
 
-        self.image_rgb = morph.mscale(self.image_not_scaled)
+        self.image_rgb: np.ndarray = morph.mscale(self.image_not_scaled)
         self.image_gray: np.ndarray = cv.cvtColor(self.image_rgb, cv.COLOR_BGR2GRAY)
-        self.image_bw = utils.thresh(self.image_gray)
+        self.image_bw: np.ndarray = utils.thresh(self.image_gray)
 
         self.image_std_filtered: np.ndarray = utils.std_filter(self.image_gray, 6)
 
@@ -36,7 +43,21 @@ class Segmenter:
         self.image_filtered: np.ndarray = np.zeros_like(self.image_gray)
 
         self.visualization: Union[np.ndarray, None] = None
-        self.results: Dict[SegmentationAlgorithm, SegmentationResult] = dict()
+        self.results_aligned: Dict[
+            Union[SegmentationAlgorithm, Tuple[SegmentationAlgorithm, SegmentationAlgorithm, SegmentationAlgorithm]],
+            SegmentationResult
+        ] = dict()
+
+        self.results_unaligned: Dict[
+            Union[SegmentationAlgorithm, Tuple[SegmentationAlgorithm, SegmentationAlgorithm, SegmentationAlgorithm]],
+            SegmentationResult
+        ] = dict()
+
+    def __unalign(self, image: np.ndarray):
+        if self.image_orig is not None and self.homo_mat is not None:
+            return Aligner.align(image, self.image_orig, np.linalg.inv(self.homo_mat))
+        else:
+            raise AssertionError
 
     def segment(self, algorithms: List[SegmentationAlgorithm]) -> NoReturn:
         self.image_edges = morph.extract_edges(self.image_std_filtered, self.image_bw, post_morph=True)
@@ -46,12 +67,13 @@ class Segmenter:
 
         for algorithm in algorithms:
             if algorithm is not SegmentationAlgorithm.MajorVoting:
-                self.results[algorithm] = SegmentationResult(self._run_algorithm(algorithm))
+                image_result = self._run_algorithm(algorithm)
+                self.results_aligned[algorithm] = SegmentationResult(image_result)
+                self.results_unaligned[algorithm] = SegmentationResult(self.__unalign(image_result))
             else:
                 for algorithm, mask in self._perform_major_voting().items():
-                    self.results[algorithm] = SegmentationResult(mask)
-
-        pass
+                    self.results_aligned[algorithm] = SegmentationResult(mask)
+                    self.results_unaligned[algorithm] = SegmentationResult(self.__unalign(mask))
 
     def _run_algorithm(self, algorithm: SegmentationAlgorithm) -> np.ndarray:
         if algorithm is SegmentationAlgorithm.MorphologyIteration1:
@@ -64,7 +86,7 @@ class Segmenter:
             return self._run_MSER()
 
     def get_result_by_algorithm(self, algorithm: SegmentationAlgorithm) -> 'SegmentationResult':
-        return self.results[algorithm]
+        return self.results_aligned[algorithm]
 
     def _run_morphology_iteration_1(self) -> np.ndarray:
         image_morphed = morph.apply_line_morphology(self.image_filtered, morph.mscale(30))
@@ -126,7 +148,7 @@ class Segmenter:
     def _run_morphology_iteration_2(self) -> np.ndarray:
         image_word_linearly_morphed = np.zeros(self.image_not_scaled.shape[:2], dtype=np.uint8)
 
-        for region in self.results[SegmentationAlgorithm.MorphologyIteration1].get_default_regions():
+        for region in self.results_aligned[SegmentationAlgorithm.MorphologyIteration1].get_default_regions():
             edges = region.crop_image(morph.mscale(self.image_edges, down=False))
             edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, np.ones((3, 3)))
             filled = utils.fill_holes(edges)
@@ -177,8 +199,8 @@ class Segmenter:
     def _create_visualization(self) -> NoReturn:
         images = [self.image_not_scaled]
 
-        if self.results:
-            for algorithm, result in self.results.items():
+        if self.results_aligned:
+            for algorithm, result in self.results_aligned.items():
                 images.append(
                     utils.add_text(
                         result.get_default_visualization(self.image_not_scaled), algorithm.blob()
@@ -209,13 +231,13 @@ class Segmenter:
     ) -> Dict[Tuple[SegmentationAlgorithm, SegmentationAlgorithm, SegmentationAlgorithm], np.ndarray]:
         resulting_masks = dict()
 
-        combinations = list(itertools.combinations(list(self.results.keys()), 3))
+        combinations = list(itertools.combinations(list(self.results_aligned.keys()), 3))
         for combination in combinations:
             alg1, alg2, alg3 = combination
 
-            mask1 = self.results[alg1].get_default_mask()
-            mask2 = self.results[alg2].get_default_mask()
-            mask3 = self.results[alg3].get_default_mask()
+            mask1 = self.results_aligned[alg1].get_default_mask()
+            mask2 = self.results_aligned[alg2].get_default_mask()
+            mask3 = self.results_aligned[alg3].get_default_mask()
 
             alg12 = cv.bitwise_and(mask1, mask2)
             alg13 = cv.bitwise_and(mask1, mask3)
@@ -235,7 +257,7 @@ class Segmenter:
 
         cv.imwrite(str(path_parent_folder / 'image_ref.png'), self.image_not_scaled)
 
-        for algorithm, result in self.results.items():
+        for algorithm, result in self.results_aligned.items():
             (path_parent_folder / algorithm.blob()).mkdir(parents=True, exist_ok=True)
             cv.imwrite(str(path_parent_folder / algorithm.blob() / 'image_mask.png'), result.get_default_mask())
 
@@ -251,13 +273,10 @@ class Segmenter:
         return image_ref, results
 
     @classmethod
-    def load_results_by_pattern(
-            cls,
-            pattern: Pattern
-    ) -> Tuple[np.ndarray, Dict[str, 'SegmentationResult']]:
-        for file in (config.general.dir_source / 'VerificationReferences').glob("*"):
-            if pattern.search(str(file)):
-                return cls.load_results(file)
+    def load_results_by_pattern(cls, pattern: str) -> Tuple[np.ndarray, Dict[str, 'SegmentationResult']]:
+        subfolders = list((config.general.dir_source / 'VerificationReferences').glob(pattern))
+        if subfolders:
+            return cls.load_results(subfolders[0])
         else:
             raise FileNotFoundError
 
@@ -281,7 +300,7 @@ class SegmentationResult:
                 return cv.boxPoints(cv.minAreaRect(contour)).astype(np.int32).reshape(-1, 1, 2)
             elif method is ApproximationMethod.Hull:
                 return cv.convexHull(contour).astype(np.int32)
-            elif method is ApproximationMethod.Approximation:
+            elif method is ApproximationMethod.HullApproximated:
                 return utils.approximate_contour(cls.contour_to_polygon(contour, ApproximationMethod.Hull), 0.02)
 
         def crop_image(self, image: np.ndarray) -> np.ndarray:
