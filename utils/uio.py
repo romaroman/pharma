@@ -1,14 +1,12 @@
 import datetime
 import logging
 import warnings
-
 from typing import NoReturn, List, Union, Tuple
 
 import cv2 as cv
-import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 mpl.rc('image', cmap='Greys_r')
 
@@ -163,10 +161,16 @@ def get_str_timestamp() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
 
 
-def add_text(image: np.ndarray, text: str, scale: int = 2) -> np.ndarray:
+def add_text(
+        image: np.ndarray,
+        text: str,
+        point: Tuple[int, int] = (25, 25),
+        scale: int = 2,
+        color: Tuple[int, int, int] = (0, 255, 0)
+) -> np.ndarray:
     return cv.putText(
-        img=np.copy(image), text=text, org=(25, 25),
-        fontFace=cv.FONT_HERSHEY_COMPLEX, fontScale=scale, color=(0, 255, 0), thickness=2
+        img=np.copy(image), text=text, org=point,
+        fontFace=cv.FONT_HERSHEY_COMPLEX, fontScale=scale, color=color, thickness=2
     )
 
 

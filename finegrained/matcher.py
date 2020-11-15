@@ -1,10 +1,8 @@
-from typing import List, NoReturn, Dict, Tuple
+from typing import List, Tuple
 
 import cv2 as cv
 import numpy as np
 import pydegensac
-
-import utils
 
 
 class Matcher:
@@ -26,7 +24,7 @@ class Matcher:
 
         matches = matcher.knnMatch(des_ver.astype(np.float32), des_ref.astype(np.float32), k=2)
 
-        matches_mask = [[0, 0] for i in range(len(matches))]
+        matches_mask = [[0, 0] for _ in range(len(matches))]
 
         matches_good = []
         for i, (m, n) in enumerate(matches):
@@ -45,9 +43,13 @@ class Matcher:
         src_pts = np.float32([kp_ver[m.queryIdx].pt for m in matches_good]).reshape(-1, 2)
         dst_pts = np.float32([kp_ref[m.trainIdx].pt for m in matches_good]).reshape(-1, 2)
 
+        ransac_matches_amount = 0
         try:
             # H, mask = pydegensac.findHomography(src_pts, dst_pts, 3.0)
             F, Fmask = pydegensac.findFundamentalMatrix(src_pts, dst_pts, 3.0)
-            return [len(kp_ver), len(kp_ref), len(matches_good), sum(Fmask)], image_visualization
+            ransac_matches_amount = sum(Fmask)
         except:
-            return [len(kp_ver), len(kp_ref), len(matches_good), 0], image_visualization
+            pass
+        finally:
+            return [len(kp_ver), len(kp_ref), len(matches), len(matches_good), ransac_matches_amount], image_visualization
+

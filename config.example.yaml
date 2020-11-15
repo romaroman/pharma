@@ -36,6 +36,8 @@ Loading:
   GroupBy: [] #[PackageClass, Distinct]
 
 FineGrained:
+  Algorithms: [ MSER, MorphologyIteration1 ]
+
   DescriptorDefault: AKAZE
   DescriptorsUsed: [AKAZE, SIFT, ORB]
 

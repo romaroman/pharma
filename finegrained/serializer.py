@@ -1,6 +1,5 @@
-import pickle
 import copyreg
-
+import pickle
 from pathlib import Path
 from typing import NoReturn, Dict, Any, Union, List, Tuple
 
@@ -85,7 +84,7 @@ class Serializer:
         src_path = cls.__get_path(as_reference)
 
         detections = dict()
-        for file in src_path.glob(f'*{identifier}.pkl'):
+        for file in src_path.glob(f'*{identifier}*.pkl'):
             descriptor = Descriptor[file.stem.split(':')[0]]
 
             with open(file, 'rb') as file_src:

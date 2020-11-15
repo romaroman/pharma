@@ -1,16 +1,15 @@
-import os
 import logging
-
-from abc import ABC, abstractmethod
-from confuse import Configuration
-from typing import List, Dict
-from pathlib import Path
+import os
+from abc import ABC
 from multiprocessing import cpu_count
+from pathlib import Path
+from typing import List, Dict
 
-from common.enums import ApproximationMethod, EvalMetric, SegmentationAlgorithm, AlignmentMethod, Mode, FileDatabase,\
-    Descriptor
+from confuse import Configuration
 
 import utils
+from common.enums import ApproximationMethod, EvalMetric, SegmentationAlgorithm, AlignmentMethod, Mode, FileDatabase, \
+    Descriptor
 
 
 class __Config(ABC):
@@ -57,6 +56,9 @@ class FineGrainedConfig(__Config):
 
     def __init__(self, confuse: Configuration):
         super().__init__(confuse)
+
+        self.algorithms: List[SegmentationAlgorithm] = \
+            [SegmentationAlgorithm[alg] for alg in confuse['Algorithms'].get()]
 
         self.descriptor_default: Descriptor = Descriptor[confuse['DescriptorDefault'].as_str()]
         self.descriptors_used: List[Descriptor] = [Descriptor[dt] for dt in confuse['DescriptorsUsed'].get()]

@@ -1,83 +1,119 @@
-import re
-import sys
-import logging
-import traceback
+from p_tqdm import p_map
+from itertools import product
+from typing import Tuple
 
-import pandas as pd
-import numpy as np
 import cv2 as cv
+import numpy as np
+import pandas as pd
 from numpy.distutils.command.config import config
+from p_tqdm import p_map
 
-from common import config
-from common.enums import Descriptor
-
-from finegrained import Detector, Serializer, Matcher
-# from segmentation.segmenter import Segmenter
-from segmentation.annotation import Annotation
-from segmentation.loader import Loader
 import utils
+from common import config
+from finegrained import Serializer, Matcher
+
+
+def create_image_ver_draw(id: str):
+    image_mask_filled = cv.imread(
+        str(config.general.dir_source / 'MasksUnaligned' / f'{id}.png'), 0
+    )
+    filename = id.split(':')[-1]
+    image_orig = cv.imread(
+        str(config.general.dir_source / str(config.general.database) / 'cropped' / f'{filename}.png')
+    )
+    contours, _ = cv.findContours(image_mask_filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    image_ver_mask = np.zeros_like(image_orig)
+    image_ver_mask = cv.drawContours(image_ver_mask, contours, -1, (0, 255, 255), 3)
+    return cv.add(image_orig, image_ver_mask)
+
+
+def create_image_ref_draw(pattern: str):
+
+    files_possible = list((config.general.dir_source / 'MasksUnaligned').glob(f'{pattern}*az360*'))
+
+    if not files_possible:
+        return None
+
+    file = files_possible[0]
+
+    image_mask_filled = cv.imread(str(file), 0)
+    filename = file.stem.split(':')[-1]
+    image_orig = cv.imread(
+        str(config.general.dir_source / str(config.general.database) / 'cropped' / f'{filename}.png')
+    )
+    contours, _ = cv.findContours(image_mask_filled, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    image_ver_mask = np.zeros_like(image_orig)
+    image_ver_mask = cv.drawContours(image_ver_mask, contours, -1, (0, 255, 255), 3)
+    return cv.add(image_orig, image_ver_mask)
+
+
+def match_single(df_iterrow: Tuple[int, pd.Series]):
+    index, row = df_iterrow
+    alg = row.segmentation_algorithm
+
+    filename = f"PFP_{row.sample_actual}_side1"
+    id_ver = f"{row.segmentation_algorithm}:{filename}"
+
+    image_ver_draw = create_image_ver_draw(id_ver)
+
+    detections_ver = Serializer.load_detections_from_file(identifier=id_ver, as_reference=False)
+
+    package_candidates = [v for k, v in row.to_dict().items() if k.startswith('package_candidate')]
+
+    results_single = []
+    for phone, package_candidate in product([1, 2, 3], package_candidates):
+        result_base = [row.sample_actual, alg, row.package_actual, phone, package_candidate]
+
+        try:
+            id_ref = f'{row.segmentation_algorithm}:*Ph{phone}*{package_candidate}'
+            image_ref_draw = create_image_ref_draw(id_ref)
+
+            detections_ref = Serializer.load_detections_from_file(identifier=id_ref, as_reference=True)
+            # image_draw = np.zeros_like(image_ref_draw)
+            # cv.drawKeypoints(image_ref_draw, detections_ref[list(detections_ref.keys())[0]][0], image_draw)
+            # utils.display(image_draw)
+            for descriptor in detections_ver.keys():
+                scores, image_visualization = Matcher.match(
+                    detections_ver[descriptor], detections_ref[descriptor],
+                    image_ver_draw, image_ref_draw
+                )
+
+                for ii, (res, label) in enumerate(
+                        zip(scores, ["ver keypoints", "ref keypoints", "matches", "good matches", "ransac matches"]),
+                        start=1
+                ):
+                    image_visualization = utils.add_text(
+                        image_visualization, text=f"{label}:{res}", point=(25, 35 * ii), scale=1, color=(0, 0, 255)
+                    )
+
+                dst_path_vis = config.general.dir_source / 'FineMatchingVisualization' / row.package_actual / row.sample_actual \
+                               / f"Alg:{alg}_Phone{phone}:_Desc:{descriptor.blob()}_Cand:{package_candidate}.png"
+                dst_path_vis.parent.mkdir(exist_ok=True, parents=True)
+                cv.imwrite(str(dst_path_vis), image_visualization)
+                results_single.append(
+                    result_base + [descriptor.blob()] + scores
+                )
+        except:
+            results_single.append(result_base)
+
+    return results_single
 
 
 if __name__ == '__main__':
-    utils.setup_logger(
-        __name__,
-        config.general.log_level,
-        str(config.general.dir_output / f'{__name__}.txt')
-    )
-    logger = logging.getLogger(__name__)
     utils.suppress_warnings()
 
-    annotations = dict()
+    df = pd.read_csv('/home/rchaban/projects/unige/pharmapack-recognition/cand_filt.csv', index_col=None)
+    rows = list(df.iterrows())
 
-    for file in (config.general.dir_source / 'Annotations').glob('*xml'):
-        annotations[file.stem[9:17]] = Annotation(file)
+    # for row in rows:
+    #     match_single(row)
 
-    masks = (config.general.dir_source / 'MasksUnaligned').glob('*.png')
-    df = pd.read_csv('/data/500gb/pharmapack/candidates_filtered_desc.csv', index_col=None)
-    samples_valid = df.sample_actual.to_list()
+    results = p_map(match_single, rows, num_cpus=44)
 
+    results_flattenned = []
+    for result_complex in results:
+        for results_s in result_complex:
+            results_flattenned.append(results_s)
 
-    results_all = []
-    for i, mask_file in enumerate(masks, start=1):
-        algorithm, filename = mask_file.name.split(':')
-        filename_formatted = filename[4:-10]
-
-        try:
-            row = df[df.sample_actual == filename_formatted]
-            if len(row.index) == 0:
-                logger.info(f"{utils.zfill_n(i)} | Skip {mask_file.name}")
-                continue
-
-            image_ver_mask = cv.imread(str(mask_file.resolve()), 0)
-            image_ver = cv.imread(str(config.general.dir_source / 'Enrollment' / 'cropped' / filename))
-
-            contours, _ = cv.findContours(image_ver_mask, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
-            image_ver_mask_contours = np.zeros_like(image_ver)
-            cv.drawContours(image_ver_mask_contours, contours, -1, (255, 255, 0), 3)
-
-            image_ver_draw = cv.add(image_ver, image_ver_mask_contours)
-            keypoints_ver = Serializer.load_detections_from_file(mask_file.stem, False)[Descriptor.AKAZE]
-
-            for candidate in list(set(row.to_numpy()[0].tolist()[2:])):
-                candidate = str(candidate)
-                keypoints_ref = Serializer.load_detections_from_redis(f'*{candidate[:-5]}*', True)[0][Descriptor.AKAZE]
-                anno = Annotation.load_by_pattern(f"*{candidate[:-5]}*")
-                image_ref = anno.image_ref
-                image_ref_mask = anno.create_mask(color=(0, 255, 255))
-
-                image_ref_draw = cv.add(image_ref, image_ref_mask)
-
-                res, img_vis = Matcher.match(
-                    keypoints_ver, keypoints_ref,
-                    image_ver_draw, image_ref_draw
-                )
-                cv.imwrite(f'/data/500gb/pharmapack/Output/finematcing/{filename_formatted}_{candidate}.png', img_vis)
-                results_all.append([filename_formatted, algorithm, candidate] + res)
-        except:
-            traceback.print_exc()
-            results_all.append([filename_formatted, algorithm, traceback.format_exc(limit=10)])
-
-        logger.info(f"{utils.zfill_n(i)} | Finematched {mask_file.name}")
-
-    pd.DataFrame(results_all).to_csv('res.csv', index=False)
-    sys.exit(0)
+    df_result = pd.DataFrame(results_flattenned)
+    df_result.to_csv('finematching)result.csv')
