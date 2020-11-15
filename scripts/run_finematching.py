@@ -1,4 +1,3 @@
-from p_tqdm import p_map
 from itertools import product
 from typing import Tuple
 
@@ -27,6 +26,21 @@ def create_image_ver_draw(id: str):
     return cv.add(image_orig, image_ver_mask)
 
 
+def find_image_ref_orig(pattern: str):
+    files_possible = list((config.general.dir_source / 'MasksUnaligned').glob(f'{pattern}*az360*'))
+
+    if not files_possible:
+        return None
+
+    file = files_possible[0]
+
+    filename = file.stem.split(':')[-1]
+    image_orig = cv.imread(
+        str(config.general.dir_source / str(config.general.database) / 'cropped' / f'{filename}.png')
+    )
+    return image_orig
+
+
 def create_image_ref_draw(pattern: str):
 
     files_possible = list((config.general.dir_source / 'MasksUnaligned').glob(f'{pattern}*az360*'))
@@ -51,10 +65,13 @@ def match_single(df_iterrow: Tuple[int, pd.Series]):
     index, row = df_iterrow
     alg = row.segmentation_algorithm
 
-    filename = f"PFP_{row.sample_actual}_side1"
-    id_ver = f"{row.segmentation_algorithm}:{filename}"
+    filename_ver = f"PFP_{row.sample_actual}_side1"
+    id_ver = f"{row.segmentation_algorithm}:{filename_ver}"
 
-    image_ver_draw = create_image_ver_draw(id_ver)
+    image_ver_orig = cv.imread(
+        str(config.general.dir_source / str(config.general.database) / 'cropped' / f'{filename_ver}.png')
+    )
+    # image_ver_draw = create_image_ver_draw(id_ver)
 
     detections_ver = Serializer.load_detections_from_file(identifier=id_ver, as_reference=False)
 
@@ -66,30 +83,26 @@ def match_single(df_iterrow: Tuple[int, pd.Series]):
 
         try:
             id_ref = f'{row.segmentation_algorithm}:*Ph{phone}*{package_candidate}'
-            image_ref_draw = create_image_ref_draw(id_ref)
+            # image_ref_draw = create_image_ref_draw(id_ref)
+            image_ref_orig = find_image_ref_orig(id_ref)
 
             detections_ref = Serializer.load_detections_from_file(identifier=id_ref, as_reference=True)
-            # image_draw = np.zeros_like(image_ref_draw)
-            # cv.drawKeypoints(image_ref_draw, detections_ref[list(detections_ref.keys())[0]][0], image_draw)
-            # utils.display(image_draw)
+
             for descriptor in detections_ver.keys():
-                scores, image_visualization = Matcher.match(
-                    detections_ver[descriptor], detections_ref[descriptor],
-                    image_ver_draw, image_ref_draw
-                )
+                scores = Matcher.match(detections_ver[descriptor], detections_ref[descriptor], image_ver_orig, image_ref_orig)
 
-                for ii, (res, label) in enumerate(
-                        zip(scores, ["ver keypoints", "ref keypoints", "matches", "good matches", "ransac matches"]),
-                        start=1
-                ):
-                    image_visualization = utils.add_text(
-                        image_visualization, text=f"{label}:{res}", point=(25, 35 * ii), scale=1, color=(0, 0, 255)
-                    )
+                # for ii, (res, label) in enumerate(
+                #         zip(scores, ["ver keypoints", "ref keypoints", "matches", "good matches", "ransac matches"]),
+                #         start=1
+                # ):
+                #     image_visualization = utils.add_text(
+                #         image_visualization, text=f"{label}:{res}", point=(25, 35 * ii), scale=1, color=(0, 0, 255)
+                #     )
 
-                dst_path_vis = config.general.dir_source / 'FineMatchingVisualization' / row.package_actual / row.sample_actual \
-                               / f"Alg:{alg}_Phone{phone}:_Desc:{descriptor.blob()}_Cand:{package_candidate}.png"
-                dst_path_vis.parent.mkdir(exist_ok=True, parents=True)
-                cv.imwrite(str(dst_path_vis), image_visualization)
+                # dst_path_vis = config.general.dir_source / 'FineMatchingVisualization' / row.package_actual / row.sample_actual \
+                #                / f"Alg:{alg}_Phone{phone}:_Desc:{descriptor.blob()}_Cand:{package_candidate}.png"
+                # dst_path_vis.parent.mkdir(exist_ok=True, parents=True)
+                # cv.imwrite(str(dst_path_vis), image_visualization)
                 results_single.append(
                     result_base + [descriptor.blob()] + scores
                 )
@@ -102,7 +115,7 @@ def match_single(df_iterrow: Tuple[int, pd.Series]):
 if __name__ == '__main__':
     utils.suppress_warnings()
 
-    df = pd.read_csv('/home/rchaban/projects/unige/pharmapack-recognition/cand_filt.csv', index_col=None)
+    df = pd.read_csv(config.general.dir_source / 'candidates_prepared.csv', index_col=None)
     rows = list(df.iterrows())
 
     # for row in rows:
@@ -116,4 +129,4 @@ if __name__ == '__main__':
             results_flattenned.append(results_s)
 
     df_result = pd.DataFrame(results_flattenned)
-    df_result.to_csv('finematching)result.csv')
+    df_result.to_csv('finematching_result.csv')
