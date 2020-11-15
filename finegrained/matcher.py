@@ -19,8 +19,8 @@ class Matcher:
             cls,
             keypoints_ver: Tuple[List[cv.KeyPoint], np.ndarray],
             keypoints_ref: Tuple[List[cv.KeyPoint], np.ndarray],
-            image_ver: np.ndarray,
-            image_ref: np.ndarray,
+            # image_ver: np.ndarray,
+            # image_ref: np.ndarray,
             matcher=flann
     ):
         kp_ver, des_ver = keypoints_ver
@@ -48,16 +48,16 @@ class Matcher:
         dst_pts = np.float32([kp_ref[m.trainIdx].pt for m in matches_good]).reshape(-1, 2)
 
         ransac_matches_amount = np.nan
-        mse_score = np.nan
-        ssim_score = np.nan
+        # mse_score = np.nan
+        # ssim_score = np.nan
         try:
             F, Fmask = pydegensac.findFundamentalMatrix(src_pts, dst_pts, 3.0)
             ransac_matches_amount = sum(Fmask)
 
-            H, mask = pydegensac.findHomography(src_pts, dst_pts, 3.0)
-            image_ver_warped = cv.warpPerspective(image_ver, H, utils.swap_dimensions(image_ref.shape))
-            mse_score = mean_squared_error(image_ver_warped, image_ref)
-            ssim_score = ssim(image_ver_warped, image_ref, data_range=image_ref.max() - image_ref.min(), multichannel=True)
+            # H, mask = pydegensac.findHomography(src_pts, dst_pts, 3.0)
+            # image_ver_warped = cv.warpPerspective(image_ver, H, utils.swap_dimensions(image_ref.shape))
+            # mse_score = mean_squared_error(image_ver_warped, image_ref)
+            # ssim_score = ssim(image_ver_warped, image_ref, data_range=image_ref.max() - image_ref.min(), multichannel=True)
         except:
             pass
         finally:
@@ -67,6 +67,6 @@ class Matcher:
                 len(matches),
                 len(matches_good),
                 ransac_matches_amount,
-                mse_score,
-                ssim_score
+                # mse_score,
+                # ssim_score
             ]
