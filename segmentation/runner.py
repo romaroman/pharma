@@ -7,12 +7,13 @@ import cv2 as cv
 
 import utils
 from common import config
+
 from finegrained import Detector, Serializer
 from segmentation import writer
 from segmentation.aligner import Aligner
 from segmentation.annotation import Annotation
 from segmentation.collector import Collector
-from segmentation.evaluator import EvaluatorByAnnotation
+from segmentation.evaluator import EvaluatorByAnnotation, EvaluatorByVerification
 from segmentation.fileinfo import FileInfoEnrollment, FileInfoRecognition
 from segmentation.loader import Loader
 from segmentation.qualityestimator import QualityEstimator
@@ -67,6 +68,7 @@ class Runner:
 
             segmenter = Segmenter(image_aligned, image_input, homo_mat)
             segmenter.segment(config.segmentation.algorithms)
+
             writer.save_segmentation_results(segmenter, file)
 
             for algorithm, res in segmenter.results_unaligned.items():
@@ -87,13 +89,15 @@ class Runner:
                 result['eval_annotation_mask'] = evaluator.get_mask_results()
                 result['eval_annotation_regions'] = evaluator.get_regions_results()
 
-            # if config.segmentation.eval_verification_mask or config.segmentation.eval_verification_regions:
-            #     image_ref, results = Segmenter.load_results_by_pattern(file.get_verification_pattern())
-            #     evaluator = EvaluatorByVerification(image_ref, results)
-            #     evaluator.evaluate(segmenter)
-            #
-            #     result['eval_verification_mask'] = evaluator.get_mask_results()
-            #     result['eval_verification_regions'] = evaluator.get_regions_results()
+            if config.segmentation.eval_verification_mask or config.segmentation.eval_verification_regions:
+                image_verref, results_verref = Segmenter.load_results(
+                    config.general.dir_source / "VerificationReferences", file.get_verification_pattern()
+                )
+                evaluator = EvaluatorByVerification(image_verref, results_verref)
+                evaluator.evaluate(segmenter)
+
+                result['eval_verification_mask'] = evaluator.get_mask_results()
+                result['eval_verification_regions'] = evaluator.get_regions_results()
 
         except Exception as exception:
             result['session'].update({

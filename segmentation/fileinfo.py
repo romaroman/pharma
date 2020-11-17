@@ -45,7 +45,7 @@ class FileInfo(ABC):
         return f"*{utils.zfill_n(self.package_class)}_D0{self.distinct}*"
 
     def get_verification_pattern(self) -> str:
-        return f"*1_P{utils.zfill_n(self.package_class)}_D0{self.distinct}_S00{self.sample}_C._az360*"
+        return f"*{utils.zfill_n(self.package_class)}_D0{self.distinct}_S{utils.zfill_n(self.sample, 3)}*"
 
     def get_unique_identifier(self) -> str:
         return f"{utils.zfill_n(self.package_class, 4)}_{utils.zfill_n(self.distinct, 2)}_{utils.zfill_n(self.sample, 2)}"

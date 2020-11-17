@@ -3,12 +3,11 @@ from typing import Tuple, Union
 import cv2 as cv
 import numpy as np
 
-try:
-    sift = cv.SIFT.create()
-    mser = cv.MSER.create()  # _max_area=int(10e4), _min_area=50, _max_variation=0.3, _min_diversity=0.1
-except:
-    sift = cv.x2features.SIFT_create()
-    mser = cv.x2features.MSER_create()  # _max_area=10e3, _min_area=50, _max_variation=0.3, _min_diversity=0.1
+sift = cv.SIFT_create()
+mser = cv.MSER_create(_delta=3, _max_area=7500)
+# except:
+#     sift = cv.x2features.SIFT_create()
+#     mser = cv.x2features.MSER_create()
 
 
 def to_rgb(image_1c: np.ndarray) -> np.ndarray:

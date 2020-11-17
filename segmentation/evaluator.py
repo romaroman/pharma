@@ -125,13 +125,13 @@ class EvaluatorByVerification(Evaluator):
     def __init__(
             self,
             image_reference: np.ndarray,
-            results: Dict[str, SegmentationResult],
+            results: Dict[SegmentationAlgorithm, SegmentationResult],
             homo_mat: Union[np.ndarray, None] = None
     ) -> NoReturn:
         super().__init__(homo_mat)
 
         self.image_reference: np.ndarray = image_reference
-        self.results: Dict[str, SegmentationResult] = results
+        self.results: Dict[SegmentationAlgorithm, SegmentationResult] = results
 
     def evaluate(self, segmenter: Segmenter) -> NoReturn:
         if self.homo_mat is None:
@@ -153,12 +153,12 @@ class EvaluatorByVerification(Evaluator):
                 self.results_regions[alg_ver] = self._evaluate_by_regions(regions_ver, regions_ref)
 
     def _evaluate_by_mask(self, image_ver: np.ndarray, image_ref: np.ndarray):
-        image_ver = cv.warpPerspective(
+        image_ver_warped = cv.warpPerspective(
             image_ver, self.homo_mat, utils.swap_dimensions(self.image_reference.shape)
         )
 
         sc = ScoreCalculator()
-        sc.calc_scores(image_ver, image_ref)
+        sc.calc_scores(image_ver_warped, image_ref)
         return np.array(sc.scores_list)
 
     def _evaluate_by_regions(

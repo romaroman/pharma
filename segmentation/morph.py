@@ -159,10 +159,7 @@ def filter_enclosed_contours(image_bw: np.ndarray) -> np.ndarray:
 def filter_non_text_blobs(image_bw: np.ndarray) -> np.ndarray:
 
     def is_prop_valid(prop: skimage.measure._regionprops._RegionProperties) -> bool:
-        min_row, min_col, max_row, max_col = prop.bbox
-        h, w = max_row - min_row, max_col - min_col
-        aspect = min(h, w) / max(h, w)
-        return prop.solidity > 0.25 and prop.area > mscale(15) ** 2 and aspect > 0.2
+        return prop.solidity > 0.25 and prop.area > mscale(15) ** 2
 
     _, image_labeled = cv.connectedComponents(image_bw)
     props = skimage.measure.regionprops(image_labeled)

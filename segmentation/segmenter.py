@@ -252,33 +252,26 @@ class Segmenter:
         image_lines_h = self._process_lines(morph.apply_rectangular_segmentation(self.image_filtered, axis=1))
         return cv.bitwise_or(image_lines_h, image_lines_v)
 
-    def save_results(self, path_parent_folder: Path) -> NoReturn:
-        path_parent_folder.mkdir(parents=True, exist_ok=True)
+    def save_results(self, parent_folder: Path, identifier: str) -> NoReturn:
+        parent_folder.mkdir(parents=True, exist_ok=True)
 
-        cv.imwrite(str(path_parent_folder / 'image_ref.png'), self.image_not_scaled)
+        cv.imwrite(str(parent_folder / f'REF:{identifier}.png'), self.image_not_scaled)
 
         for algorithm, result in self.results_aligned.items():
-            (path_parent_folder / algorithm.blob()).mkdir(parents=True, exist_ok=True)
-            cv.imwrite(str(path_parent_folder / algorithm.blob() / 'image_mask.png'), result.get_default_mask())
+            cv.imwrite(str(parent_folder / f'{algorithm.blob()}:{identifier}.png'), result.get_default_mask())
 
     @classmethod
-    def load_results(cls, path_parent_folder: Path) -> Tuple[np.ndarray, Dict[str, 'SegmentationResult']]:
+    def load_results(cls, path_parent_folder: Path, pattern: str) -> Tuple[np.ndarray, Dict[SegmentationAlgorithm, 'SegmentationResult']]:
         results = dict()
-        image_ref = cv.imread(str(path_parent_folder / 'image_ref.png'))
-
-        algorithm_folders = [d for d in path_parent_folder.iterdir() if d.is_dir()]
-        for algorithm_folder in algorithm_folders:
-            results[algorithm_folder.stem] = SegmentationResult(cv.imread(str(algorithm_folder / 'image_mask.png'), 0))
+        files = list(path_parent_folder.glob(pattern))
+        file_ref = [f for f in files if f.stem.find('REF') != -1][0]
+        image_ref = cv.imread(str(file_ref))
+        
+        for algorithm in config.segmentation.algorithms:
+            file_algorithm = [f for f in files if f.stem.find(algorithm.blob()) != -1][0]
+            results[algorithm] = SegmentationResult(cv.imread(str(file_algorithm), 0))
 
         return image_ref, results
-
-    @classmethod
-    def load_results_by_pattern(cls, pattern: str) -> Tuple[np.ndarray, Dict[str, 'SegmentationResult']]:
-        subfolders = list((config.general.dir_source / 'VerificationReferences').glob(pattern))
-        if subfolders:
-            return cls.load_results(subfolders[0])
-        else:
-            raise FileNotFoundError
 
 
 class SegmentationResult:

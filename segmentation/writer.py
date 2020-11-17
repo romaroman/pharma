@@ -83,7 +83,7 @@ def save_segmentation_results(segmenter: Segmenter, fileinfo: FileInfo) -> NoRet
                 )
 
         if 'verref' in config.segmentation.write:
-            segmenter.save_results(config.general.dir_source / "VerificationReferences" / fileinfo.filename)
+            segmenter.save_results(config.general.dir_source / "VerificationReferences", fileinfo.filename)
 
         if 'mask_unaligned' in config.segmentation.write:
             dst_path = config.general.dir_source / "MasksUnaligned" / f"{algorithm.blob()}:{fileinfo.filename}.png"
