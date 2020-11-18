@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 import torchvision.models as models
 
-from nnmodels import config
+from common import config
 from ntxent import NTXentLoss
 
 
@@ -42,14 +42,14 @@ class ResNetSimCLR(nn.Module):
         self.resnet_dict = {"resnet18": models.resnet18(pretrained=False),
                             "resnet50": models.resnet50(pretrained=False)}
 
-        resnet = self._get_basemodel(config.simclr_model_base_model)
+        resnet = self._get_basemodel(config.nnsimclr.base_model)
         num_ftrs = resnet.fc.in_features
 
         self.features = nn.Sequential(*list(resnet.children())[:-1])
 
         # projection MLP
         self.l1 = nn.Linear(num_ftrs, num_ftrs)
-        self.l2 = nn.Linear(num_ftrs, config.simclr_model_out_dim)
+        self.l2 = nn.Linear(num_ftrs, config.nnsimclr.out_dim)
 
     def _get_basemodel(self, model_name):
         try:
@@ -105,12 +105,12 @@ class SimCLR(object):
         model = ResNetSimCLR().to(self.device)
         model = self.load_pre_trained_weights(model)
 
-        optimizer = torch.optim.Adam(model.parameters(), 3e-4, weight_decay=config.weight_decay)
+        optimizer = torch.optim.Adam(model.parameters(), 3e-4, weight_decay=config.nncommon.weight_decay)
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_loader), eta_min=0,
                                                                last_epoch=-1)
 
-        if apex_support and config.fp16_precision:
+        if apex_support and config.nncommon.fp16_precision:
             model, optimizer = amp.initialize(model, optimizer,
                                               opt_level='O2',
                                               keep_batchnorm_fp32=True)
@@ -124,7 +124,7 @@ class SimCLR(object):
         valid_n_iter = 0
         best_valid_loss = np.inf
 
-        for epoch_counter in range(config.epochs):
+        for epoch_counter in range(config.nncommon.epochs):
             for (xis, xjs), _ in train_loader:
                 optimizer.zero_grad()
 
@@ -133,10 +133,10 @@ class SimCLR(object):
 
                 loss = self._step(model, xis, xjs, n_iter)
 
-                if n_iter % config.log_every_n_steps == 0:
+                if n_iter % config.nncommon.log_every_n_steps == 0:
                     self.writer.add_scalar('train_loss', loss, global_step=n_iter)
 
-                if apex_support and config.fp16_precision:
+                if apex_support and config.nncommon.fp16_precision:
                     with amp.scale_loss(loss, optimizer) as scaled_loss:
                         scaled_loss.backward()
                 else:
@@ -146,7 +146,7 @@ class SimCLR(object):
                 n_iter += 1
 
             # validate the model if requested
-            if epoch_counter % config.eval_every_n_epochs == 0:
+            if epoch_counter % config.nncommon.eval_every_n_epochs == 0:
                 valid_loss = self._validate(model, valid_loader)
                 if valid_loss < best_valid_loss:
                     # save the model weights
@@ -164,7 +164,7 @@ class SimCLR(object):
     @classmethod
     def load_pre_trained_weights(cls, model):
         try:
-            checkpoints_folder = os.path.join('./runs', str(config.fine_tune_from), 'checkpoints')
+            checkpoints_folder = os.path.join('./runs', str(config.nnsimclr.fine_tune_from), 'checkpoints')
             state_dict = torch.load(os.path.join(checkpoints_folder, 'model.pth'))
             model.load_state_dict(state_dict)
             logger.info("Loaded pre-trained model with success.")

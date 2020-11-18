@@ -162,6 +162,35 @@ class HashConfig(__Config):
         self.lopq_subquantizer_clusters: int = confuse['LOPQ']['SubquantizerClusters'].as_number()
 
 
+class NNCommon(__Config):
+
+    def __init__(self, confuse: Configuration):
+        super().__init__(confuse)
+
+        self.batch_size: int = confuse['BatchSize'].as_number()
+        self.epochs: int = confuse['Epochs'].as_number()
+
+        self.log_every_n_steps: int = confuse['LogEveryNSteps'].as_number()
+        self.eval_every_n_epochs: int = confuse['EvalEveryNEpochs'].as_number()
+
+        self.fine_tune_from: str = confuse['FineTuneFrom'].as_str()
+        self.weight_decay: float = confuse['WeightDecay'].as_number()
+        self.fp16_precision: bool = confuse['FP16Precision'].get()
+
+
+class NNSimCLR(__Config):
+
+    def __init__(self, confuse: Configuration):
+        super().__init__(confuse)
+
+        self.base_model: str = confuse['BaseModel'].as_str()
+        self.out_dim: int = confuse['OutDim'].as_number()
+
+        self.loss_temperature: float = confuse['Loss']['Temperature'].as_number()
+        self.loss_use_cosine_similarity: bool = confuse['Loss']['UseCosineSimilarity'].get()
+
+
+
 confuse_main = Configuration('pharmapack-recognition', 'config')
 confuse_main.set_file(f"{os.getenv('PHARMAPACK_PROJECT_DIR')}/config.yaml")
 
@@ -169,3 +198,5 @@ general = GeneralConfig(confuse_main['General'])
 finegrained = FineGrainedConfig(confuse_main['FineGrained'])
 loading = LoadingConfig(confuse_main['Loading'])
 segmentation = SegmentationConfig(confuse_main['Segmentation'])
+nncommon = NNCommon(confuse_main['NN']['Common'])
+nnsimclr = NNSimCLR(confuse_main['NN']['SimCLR'])

@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-from nnmodels import config
+from common import config
 
 
 class NTXentLoss(torch.nn.Module):
@@ -9,12 +9,12 @@ class NTXentLoss(torch.nn.Module):
     def __init__(self, device):
         super(NTXentLoss, self).__init__()
 
-        self.batch_size: int = config.batch_size
-        self.temperature: float = config.simclr_loss_temperature
+        self.batch_size: int = config.nncommon.batch_size
+        self.temperature: float = config.nnsimclr.loss_temperature
         self.device = device
         self.softmax = torch.nn.Softmax(dim=-1)
         self.mask_samples_from_same_repr = self._get_correlated_mask().type(torch.bool)
-        self.similarity_function = self._get_similarity_function(config.simclr_loss_use_cosine_similarity)
+        self.similarity_function = self._get_similarity_function(config.nnsimclr.use_cosine_similarity)
         self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
 
     def _get_similarity_function(self, use_cosine_similarity):
