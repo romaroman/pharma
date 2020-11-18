@@ -70,7 +70,7 @@ class Runner:
             segmenter.segment(config.segmentation.algorithms)
 
             writer.save_segmentation_results(segmenter, file)
-
+            # return
             for algorithm, res in segmenter.results_unaligned.items():
                 detections = Detector.detect_descriptors(
                     image_input, config.finegrained.descriptors_used, res.get_default_mask()

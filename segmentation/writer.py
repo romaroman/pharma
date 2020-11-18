@@ -78,7 +78,7 @@ def save_segmentation_results(segmenter: Segmenter, fileinfo: FileInfo) -> NoRet
 
             for index, region in enumerate(result.get_default_regions(), start=1):
                 cv.imwrite(
-                    str(parent_folder / f"{fileinfo.filename}_{utils.zfill_n(index)}.png"),
+                        str(parent_folder / f"{fileinfo.filename}:{utils.zfill_n(index)}.png"),
                     region.as_nn_input(segmenter.image_not_scaled)
                 )
 

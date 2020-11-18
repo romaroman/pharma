@@ -28,8 +28,8 @@ parser.add_argument('dir_complete', type=str)
 parser.add_argument('--flushdb', type=bool, default=False)
 parser.add_argument('--db', type=int, default=6)
 
-base_models = ['resnet18', 'resnet50', 'resnet101']
-descriptor_lengths = [256, 512, 1024]
+base_models = ['resnet50']
+descriptor_lengths = [512]
 
 
 def unzip_d(data):
@@ -76,8 +76,8 @@ if __name__ == '__main__':
 
     for dir_alg in Path(args.dir_complete).glob('*'):
         for base_model in base_models:
-            batch_size = dict(resnet18=1024, resnet50=1024, resnet101=1024).get(base_model, 512)
-            # batch_size = 256
+            # batch_size = dict(resnet18=1024, resnet50=1024, resnet101=1024).get(base_model, 512)
+            batch_size = 1024
 
             dataset = PharmaPackDataset(dir_alg)
             loader = DataLoader(

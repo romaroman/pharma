@@ -144,12 +144,12 @@ class EvaluatorByVerification(Evaluator):
 
             if config.segmentation.eval_verification_mask:
                 image_ver = result_ver.get_default_mask()
-                image_ref = result_ref.get_mask(ApproximationMethod.Contour)
+                image_ref = result_ref.get_default_mask()
                 self.results_mask[alg_ver] = self._evaluate_by_mask(image_ver, image_ref)
 
             if config.segmentation.eval_verification_regions:
                 regions_ver = result_ver.get_default_regions()
-                regions_ref = result_ref.get_regions(ApproximationMethod.Contour)
+                regions_ref = result_ref.get_default_regions()
                 self.results_regions[alg_ver] = self._evaluate_by_regions(regions_ver, regions_ref)
 
     def _evaluate_by_mask(self, image_ver: np.ndarray, image_ref: np.ndarray):
