@@ -1,5 +1,6 @@
 from itertools import product
 from typing import Tuple
+import traceback
 
 import cv2 as cv
 import numpy as np
@@ -78,7 +79,7 @@ def match_single(df_iterrow: Tuple[int, pd.Series]):
     package_candidates = [v for k, v in row.to_dict().items() if k.startswith('package_candidate')]
 
     results_single = []
-    for phone, package_candidate in product([1], package_candidates):
+    for phone, package_candidate in product([1,2,3], package_candidates):
         result_base = [row.sample_actual, alg, row.package_actual, phone, package_candidate]
 
         try:
@@ -110,7 +111,7 @@ def match_single(df_iterrow: Tuple[int, pd.Series]):
                     result_base + [descriptor.blob()] + scores
                 )
         except:
-            results_single.append(result_base)
+            results_single.append(result_base + [traceback.format_exc(limit=5)])
 
     return results_single
 
@@ -118,13 +119,13 @@ def match_single(df_iterrow: Tuple[int, pd.Series]):
 if __name__ == '__main__':
     utils.suppress_warnings()
 
-    df = pd.read_csv(config.general.dir_source / 'candidates_prepared.csv', index_col=None)
+    df = pd.read_csv(config.general.dir_source / 'CSVs/lopq' / 'LOPQ:BOTH:resnet50:512:20:candidates.csv', index_col=None)
     rows = list(df.iterrows())
 
     # for row in rows:
     #     match_single(row)
 
-    results = p_map(match_single, rows, num_cpus=44)
+    results = p_map(match_single, rows, num_cpus=46)
 
     results_flattenned = []
     for result_complex in results:
@@ -132,4 +133,4 @@ if __name__ == '__main__':
             results_flattenned.append(results_s)
 
     df_result = pd.DataFrame(results_flattenned)
-    df_result.to_csv('finematching_result.csv')
+    df_result.to_csv('finematching_result_new_phones123.csv', index=False)

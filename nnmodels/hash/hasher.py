@@ -30,9 +30,9 @@ parser.add_argument('--db_insert', type=int, default=8)
 parser.add_argument('--db_complete', type=int, default=6)
 
 parser.add_argument('--segmentation_algorithm', type=str, default='MI1')
-parser.add_argument('--base_model', type=str, default='resnet18')
-parser.add_argument('--descriptor_length', type=int, default=256)
-parser.add_argument('--neighbours_amount', type=int, default=5)
+parser.add_argument('--base_model', type=str, default='resnet50')
+parser.add_argument('--descriptor_length', type=int, default=512)
+parser.add_argument('--neighbours_amount', type=int, default=20)
 
 parser.add_argument('--search_algorithm', type=str, default='LOPQ')
 
@@ -303,7 +303,7 @@ def search_l2(
 
 
 def save_results(results: List[List[Any]]) -> NoReturn:
-    df_uuid = "+".join([args.search_algorithm, args.segmentation_algorithm, args.base_model,
+    df_uuid = ":".join([args.search_algorithm, args.segmentation_algorithm, args.base_model,
                         str(args.descriptor_length), str(args.neighbours_amount)])
     df_path = Path(f"search_results/{df_uuid}.csv")
     df_path.parent.mkdir(parents=True, exist_ok=True)

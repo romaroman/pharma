@@ -41,7 +41,7 @@ def unzip_d(data):
 
 
 def insert(loader, hash_model: HashEncoder, db: Redis):
-    parallel_model = torch.nn.DataParallel(hash_model)
+    # parallel_model = torch.nn.DataParallel(hash_model)
 
     with torch.no_grad():
         model.eval()
@@ -51,7 +51,7 @@ def insert(loader, hash_model: HashEncoder, db: Redis):
         for batch_idx, (data, filepaths) in enumerate(loader, start=1):
             data = unzip_d(data)
 
-            tensor = parallel_model(*data)
+            tensor = hash_model(*data)
 
             for descriptor_length, tensor in zip(hash_model.descriptor_lengths, tensor):
                 for descriptor, filepath in zip(tensor.cpu().numpy(), filepaths):
@@ -84,7 +84,7 @@ if __name__ == '__main__':
                 dataset=dataset,
                 batch_size=batch_size,
                 sampler=sampler.SubsetRandomSampler(np.arange(len(dataset))),
-                num_workers=0,
+                num_workers=16,
                 drop_last=False,
                 shuffle=False
             )
