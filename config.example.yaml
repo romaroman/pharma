@@ -105,7 +105,7 @@ NN:
     EvalEveryNEpochs: 1
 
     FineTuneFrom: None
-    WeightDecay: 10e-6
+    WeightDecay: 0.000001
     FP16Precision: False
 
     Dataset:

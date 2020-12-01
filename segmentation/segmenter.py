@@ -220,7 +220,7 @@ class Segmenter:
         mb = utils.MSER(b)
         mg = utils.MSER(g)
 
-        image_mser = cv.bitwise_and(cv.bitwise_and(mr, mb), mg)
+        image_mser = cv.bitwise_or(cv.bitwise_or(mr, mb), mg)
         image_mser = utils.fill_holes(image_mser)
         image_mser = morph.apply_line_morphology(image_mser, morph.mscale(30))
 

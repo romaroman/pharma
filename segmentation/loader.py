@@ -15,7 +15,7 @@ logger = logging.getLogger('segmentation | loader')
 
 class Loader:
     __DEBUG_FILES = [
-        # 'PharmaPack_R_I_S1_Ph1_P0056_D01_S001_C1_P1',
+        'PFP_Ph1_P0608_D01_S001_C2_az180_side1'
     ]
 
     def __init__(self, dir_source: Path) -> NoReturn:

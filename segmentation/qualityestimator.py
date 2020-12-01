@@ -71,7 +71,7 @@ class QualityEstimator:
         return self.blur_score_ref - self.blur_score_ver > 2
 
     def calculate_glares_score(self, image: np.ndarray) -> float:
-        glares_value_threshold = 220
+        glares_value_threshold = 200
 
         erd_kernel_s = min(2, round(image.size * 0.0075))
         erd_kernel = cv.getStructuringElement(cv.MORPH_RECT, (erd_kernel_s, erd_kernel_s))

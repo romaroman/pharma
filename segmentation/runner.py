@@ -7,6 +7,7 @@ import cv2 as cv
 
 import utils
 from common import config
+from common.enums import ApproximationMethod, SegmentationAlgorithm, AlignmentMethod
 
 from finegrained import Detector, Serializer
 from segmentation import writer
