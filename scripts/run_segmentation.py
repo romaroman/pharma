@@ -1,24 +1,24 @@
 import sys
 import logging
 
-from common import config
-import segmentation
-import utils
+from pharma.common import config
+from pharma.segmentation import writer, Runner
+import pyutils as pu
 
 
 if __name__ == '__main__':
     logger = logging.getLogger('segmentation')
 
-    segmentation.writer.prepare_output_folder()
+    writer.prepare_output_folder()
 
-    utils.setup_logger(
+    pu.setup_logger(
         'segmentation',
         config.general.log_level,
         str(config.general.dir_output / 'log.txt')
     )
-    utils.suppress_warnings()
+    pu.suppress_warnings()
 
     logger.info(f"Currently used configuration:\n{config.segmentation.confuse.parent.dump()}")
-    segmentation.Runner.process()
+    Runner.process()
 
     sys.exit(0)

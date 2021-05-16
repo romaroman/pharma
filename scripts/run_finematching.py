@@ -8,9 +8,9 @@ import pandas as pd
 from numpy.distutils.command.config import config
 from p_tqdm import p_map
 
-import utils
-from common import config
-from finegrained import Serializer, Matcher
+import pyutils as pu
+from pharma.common import config
+from pharma.finegrained import Serializer, Matcher
 
 
 # def create_image_ver_draw(id: str):
@@ -99,7 +99,7 @@ def match_single(df_iterrow: Tuple[int, pd.Series]):
                 #         zip(scores, ["ver keypoints", "ref keypoints", "matches", "good matches", "ransac matches"]),
                 #         start=1
                 # ):
-                #     image_visualization = utils.add_text(
+                #     image_visualization = pu.add_text(
                 #         image_visualization, text=f"{label}:{res}", point=(25, 35 * ii), scale=1, color=(0, 0, 255)
                 #     )
 
@@ -117,7 +117,7 @@ def match_single(df_iterrow: Tuple[int, pd.Series]):
 
 
 if __name__ == '__main__':
-    utils.suppress_warnings()
+    pu.suppress_warnings()
 
     df = pd.read_csv(config.general.dir_source / 'CSVs/lopq' / 'LOPQ:BOTH:resnet50:512:20:candidates.csv', index_col=None)
     rows = list(df.iterrows())

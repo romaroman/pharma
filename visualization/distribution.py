@@ -11,8 +11,8 @@ import seaborn as sns
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from textdetector.enums import DetectionAlgorithm, EvalMetric
-import utils
+from pharma.common.enums import SegmentationAlgorithm, EvalMetric
+import pyutils as pu
 
 
 def prepare_df(df: pd.DataFrame) -> pd.DataFrame:

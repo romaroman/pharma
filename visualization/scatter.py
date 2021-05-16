@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from textdetector.enums import EvalMetric
+from pharma.common.enums import EvalMetric
 
 
 # parser = argparse.ArgumentParser()
